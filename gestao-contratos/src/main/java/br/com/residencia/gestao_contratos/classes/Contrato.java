@@ -1,4 +1,4 @@
-package br.com.unit.residencia.classes;
+package br.com.residencia.gestao_contratos.classes;
 
 
 import jakarta.persistence.*;
