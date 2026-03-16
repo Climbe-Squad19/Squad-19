@@ -1,8 +1,15 @@
 package br.com.residencia.gestao_contratos.classes;
 
-import jakarta.persistence.*;
-import lombok.Data;
 import java.util.List;
+
+import jakarta.persistence.Column;
+import jakarta.persistence.ElementCollection;
+import jakarta.persistence.Entity;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
+import jakarta.persistence.Id;
+import jakarta.persistence.Table;
+import lombok.Data;
 
 @Data
 @Entity
@@ -26,7 +33,9 @@ public class Usuario {
 
     private String contato; 
 
-    private boolean ativo; 
+    private boolean ativo;
+
+    private String senha;
 
     @ElementCollection
     private List<String> permissoes; // Caso tenha mais de uma permissão
