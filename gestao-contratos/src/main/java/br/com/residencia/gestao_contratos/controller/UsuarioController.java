@@ -4,6 +4,7 @@ import java.util.List;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -22,9 +23,11 @@ import br.com.residencia.gestao_contratos.repository.UsuarioRepository;
 public class UsuarioController {
 
     private final UsuarioRepository usuarioRepository;
+    private final PasswordEncoder passwordEncoder; //criptografia da senha
 
-    public UsuarioController(UsuarioRepository usuarioRepository) {
+    public UsuarioController(UsuarioRepository usuarioRepository, PasswordEncoder passwordEncoder) {
         this.usuarioRepository = usuarioRepository;
+        this.passwordEncoder = passwordEncoder;
     }
 
     @GetMapping
@@ -39,8 +42,9 @@ public class UsuarioController {
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Usuario nao encontrado"));
     }
 
-    @PostMapping
+@PostMapping
     public ResponseEntity<Usuario> create(@RequestBody Usuario usuario) {
+        usuario.setSenha(passwordEncoder.encode(usuario.getSenha()));
         Usuario saved = usuarioRepository.save(usuario);
         return new ResponseEntity<>(saved, HttpStatus.CREATED);
     }
@@ -57,7 +61,11 @@ public class UsuarioController {
         existing.setContato(usuario.getContato());
         existing.setAtivo(usuario.isAtivo());
         existing.setPermissoes(usuario.getPermissoes());
-        existing.setSenha(usuario.getSenha());
+
+
+        if (usuario.getSenha() != null && !usuario.getSenha().isEmpty()) {
+            existing.setSenha(passwordEncoder.encode(usuario.getSenha()));
+        }
 
         Usuario updated = usuarioRepository.save(existing);
         return ResponseEntity.ok(updated);
