@@ -1,10 +1,9 @@
 package br.com.residencia.gestao_contratos.dtos.request;
 
-import java.util.List;
-
-import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+import lombok.AllArgsConstructor;
+import java.util.List;
 
 @Data
 @NoArgsConstructor
@@ -14,5 +13,7 @@ public class UsuarioAtualizacaoRequest {
     private String cargo;
     private String telefone;
     private boolean ativo;
+    private String senha; 
     private List<String> permissoes;
+
 }

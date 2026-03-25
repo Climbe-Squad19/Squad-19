@@ -14,5 +14,6 @@ public class UsuarioCriacaoRequest {
     private String cpf;
     private String email;
     private String telefone;
+    private String senha; 
     private List<String> permissoes;
 }
