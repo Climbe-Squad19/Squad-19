@@ -54,7 +54,7 @@ public class UsuarioController {
         existing.setCargo(usuario.getCargo());
         existing.setCpf(usuario.getCpf());
         existing.setEmail(usuario.getEmail());
-        existing.setContato(usuario.getContato());
+        existing.setTelefone(usuario.getTelefone());
         existing.setAtivo(usuario.isAtivo());
         existing.setPermissoes(usuario.getPermissoes());
         existing.setSenha(usuario.getSenha());
