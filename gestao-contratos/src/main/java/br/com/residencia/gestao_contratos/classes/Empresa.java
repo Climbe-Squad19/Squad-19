@@ -1,5 +1,7 @@
 package br.com.residencia.gestao_contratos.classes;
 
+import java.time.LocalDateTime;
+
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
@@ -38,4 +40,9 @@ public class Empresa {
     private String nomeRepresentante;
     private String cpfRepresentante;
     private String contatoRepresentante;
+
+    private boolean ativa;              
+
+    @Column(updatable = false)
+    private LocalDateTime dataCadastro; 
 }
