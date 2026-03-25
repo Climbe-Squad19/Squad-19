@@ -1,15 +1,25 @@
-package br.com.residencia.gestao_contratos.classes
-;
+package br.com.residencia.gestao_contratos.classes;
 
-import jakarta.persistence.*;
-import lombok.Data;
 import java.math.BigDecimal;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
+
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
+import jakarta.persistence.Id;
+import jakarta.persistence.ManyToOne;
+import jakarta.persistence.Table;
+import lombok.Data;
 
 @Data
 @Entity
 @Table(name = "propostas")
 public class Proposta {
+
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
@@ -17,14 +27,21 @@ public class Proposta {
     @ManyToOne
     private Empresa empresa;
 
-    private String servicoContratado; 
+    @ManyToOne
+    private Usuario criadoPor;          
+
+    private String servicoContratado;
     private BigDecimal valorMensal;
     private BigDecimal valorSetup;
     private LocalDate dataEmissao;
-    private String linkGoogleDrive; // integra com drive
+    private String linkGoogleDrive;
+    private String motivoRecusa;        
 
     @Enumerated(EnumType.STRING)
     private StatusProposta status;
+
+    @Column(updatable = false)
+    private LocalDateTime dataCriacao;   
 
     public enum StatusProposta {
         ELABORACAO, ENVIADA, ACEITA, RECUSADA
