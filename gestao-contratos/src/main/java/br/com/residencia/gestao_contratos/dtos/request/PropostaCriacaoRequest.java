@@ -11,7 +11,6 @@ import java.time.LocalDate;
 @AllArgsConstructor
 public class PropostaCriacaoRequest {
     private Long empresaId;
-    private Long criadoPorId;     
     private String servicoContratado;
     private BigDecimal valorMensal;
     private BigDecimal valorSetup;
