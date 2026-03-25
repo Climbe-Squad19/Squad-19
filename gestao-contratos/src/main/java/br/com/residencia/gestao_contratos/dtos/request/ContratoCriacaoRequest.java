@@ -11,6 +11,8 @@ import java.time.LocalDate;
 public class ContratoCriacaoRequest {
     private Long propostaOrigemId;
     private Long empresaId;
+    private Long usuarioResponsavelId;
+    private String status;      
     private LocalDate dataInicio;
     private LocalDate dataFim;
     private String linkContratoAssinado;

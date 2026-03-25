@@ -14,6 +14,7 @@ public class ContratoResponse {
     private Long propostaOrigemId;
     private Long empresaId;
     private String nomeEmpresa;
+    private String nomeUsuarioResponsavel;
     private String tipoServico;
     private String status;
     private LocalDate dataInicio;

@@ -23,4 +23,5 @@ public class PropostaResponse {
     private String status;
     private String motivoRecusa;
     private LocalDateTime dataCriacao;
+    private String nomeCriadoPor;
 }

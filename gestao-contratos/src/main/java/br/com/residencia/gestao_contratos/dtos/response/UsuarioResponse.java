@@ -15,7 +15,7 @@ public class UsuarioResponse {
     private String nomeCompleto;
     private String cargo;
     private String email;
-    private String cpf; 
+    private String cpf; // pode manter pq ele vai ser mascarado no service
     private String telefone;
     private boolean ativo;
     private List<String> permissoes;
