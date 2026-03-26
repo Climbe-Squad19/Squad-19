@@ -4,9 +4,17 @@ import java.util.List;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.DeleteMapping;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RestController;
 
-import br.com.residencia.gestao_contratos.classes.Usuario;
+import br.com.residencia.gestao_contratos.dtos.request.UsuarioAtualizacaoRequest;
+import br.com.residencia.gestao_contratos.dtos.request.UsuarioCriacaoRequest;
 import br.com.residencia.gestao_contratos.dtos.response.UsuarioResponse;
 import br.com.residencia.gestao_contratos.services.UsuarioService;
 
@@ -31,21 +39,21 @@ public class UsuarioController {
     }
 
     @PostMapping
-    public ResponseEntity<UsuarioResponse> create(@RequestBody Usuario usuario) {
-        UsuarioResponse saved = usuarioService.cadastrarUsuario(usuario);
-        return new ResponseEntity<>(saved, HttpStatus.CREATED);
+    public ResponseEntity<UsuarioResponse> create(
+            @RequestBody UsuarioCriacaoRequest request) {
+        return new ResponseEntity<>(usuarioService.criar(request), HttpStatus.CREATED);
     }
 
     @PutMapping("/{id}")
-    public ResponseEntity<UsuarioResponse> update(@PathVariable Long id, @RequestBody Usuario usuario) {
-        usuario.setId(id);
-        UsuarioResponse updated = usuarioService.cadastrarUsuario(usuario);
-        return ResponseEntity.ok(updated);
+    public ResponseEntity<UsuarioResponse> update(
+            @PathVariable Long id,
+            @RequestBody UsuarioAtualizacaoRequest request) {
+        return ResponseEntity.ok(usuarioService.atualizar(id, request));
     }
 
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> delete(@PathVariable Long id) {
-        usuarioService.excluir(id);
+        usuarioService.inativar(id);
         return ResponseEntity.noContent().build();
     }
 }

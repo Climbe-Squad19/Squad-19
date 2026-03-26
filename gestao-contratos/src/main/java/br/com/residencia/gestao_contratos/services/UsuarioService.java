@@ -10,6 +10,8 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import br.com.residencia.gestao_contratos.classes.Usuario;
+import br.com.residencia.gestao_contratos.dtos.request.UsuarioAtualizacaoRequest;
+import br.com.residencia.gestao_contratos.dtos.request.UsuarioCriacaoRequest;
 import br.com.residencia.gestao_contratos.dtos.response.UsuarioResponse;
 import br.com.residencia.gestao_contratos.repository.UsuarioRepository;
 
@@ -23,16 +25,47 @@ public class UsuarioService {
     private PasswordEncoder passwordEncoder;
 
     @Transactional
-    public UsuarioResponse cadastrarUsuario(Usuario usuario) {
-        usuario.setSenha(passwordEncoder.encode(usuario.getSenha()));
-        
-        if (usuario.getId() == null) {
-            usuario.setDataCriacao(LocalDateTime.now());
-            usuario.setAtivo(true);
-        }
+    public UsuarioResponse criar(UsuarioCriacaoRequest request) {
+
+        if (usuarioRepository.existsByCpf(request.getCpf()))
+            throw new RuntimeException("CPF já cadastrado");
+
+        if (usuarioRepository.existsByEmail(request.getEmail()))
+            throw new RuntimeException("Email já cadastrado");
+
+        Usuario usuario = new Usuario();
+        usuario.setNomeCompleto(request.getNomeCompleto());
+        usuario.setCargo(request.getCargo());
+        usuario.setPermissoes(request.getPermissoes());
+        usuario.setCpf(request.getCpf());
+        usuario.setEmail(request.getEmail());
+        usuario.setTelefone(request.getTelefone());
+        usuario.setSenha(passwordEncoder.encode(request.getSenha()));
+        usuario.setAtivo(true);
+        usuario.setSituacao(Usuario.SituacaoUsuario.ATIVO);
+        usuario.setDataCriacao(LocalDateTime.now());
 
         Usuario salvo = usuarioRepository.save(usuario);
         return converterParaResponse(salvo);
+    }
+
+    @Transactional
+    public UsuarioResponse atualizar(Long id, UsuarioAtualizacaoRequest request) {
+        Usuario usuario = usuarioRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Usuário não encontrado"));
+
+        usuario.setNomeCompleto(request.getNomeCompleto());
+        usuario.setCargo(request.getCargo());
+        usuario.setPermissoes(request.getPermissoes());
+        usuario.setTelefone(request.getTelefone());
+        usuario.setAtivo(request.isAtivo());
+
+        if (request.getSenha() != null && !request.getSenha().isEmpty()) {
+            usuario.setSenha(passwordEncoder.encode(request.getSenha()));
+        }
+
+        Usuario atualizado = usuarioRepository.save(usuario);
+        return converterParaResponse(atualizado);
     }
 
     public List<UsuarioResponse> listarTodos() {
@@ -48,11 +81,14 @@ public class UsuarioService {
     }
 
     @Transactional
-    public void excluir(Long id) {
-        if (!usuarioRepository.existsById(id)) {
-            throw new RuntimeException("Usuário não encontrado para exclusão");
-        }
-        usuarioRepository.deleteById(id);
+    public void inativar(Long id) {
+        Usuario usuario = usuarioRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Usuário não encontrado"));
+
+
+        usuario.setAtivo(false);
+        usuario.setSituacao(Usuario.SituacaoUsuario.INATIVO);
+        usuarioRepository.save(usuario);
     }
 
     private UsuarioResponse converterParaResponse(Usuario usuario) {
@@ -67,10 +103,10 @@ public class UsuarioService {
         response.setFotoPerfilUrl(usuario.getFotoPerfilUrl());
         response.setDataCriacao(usuario.getDataCriacao());
 
+
         if (usuario.getCpf() != null && usuario.getCpf().length() == 11) {
-            String cpfOriginal = usuario.getCpf();
-            String cpfMascarado = "****" + cpfOriginal.substring(4, 7) + "****";
-            response.setCpf(cpfMascarado);
+            String cpf = usuario.getCpf();
+            response.setCpf("***" + cpf.substring(3, 9) + "**");
         }
 
         return response;
