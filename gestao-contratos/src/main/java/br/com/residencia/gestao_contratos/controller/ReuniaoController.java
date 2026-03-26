@@ -1,64 +1,59 @@
 package br.com.residencia.gestao_contratos.controller;
 
-import br.com.residencia.gestao_contratos.classes.Reuniao;
-import br.com.residencia.gestao_contratos.repository.ReuniaoRepository;
+import java.util.List;
+
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.*;
-import org.springframework.web.server.ResponseStatusException;
+import org.springframework.web.bind.annotation.DeleteMapping;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RestController;
 
-import java.util.List;
+import br.com.residencia.gestao_contratos.dtos.request.ReuniaoAtualizacaoRequest;
+import br.com.residencia.gestao_contratos.dtos.request.ReuniaoCriacaoRequest;
+import br.com.residencia.gestao_contratos.dtos.response.ReuniaoResponse;
+import br.com.residencia.gestao_contratos.services.ReuniaoService;
 
 @RestController
 @RequestMapping("/reunioes")
 public class ReuniaoController {
 
-    private final ReuniaoRepository reuniaoRepository;
+    private final ReuniaoService reuniaoService;
 
-    public ReuniaoController(ReuniaoRepository reuniaoRepository) {
-        this.reuniaoRepository = reuniaoRepository;
+    public ReuniaoController(ReuniaoService reuniaoService) {
+        this.reuniaoService = reuniaoService;
     }
 
     @GetMapping
-    public List<Reuniao> getAll() {
-        return reuniaoRepository.findAll();
+    public ResponseEntity<List<ReuniaoResponse>> getAll() {
+        return ResponseEntity.ok(reuniaoService.listarTodos());
     }
 
     @GetMapping("/{id}")
-    public ResponseEntity<Reuniao> getById(@PathVariable Long id) {
-        return reuniaoRepository.findById(id)
-                .map(ResponseEntity::ok)
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Reuniao nao encontrada"));
+    public ResponseEntity<ReuniaoResponse> getById(@PathVariable Long id) {
+        return ResponseEntity.ok(reuniaoService.buscarPorId(id));
     }
 
     @PostMapping
-    public ResponseEntity<Reuniao> create(@RequestBody Reuniao reuniao) {
-        Reuniao saved = reuniaoRepository.save(reuniao);
-        return new ResponseEntity<>(saved, HttpStatus.CREATED);
+    public ResponseEntity<ReuniaoResponse> create(
+            @RequestBody ReuniaoCriacaoRequest request) {
+        return new ResponseEntity<>(reuniaoService.agendar(request), HttpStatus.CREATED);
     }
 
     @PutMapping("/{id}")
-    public ResponseEntity<Reuniao> update(@PathVariable Long id, @RequestBody Reuniao reuniao) {
-        Reuniao existing = reuniaoRepository.findById(id)
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Reuniao nao encontrada"));
-
-        existing.setPauta(reuniao.getPauta());
-        existing.setEmpresa(reuniao.getEmpresa());
-        existing.setDataHora(reuniao.getDataHora());
-        existing.setPresencial(reuniao.isPresencial());
-        existing.setLinkOnline(reuniao.getLinkOnline());
-        existing.setSala(reuniao.getSala());
-
-        Reuniao updated = reuniaoRepository.save(existing);
-        return ResponseEntity.ok(updated);
+    public ResponseEntity<ReuniaoResponse> update(
+            @PathVariable Long id,
+            @RequestBody ReuniaoAtualizacaoRequest request) {
+        return ResponseEntity.ok(reuniaoService.atualizar(id, request));
     }
 
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> delete(@PathVariable Long id) {
-        Reuniao existing = reuniaoRepository.findById(id)
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Reuniao nao encontrada"));
-
-        reuniaoRepository.delete(existing);
+        reuniaoService.cancelar(id);
         return ResponseEntity.noContent().build();
     }
 }
