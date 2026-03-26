@@ -1,72 +1,60 @@
 package br.com.residencia.gestao_contratos.controller;
 
-import br.com.residencia.gestao_contratos.classes.Empresa;
-import br.com.residencia.gestao_contratos.repository.EmpresaRepository;
+import java.util.List;
+
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.*;
-import org.springframework.web.server.ResponseStatusException;
+import org.springframework.web.bind.annotation.DeleteMapping;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RestController;
 
-import java.util.List;
+import br.com.residencia.gestao_contratos.dtos.request.EmpresaAtualizacaoRequest;
+import br.com.residencia.gestao_contratos.dtos.request.EmpresaCriacaoRequest;
+import br.com.residencia.gestao_contratos.dtos.response.EmpresaResponse;
+import br.com.residencia.gestao_contratos.services.EmpresaService;
 
 @RestController
 @RequestMapping("/empresas")
 public class EmpresaController {
 
-    private final EmpresaRepository empresaRepository;
+    private final EmpresaService empresaService;
 
-    public EmpresaController(EmpresaRepository empresaRepository) {
-        this.empresaRepository = empresaRepository;
+    public EmpresaController(EmpresaService empresaService) {
+        this.empresaService = empresaService;
     }
 
     @GetMapping
-    public List<Empresa> getAll() {
-        return empresaRepository.findAll();
+    public ResponseEntity<List<EmpresaResponse>> getAll() {
+        return ResponseEntity.ok(empresaService.listarTodos());
     }
 
     @GetMapping("/{id}")
-    public ResponseEntity<Empresa> getById(@PathVariable Long id) {
-        return empresaRepository.findById(id)
-                .map(ResponseEntity::ok)
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Empresa nao encontrada"));
+    public ResponseEntity<EmpresaResponse> getById(@PathVariable Long id) {
+        return ResponseEntity.ok(empresaService.buscarPorId(id));
     }
 
     @PostMapping
-    public ResponseEntity<Empresa> create(@RequestBody Empresa empresa) {
-        Empresa saved = empresaRepository.save(empresa);
-        return new ResponseEntity<>(saved, HttpStatus.CREATED);
+    public ResponseEntity<EmpresaResponse> create(
+            @RequestBody EmpresaCriacaoRequest request) {
+        return new ResponseEntity<>(empresaService.criar(request), HttpStatus.CREATED);
     }
 
     @PutMapping("/{id}")
-    public ResponseEntity<Empresa> update(@PathVariable Long id, @RequestBody Empresa empresa) {
-        Empresa existing = empresaRepository.findById(id)
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Empresa nao encontrada"));
-
-        existing.setRazaoSocial(empresa.getRazaoSocial());
-        existing.setNomeFantasia(empresa.getNomeFantasia());
-        existing.setCnpj(empresa.getCnpj());
-        existing.setLogradouro(empresa.getLogradouro());
-        existing.setNumero(empresa.getNumero());
-        existing.setBairro(empresa.getBairro());
-        existing.setCidade(empresa.getCidade());
-        existing.setUf(empresa.getUf());
-        existing.setCep(empresa.getCep());
-        existing.setTelefone(empresa.getTelefone());
-        existing.setEmailContato(empresa.getEmailContato());
-        existing.setNomeRepresentante(empresa.getNomeRepresentante());
-        existing.setCpfRepresentante(empresa.getCpfRepresentante());
-        existing.setContatoRepresentante(empresa.getContatoRepresentante());
-
-        Empresa updated = empresaRepository.save(existing);
-        return ResponseEntity.ok(updated);
+    public ResponseEntity<EmpresaResponse> update(
+            @PathVariable Long id,
+            @RequestBody EmpresaAtualizacaoRequest request) {
+        return ResponseEntity.ok(empresaService.atualizar(id, request));
     }
 
+    // inativa empresa em vez de deletar
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> delete(@PathVariable Long id) {
-        Empresa existing = empresaRepository.findById(id)
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Empresa nao encontrada"));
-
-        empresaRepository.delete(existing);
+        empresaService.inativar(id);
         return ResponseEntity.noContent().build();
     }
 }
