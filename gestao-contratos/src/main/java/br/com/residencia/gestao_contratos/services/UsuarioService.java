@@ -24,32 +24,15 @@ public class UsuarioService {
 
     @Transactional
     public UsuarioResponse cadastrarUsuario(Usuario usuario) {
-        if (usuarioRepository.existsByCpf(usuario.getCpf())) {
-            throw new IllegalArgumentException("Erro: CPF já registado no sistema.");
-        }
-        if (usuarioRepository.existsByEmail(usuario.getEmail())) {
-            throw new IllegalArgumentException("Erro: E-mail já registado no sistema.");
-        }
-
-        if (usuario.getSenha() != null && !usuario.getSenha().isEmpty()) {
-            String senhaEncriptada = passwordEncoder.encode(usuario.getSenha());
-            usuario.setSenha(senhaEncriptada);
-        }
-
-        usuario.setDataCriacao(LocalDateTime.now());
-        usuario.setSituacao(Usuario.SituacaoUsuario.ATIVO);
-        usuario.setAtivo(true);
+        usuario.setSenha(passwordEncoder.encode(usuario.getSenha()));
         
-        Usuario usuarioGuardado = usuarioRepository.save(usuario);
+        if (usuario.getId() == null) {
+            usuario.setDataCriacao(LocalDateTime.now());
+            usuario.setAtivo(true);
+        }
 
-        return converterParaResponse(usuarioGuardado);
-    }
-
-    public UsuarioResponse buscarPorId(Long id) {
-        Usuario usuario = usuarioRepository.findById(id)
-                .orElseThrow(() -> new IllegalArgumentException("Utilizador não encontrado."));
-        
-        return converterParaResponse(usuario);
+        Usuario salvo = usuarioRepository.save(usuario);
+        return converterParaResponse(salvo);
     }
 
     public List<UsuarioResponse> listarTodos() {
@@ -58,10 +41,22 @@ public class UsuarioService {
                 .collect(Collectors.toList());
     }
 
+    public UsuarioResponse buscarPorId(Long id) {
+        Usuario usuario = usuarioRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Usuário não encontrado"));
+        return converterParaResponse(usuario);
+    }
+
+    @Transactional
+    public void excluir(Long id) {
+        if (!usuarioRepository.existsById(id)) {
+            throw new RuntimeException("Usuário não encontrado para exclusão");
+        }
+        usuarioRepository.deleteById(id);
+    }
 
     private UsuarioResponse converterParaResponse(Usuario usuario) {
         UsuarioResponse response = new UsuarioResponse();
-        
         response.setId(usuario.getId());
         response.setNomeCompleto(usuario.getNomeCompleto());
         response.setCargo(usuario.getCargo());
@@ -73,10 +68,9 @@ public class UsuarioService {
         response.setDataCriacao(usuario.getDataCriacao());
 
         if (usuario.getCpf() != null && usuario.getCpf().length() == 11) {
-            String cpfMascarado = "****" + usuario.getCpf().substring(4, 7) + "****";
+            String cpfOriginal = usuario.getCpf();
+            String cpfMascarado = "****" + cpfOriginal.substring(4, 7) + "****";
             response.setCpf(cpfMascarado);
-        } else {
-            response.setCpf(usuario.getCpf()); 
         }
 
         return response;
