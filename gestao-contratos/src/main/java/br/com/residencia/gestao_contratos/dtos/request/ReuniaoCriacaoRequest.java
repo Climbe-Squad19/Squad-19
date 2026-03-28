@@ -1,10 +1,12 @@
 package br.com.residencia.gestao_contratos.dtos.request;
 
-import lombok.Data;
-import lombok.NoArgsConstructor;
-import lombok.AllArgsConstructor;
 import java.time.LocalDateTime;
 import java.util.List;
+
+import br.com.residencia.gestao_contratos.classes.Reuniao;
+import lombok.AllArgsConstructor;
+import lombok.Data;
+import lombok.NoArgsConstructor;
 
 @Data
 @NoArgsConstructor
@@ -13,6 +15,7 @@ public class ReuniaoCriacaoRequest {
     private String pauta;
     private Long empresaId;
     private Long contratoId;
+    private Reuniao.TipoReuniao tipo;   
     private LocalDateTime dataHora;
     private boolean presencial;
     private String linkOnline;
