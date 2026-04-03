@@ -9,6 +9,7 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import br.com.residencia.gestao_contratos.classes.Cargo;
 import br.com.residencia.gestao_contratos.classes.Usuario;
 import br.com.residencia.gestao_contratos.dtos.request.UsuarioAtualizacaoRequest;
 import br.com.residencia.gestao_contratos.dtos.request.UsuarioCriacaoRequest;
@@ -72,6 +73,22 @@ public class UsuarioService {
         return usuarioRepository.findAll().stream()
                 .map(this::converterParaResponse)
                 .collect(Collectors.toList());
+    }
+
+    public List<UsuarioResponse> listarPorCargos(List<Cargo> cargos) {
+        return usuarioRepository.findByCargoIn(cargos).stream()
+                .map(this::converterParaResponse)
+                .collect(Collectors.toList());
+    }
+
+    public List<UsuarioResponse> listarAnalistas() {
+        return listarPorCargos(List.of(
+                Cargo.ANALISTA_TRAINEE,
+                Cargo.ANALISTA_JUNIOR,
+                Cargo.ANALISTA_PLENO,
+                Cargo.ANALISTA_SENIOR,
+                Cargo.ANALISTA_BPO
+        ));
     }
 
     public UsuarioResponse buscarPorId(Long id) {

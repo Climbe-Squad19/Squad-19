@@ -113,6 +113,30 @@ public class ContratoService {
         contratoRepository.save(contrato);
     }
 
+    @Transactional
+    public ContratoResponse atribuirResponsavel(Long contratoId, Long usuarioResponsavelId) {
+        Contrato contrato = buscarEntidadePorId(contratoId);
+        Usuario responsavel = usuarioRepository.findById(usuarioResponsavelId)
+                .orElseThrow(() -> new RuntimeException("Usuário responsável não encontrado"));
+
+        if (responsavel.getCargo() == null) {
+            throw new RuntimeException("Cargo do usuário responsável não informado");
+        }
+
+        boolean cargoValido = switch (responsavel.getCargo()) {
+            case ANALISTA_TRAINEE, ANALISTA_JUNIOR, ANALISTA_PLENO, ANALISTA_SENIOR, ANALISTA_BPO,
+                    CMO, CSO, CEO, CFO -> true;
+            default -> false;
+        };
+
+        if (!cargoValido) {
+            throw new RuntimeException("Somente analistas, CMO, CSO, CEO ou CFO podem ser responsáveis");
+        }
+
+        contrato.setUsuarioResponsavel(responsavel);
+        return converterParaResponse(contratoRepository.save(contrato));
+    }
+
     private Contrato buscarEntidadePorId(Long id) {
         return contratoRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Contrato não encontrado"));

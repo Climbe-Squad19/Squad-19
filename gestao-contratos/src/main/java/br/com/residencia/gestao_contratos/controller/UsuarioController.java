@@ -33,6 +33,21 @@ public class UsuarioController {
         return ResponseEntity.ok(usuarioService.listarTodos());
     }
 
+    @GetMapping("/analistas")
+    public ResponseEntity<List<UsuarioResponse>> getAnalistas() {
+        return ResponseEntity.ok(usuarioService.listarAnalistas());
+    }
+
+    @GetMapping("/gestores")
+    public ResponseEntity<List<UsuarioResponse>> getGestores() {
+        return ResponseEntity.ok(usuarioService.listarPorCargos(List.of(
+                br.com.residencia.gestao_contratos.classes.Cargo.CMO,
+                br.com.residencia.gestao_contratos.classes.Cargo.CSO,
+                br.com.residencia.gestao_contratos.classes.Cargo.CEO,
+                br.com.residencia.gestao_contratos.classes.Cargo.CFO
+        )));
+    }
+
     @GetMapping("/{id}")
     public ResponseEntity<UsuarioResponse> getById(@PathVariable Long id) {
         return ResponseEntity.ok(usuarioService.buscarPorId(id));
