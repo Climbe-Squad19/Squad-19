@@ -42,6 +42,7 @@ public class ReuniaoService {
         reuniao.setPauta(request.getPauta());
         reuniao.setEmpresa(empresa);
         reuniao.setContrato(contrato);
+        reuniao.setTipo(request.getTipo());
         reuniao.setDataHora(request.getDataHora());
         reuniao.setPresencial(request.isPresencial());
         reuniao.setLinkOnline(request.getLinkOnline());
@@ -98,6 +99,7 @@ public class ReuniaoService {
     private ReuniaoResponse converterParaResponse(Reuniao reuniao) {
         ReuniaoResponse response = new ReuniaoResponse();
         response.setId(reuniao.getId());
+        response.setTipo(reuniao.getTipo());
         response.setPauta(reuniao.getPauta());
         response.setEmpresaId(reuniao.getEmpresa().getId());
         response.setNomeEmpresa(reuniao.getEmpresa().getRazaoSocial());
