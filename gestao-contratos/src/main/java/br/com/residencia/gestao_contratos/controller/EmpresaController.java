@@ -51,7 +51,6 @@ public class EmpresaController {
         return ResponseEntity.ok(empresaService.atualizar(id, request));
     }
 
-    // inativa empresa em vez de deletar
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> delete(@PathVariable Long id) {
         empresaService.inativar(id);

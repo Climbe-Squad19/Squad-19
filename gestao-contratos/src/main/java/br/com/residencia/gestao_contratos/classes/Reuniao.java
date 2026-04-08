@@ -32,7 +32,10 @@ public class Reuniao {
     private Empresa empresa;
 
     @ManyToOne
-    private Contrato contrato;    
+    private Contrato contrato;
+
+    @Enumerated(EnumType.STRING)
+    private TipoReuniao tipo;         
 
     private LocalDateTime dataHora;
     private boolean presencial;
@@ -40,16 +43,22 @@ public class Reuniao {
     private String sala;
 
     @Enumerated(EnumType.STRING)
-    private StatusReuniao status;     
+    private StatusReuniao status;
+
     @ElementCollection
     @CollectionTable(
         name = "reuniao_participantes",
         joinColumns = @JoinColumn(name = "reuniao_id")
     )
-    private List<Long> participantesIds; 
+    private List<Long> participantesIds;
 
     @Column(updatable = false)
-    private LocalDateTime dataCriacao; 
+    private LocalDateTime dataCriacao;
+
+    public enum TipoReuniao {
+        INICIAL,        
+        APRESENTACAO    
+    }
 
     public enum StatusReuniao {
         AGENDADA, CANCELADA, REALIZADA
