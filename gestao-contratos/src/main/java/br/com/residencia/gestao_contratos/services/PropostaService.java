@@ -49,22 +49,24 @@ public class PropostaService {
 
     @Transactional
     public PropostaResponse criar(PropostaCriacaoRequest request) {
-
         String emailLogado = SecurityContextHolder
-        .getContext()
-        .getAuthentication()
-        .getName();
+            .getContext()
+            .getAuthentication()
+            .getName();
 
         Usuario usuarioLogado = usuarioRepository.findByEmail(emailLogado)
-        .orElseThrow(() -> new RuntimeException("Usuário não encontrado"));
+            .orElseThrow(() -> new RuntimeException("Usuário não encontrado"));
 
         if (!CARGOS_AUTORIZADOS.contains(usuarioLogado.getCargo())) {
-        throw new RuntimeException(
-        "Apenas CMO, CSO, CEO, CFO ou Analista podem criar propostas"
-    );
-}
+            throw new RuntimeException(
+                "Apenas CMO, CSO, CEO, CFO ou Analista podem criar propostas");
+        }
 
-        Empresa empresa = empresaRepository.findById(request.getEmpresaId())
+        Long empresaId = request.getEmpresaId();
+        if (empresaId == null) {
+            throw new RuntimeException("Empresa ID não pode ser nulo");
+        }
+        Empresa empresa = empresaRepository.findById(empresaId)
                 .orElseThrow(() -> new RuntimeException("Empresa não encontrada"));
 
         Proposta proposta = new Proposta();

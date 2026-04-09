@@ -25,7 +25,22 @@ Fiz algumas implementações importantes no backend da gestão de contratos. Vou
 
 ---
 
-## 🔧 Arquivos que mexi
+## � Swagger / OpenAPI
+A API agora inclui documentação Swagger para testes.
+
+- Swagger UI: `http://localhost:8080/swagger-ui/index.html`
+- OpenAPI JSON: `http://localhost:8080/v3/api-docs`
+
+Para iniciar o backend e testar:
+
+```bash
+cd gestao-contratos
+./mvnw spring-boot:run
+```
+
+---
+
+## �🔧 Arquivos que mexi
 
 ### Backend
 

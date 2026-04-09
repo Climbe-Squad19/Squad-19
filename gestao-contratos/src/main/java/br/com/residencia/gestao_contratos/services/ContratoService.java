@@ -38,6 +38,9 @@ public class ContratoService {
     // chamado pelo PropostaService quando proposta é aceita
     @Transactional
     public Contrato gerarContratoAPartirDeProposta(Proposta proposta) {
+        if (proposta.getCriadoPor() == null) {
+            throw new RuntimeException("Usuário responsável não informado na proposta");
+        }
         Contrato contrato = new Contrato();
         contrato.setPropostaOrigem(proposta);
         contrato.setEmpresa(proposta.getEmpresa());
@@ -51,6 +54,15 @@ public class ContratoService {
     // criação manual de contrato
     @Transactional
     public ContratoResponse criar(ContratoCriacaoRequest request) {
+        if (request.getPropostaOrigemId() == null) {
+            throw new RuntimeException("ID da proposta de origem é obrigatório");
+        }
+        if (request.getEmpresaId() == null) {
+            throw new RuntimeException("ID da empresa é obrigatório");
+        }
+        if (request.getUsuarioResponsavelId() == null) {
+            throw new RuntimeException("ID do usuário responsável é obrigatório");
+        }
         Proposta proposta = propostaRepository.findById(request.getPropostaOrigemId())
                 .orElseThrow(() -> new RuntimeException("Proposta não encontrada"));
 
@@ -80,6 +92,9 @@ public class ContratoService {
 
     @Transactional
     public ContratoResponse atualizar(Long id, ContratoAtualizacaoRequest request) {
+        if (id == null) {
+            throw new RuntimeException("ID do contrato é obrigatório");
+        }
         Contrato contrato = buscarEntidadePorId(id);
 
         contrato.setDataFim(request.getDataFim());
@@ -103,11 +118,17 @@ public class ContratoService {
     }
 
     public ContratoResponse buscarPorId(Long id) {
+        if (id == null) {
+            throw new RuntimeException("ID do contrato é obrigatório");
+        }
         return converterParaResponse(buscarEntidadePorId(id));
     }
 
     @Transactional
     public void encerrar(Long id) {
+        if (id == null) {
+            throw new RuntimeException("ID do contrato é obrigatório");
+        }
         Contrato contrato = buscarEntidadePorId(id);
         contrato.setStatus(Contrato.StatusContrato.ENCERRADO);
         contratoRepository.save(contrato);
@@ -115,6 +136,9 @@ public class ContratoService {
 
     @Transactional
     public ContratoResponse atribuirResponsavel(Long contratoId, Long usuarioResponsavelId) {
+        if (usuarioResponsavelId == null) {
+            throw new RuntimeException("ID do usuário responsável é obrigatório");
+        }
         Contrato contrato = buscarEntidadePorId(contratoId);
         Usuario responsavel = usuarioRepository.findById(usuarioResponsavelId)
                 .orElseThrow(() -> new RuntimeException("Usuário responsável não encontrado"));
