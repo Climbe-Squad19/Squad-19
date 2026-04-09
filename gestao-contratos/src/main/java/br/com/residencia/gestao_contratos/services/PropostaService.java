@@ -5,16 +5,20 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import br.com.residencia.gestao_contratos.classes.Cargo;
 import br.com.residencia.gestao_contratos.classes.Empresa;
 import br.com.residencia.gestao_contratos.classes.Proposta;
+import br.com.residencia.gestao_contratos.classes.Usuario;
 import br.com.residencia.gestao_contratos.dtos.request.PropostaAtualizacaoRequest;
 import br.com.residencia.gestao_contratos.dtos.request.PropostaCriacaoRequest;
 import br.com.residencia.gestao_contratos.dtos.response.PropostaResponse;
 import br.com.residencia.gestao_contratos.repository.EmpresaRepository;
 import br.com.residencia.gestao_contratos.repository.PropostaRepository;
+import br.com.residencia.gestao_contratos.repository.UsuarioRepository;
 
 @Service
 public class PropostaService {
@@ -26,15 +30,46 @@ public class PropostaService {
     private EmpresaRepository empresaRepository;
 
     @Autowired
+    private UsuarioRepository usuarioRepository;
+
+    @Autowired
     private ContratoService contratoService;
+
+    private static final List<Cargo> CARGOS_AUTORIZADOS = List.of(
+        Cargo.CMO,
+        Cargo.CSO,
+        Cargo.CEO,
+        Cargo.CFO,
+        Cargo.ANALISTA_TRAINEE,
+        Cargo.ANALISTA_JUNIOR,
+        Cargo.ANALISTA_PLENO,
+        Cargo.ANALISTA_SENIOR,
+        Cargo.ANALISTA_BPO
+    );
 
     @Transactional
     public PropostaResponse criar(PropostaCriacaoRequest request) {
+
+        String emailLogado = SecurityContextHolder
+        .getContext()
+        .getAuthentication()
+        .getName();
+
+        Usuario usuarioLogado = usuarioRepository.findByEmail(emailLogado)
+        .orElseThrow(() -> new RuntimeException("Usuário não encontrado"));
+
+        if (!CARGOS_AUTORIZADOS.contains(usuarioLogado.getCargo())) {
+        throw new RuntimeException(
+        "Apenas CMO, CSO, CEO, CFO ou Analista podem criar propostas"
+    );
+}
+
         Empresa empresa = empresaRepository.findById(request.getEmpresaId())
                 .orElseThrow(() -> new RuntimeException("Empresa não encontrada"));
 
         Proposta proposta = new Proposta();
         proposta.setEmpresa(empresa);
+        proposta.setCriadoPor(usuarioLogado);   // ← agora vem do JWT
         proposta.setServicoContratado(request.getServicoContratado());
         proposta.setValorMensal(request.getValorMensal());
         proposta.setValorSetup(request.getValorSetup());
