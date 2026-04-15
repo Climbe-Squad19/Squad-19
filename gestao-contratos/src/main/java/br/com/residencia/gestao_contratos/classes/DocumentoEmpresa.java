@@ -46,9 +46,10 @@ public class DocumentoEmpresa {
     @Lob
     private byte[] conteudo;
 
-    @Column(length = 512)
+    @Column(name = "s3_key", length = 512)
     private String s3Key;
-    @Column(length = 1024)
+
+    @Column(name = "s3_url", length = 1024)
     private String s3Url;
 
     @Column(length = 255)

@@ -34,7 +34,9 @@ public class Empresa {
     private String bairro;
     @Column(length = 128)
     private String cidade;
-    @Column(length = 2)
+
+    /** Alinhado ao Flyway: UF como CHAR(2) no MySQL. */
+    @Column(name = "uf", length = 2, columnDefinition = "CHAR(2)")
     private String uf;
     @Column(length = 16)
     private String cep;
