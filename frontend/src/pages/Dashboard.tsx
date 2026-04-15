@@ -3,7 +3,7 @@ import { Avatar, Divider, ListItemIcon, Menu, MenuItem as MuiMenuItem, Tooltip, 
 import ProfileDrawer from '../components/ProfileDrawer';
 import { fetchAgenda, fetchCalendar, createMeeting, fetchDashboardOverview, AgendaApiItem, CalendarApiDay } from '../services/dashboard';
 import { createEmpresa, fetchEmpresas, EmpresaApiResponse } from '../services/empresas';
-import { fetchUsuarios, UsuarioApiResponse } from '../services/usuarios';
+import { createUsuario, fetchUsuarios, UsuarioApiResponse } from '../services/usuarios';
 import { fetchContratos, fetchDocumentosByEmpresa, fetchPropostas, fetchReunioes, PropostaApiResponse } from '../services/business';
 import { fetchMinhasIntegracoes, getGoogleIntegrationAuthUrl, updateIntegracao } from '../services/integracoes';
 import { useAppDispatch, useAppSelector } from '../store/hooks';
@@ -39,6 +39,7 @@ type UpcomingItem = {
 };
 
 type TeamMember = {
+  id?: number;
   name: string;
   role: string;
   status: 'Online' | 'Em reunião' | 'Offline';
@@ -202,17 +203,6 @@ const teamMembers: TeamMember[] = [
     permissions: ['Agendar Reuniões', 'Gerenciar Empresas'],
   }
 ];
-
-const teamPermissionOptions = [
-  'Aprovar Proposta',
-  'Criar Contrato',
-  'Validar Documentos',
-  'Ver Relatórios',
-  'Criar Relatórios',
-  'Agendar Reuniões',
-  'Gerenciar Equipe',
-  'Gerenciar Empresas',
-] as const;
 
 const teamRoleOptions = [
   { value: 'CEO', label: 'CEO' },
@@ -449,9 +439,11 @@ export default function Dashboard({ onLogout }: DashboardProps) {
   const [teamFormCpf, setTeamFormCpf] = useState('');
   const [teamFormEmail, setTeamFormEmail] = useState('');
   const [teamFormPhone, setTeamFormPhone] = useState('');
-  const [teamFormRole, setTeamFormRole] = useState<string>(teamRoleOptions[0].label);
-  const [teamFormStatus, setTeamFormStatus] = useState<'Online' | 'Offline'>('Online');
-  const [teamFormPermissions, setTeamFormPermissions] = useState<string[]>(['Validar Documentos']);
+  const [teamFormRole, setTeamFormRole] = useState<string>(teamRoleOptions[0].value);
+  const [teamFormPermissions, setTeamFormPermissions] = useState<string[]>([teamRoleOptions[0].value]);
+  const [teamFormPassword, setTeamFormPassword] = useState('');
+  const [teamFormPasswordConfirm, setTeamFormPasswordConfirm] = useState('');
+  const [teamFormSubmitting, setTeamFormSubmitting] = useState(false);
   const [teamFormError, setTeamFormError] = useState('');
   const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
 
@@ -502,13 +494,17 @@ export default function Dashboard({ onLogout }: DashboardProps) {
       .join(' ');
 
   const mapUsuarioToTeamMember = (usuario: UsuarioApiResponse): TeamMember => ({
+    id: usuario.id,
     name: usuario.nomeCompleto,
     role: formatCargoLabel(usuario.cargo),
     status: usuario.ativo ? 'Online' : 'Offline',
     email: usuario.email || 'sem-email@empresa.com',
     phone: usuario.telefone || '(00) 00000-0000',
     cpf: usuario.cpf || '000.000.000-00',
-    permissions: [`Cargo: ${formatCargoLabel(usuario.cargo)}`],
+    permissions:
+      usuario.permissoes && usuario.permissoes.length > 0
+        ? usuario.permissoes.map((p) => formatCargoLabel(p))
+        : [`Cargo: ${formatCargoLabel(usuario.cargo)}`],
   });
 
   const statusToProposalStage = (status: string) => {
@@ -982,9 +978,10 @@ export default function Dashboard({ onLogout }: DashboardProps) {
     setTeamFormCpf('');
     setTeamFormEmail('');
     setTeamFormPhone('');
-    setTeamFormRole(teamRoleOptions[0].label);
-    setTeamFormStatus('Online');
-    setTeamFormPermissions(['Validar Documentos']);
+    setTeamFormRole(teamRoleOptions[0].value);
+    setTeamFormPermissions([teamRoleOptions[0].value]);
+    setTeamFormPassword('');
+    setTeamFormPasswordConfirm('');
     setTeamFormError('');
   }
 
@@ -1116,40 +1113,78 @@ export default function Dashboard({ onLogout }: DashboardProps) {
     }
   }
 
-  function toggleTeamPermission(permission: string) {
+  function toggleTeamPermission(cargoValue: string) {
     setTeamFormPermissions((current) =>
-      current.includes(permission)
-        ? current.filter((item) => item !== permission)
-        : [...current, permission]
+      current.includes(cargoValue)
+        ? current.filter((item) => item !== cargoValue)
+        : [...current, cargoValue]
     );
   }
 
-  function handleCreateTeamMember(event: FormEvent<HTMLFormElement>) {
+  async function handleCreateTeamMember(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
+    setTeamFormError('');
 
-    if (!teamFormName.trim() || !teamFormCpf.trim() || !teamFormEmail.trim() || !teamFormPhone.trim() || !teamFormRole.trim()) {
+    if (
+      !teamFormName.trim() ||
+      !teamFormCpf.trim() ||
+      !teamFormEmail.trim() ||
+      !teamFormPhone.trim() ||
+      !teamFormRole.trim()
+    ) {
       setTeamFormError('Preencha todos os campos obrigatórios do colaborador.');
       return;
     }
 
     if (teamFormPermissions.length === 0) {
-      setTeamFormError('Selecione pelo menos uma permissão.');
+      setTeamFormError('Selecione pelo menos uma permissão (cargos).');
       return;
     }
 
-    const newMember: TeamMember = {
-      name: teamFormName.trim(),
-      cpf: teamFormCpf.trim(),
-      email: teamFormEmail.trim(),
-      phone: teamFormPhone.trim(),
-      role: teamFormRole.trim(),
-      status: teamFormStatus,
-      permissions: teamFormPermissions,
-    };
+    const cpfDigits = teamFormCpf.replace(/\D/g, '');
+    if (cpfDigits.length !== 11) {
+      setTeamFormError('CPF deve conter 11 dígitos.');
+      return;
+    }
 
-    setMembers((current) => [newMember, ...current]);
-    setShowTeamCreateModal(false);
-    resetTeamForm();
+    if (!teamFormPassword.trim() || teamFormPassword.length < 6) {
+      setTeamFormError('Senha inicial deve ter pelo menos 6 caracteres.');
+      return;
+    }
+
+    if (teamFormPassword !== teamFormPasswordConfirm) {
+      setTeamFormError('A confirmação da senha não confere.');
+      return;
+    }
+
+    let permissoes = [...new Set(teamFormPermissions)];
+    if (!permissoes.includes(teamFormRole)) {
+      permissoes = [teamFormRole, ...permissoes];
+    }
+
+    setTeamFormSubmitting(true);
+    try {
+      await createUsuario({
+        nomeCompleto: teamFormName.trim(),
+        cargo: teamFormRole,
+        permissoes,
+        cpf: cpfDigits,
+        email: teamFormEmail.trim().toLowerCase(),
+        telefone: teamFormPhone.trim(),
+        senha: teamFormPassword,
+      });
+      const usuarios = await fetchUsuarios();
+      setMembers(usuarios.map(mapUsuarioToTeamMember));
+      setShowTeamCreateModal(false);
+      resetTeamForm();
+      dispatch(openNotifications('Colaborador cadastrado com sucesso.'));
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'Não foi possível cadastrar o colaborador.';
+      setTeamFormError(message);
+      dispatch(openNotifications(message));
+    } finally {
+      setTeamFormSubmitting(false);
+    }
   }
 
   function handleCreateCompany(event: FormEvent<HTMLFormElement>) {
@@ -2087,7 +2122,11 @@ export default function Dashboard({ onLogout }: DashboardProps) {
 
         <div className="team-grid">
           {filteredTeamMembers.map((member) => (
-            <article key={member.name} className="team-member-card" onClick={() => setSelectedTeamMember(member)}>
+            <article
+              key={member.id ?? member.email}
+              className="team-member-card"
+              onClick={() => setSelectedTeamMember(member)}
+            >
               <div className="team-member-header">
                 <div className="team-member-identity">
                   <div className="team-member-avatar">
@@ -2752,32 +2791,51 @@ export default function Dashboard({ onLogout }: DashboardProps) {
                     Cargo
                     <select value={teamFormRole} onChange={(e) => setTeamFormRole(e.target.value)} required>
                       {teamRoleOptions.map((option) => (
-                        <option key={option.value} value={option.label}>
+                        <option key={option.value} value={option.value}>
                           {option.label}
                         </option>
                       ))}
                     </select>
                   </label>
                   <label>
-                    Situação
-                    <select value={teamFormStatus} onChange={(e) => setTeamFormStatus(e.target.value === 'Offline' ? 'Offline' : 'Online')}>
-                      <option value="Online">Ativo</option>
-                      <option value="Offline">Inativo</option>
-                    </select>
+                    Senha inicial
+                    <input
+                      type="password"
+                      autoComplete="new-password"
+                      value={teamFormPassword}
+                      onChange={(e) => setTeamFormPassword(e.target.value)}
+                      required
+                      minLength={6}
+                    />
+                  </label>
+                  <label>
+                    Confirmar senha
+                    <input
+                      type="password"
+                      autoComplete="new-password"
+                      value={teamFormPasswordConfirm}
+                      onChange={(e) => setTeamFormPasswordConfirm(e.target.value)}
+                      required
+                      minLength={6}
+                    />
                   </label>
                 </div>
 
+                <p className="team-create-hint" style={{ margin: '0 0 8px', fontSize: 13, opacity: 0.85 }}>
+                  Novos colaboradores são criados como <strong>ativos</strong>. Permissões correspondem aos cargos no sistema.
+                </p>
+
                 <div className="team-create-permissions">
-                  <span>Permissões</span>
+                  <span>Permissões (cargos)</span>
                   <div className="team-permissions-grid">
-                    {teamPermissionOptions.map((permission) => (
+                    {teamRoleOptions.map((option) => (
                       <button
-                        key={permission}
+                        key={option.value}
                         type="button"
-                        className={`team-permission-chip ${teamFormPermissions.includes(permission) ? 'active' : ''}`}
-                        onClick={() => toggleTeamPermission(permission)}
+                        className={`team-permission-chip ${teamFormPermissions.includes(option.value) ? 'active' : ''}`}
+                        onClick={() => toggleTeamPermission(option.value)}
                       >
-                        {permission}
+                        {option.label}
                       </button>
                     ))}
                   </div>
@@ -2786,8 +2844,17 @@ export default function Dashboard({ onLogout }: DashboardProps) {
                 {teamFormError && <p className="form-error">{teamFormError}</p>}
 
                 <div className="dialog-actions">
-                  <button type="button" className="button button--outline" onClick={handleCloseTeamCreateModal}>Cancelar</button>
-                  <button type="submit" className="button button--primary">Salvar colaborador</button>
+                  <button
+                    type="button"
+                    className="button button--outline"
+                    onClick={handleCloseTeamCreateModal}
+                    disabled={teamFormSubmitting}
+                  >
+                    Cancelar
+                  </button>
+                  <button type="submit" className="button button--primary" disabled={teamFormSubmitting}>
+                    {teamFormSubmitting ? 'Salvando…' : 'Salvar colaborador'}
+                  </button>
                 </div>
               </form>
             </section>
