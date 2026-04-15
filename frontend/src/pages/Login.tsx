@@ -1,4 +1,4 @@
-import { FormEvent, useState } from 'react';
+import { useState } from 'react';
 import { login } from '../services/auth';
 
 interface LoginProps {
@@ -89,12 +89,6 @@ export default function Login({ onLogin, onForgotPassword }: LoginProps) {
               {feedback}
             </p>
           )}
-
-          <div style={{ marginTop: 14, padding: '12px 14px', borderRadius: 14, background: 'rgba(125, 253, 212, 0.08)', color: '#d7f7ef' }}>
-            <strong style={{ display: 'block', marginBottom: 6 }}>Primeiro acesso</strong>
-            <span style={{ display: 'block' }}>E-mail: admin@climbe.com</span>
-            <span style={{ display: 'block' }}>Senha: PrimeiroAcesso@123</span>
-          </div>
 
           <div className="login-divider">ou</div>
           <button type="button" className="button button--outline">
