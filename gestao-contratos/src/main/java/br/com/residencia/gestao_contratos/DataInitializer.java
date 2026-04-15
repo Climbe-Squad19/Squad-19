@@ -7,6 +7,7 @@ import java.util.List;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.security.crypto.password.PasswordEncoder;
 
 import br.com.residencia.gestao_contratos.classes.Cargo;
 import br.com.residencia.gestao_contratos.classes.Contrato;
@@ -25,8 +26,26 @@ public class DataInitializer {
     public CommandLineRunner initData(EmpresaRepository empresaRepository,
                                       UsuarioRepository usuarioRepository,
                                       ContratoRepository contratoRepository,
-                                      ReuniaoRepository reuniaoRepository) {
+                                      ReuniaoRepository reuniaoRepository,
+                                      PasswordEncoder passwordEncoder) {
         return args -> {
+            if (!usuarioRepository.existsByEmail("admin@climbe.com")) {
+                Usuario admin = new Usuario();
+                admin.setNomeCompleto("Administrador Climbe");
+                admin.setCargo(Cargo.CEO);
+                admin.setCpf("11122233344");
+                admin.setEmail("admin@climbe.com");
+                admin.setTelefone("(79) 90000-0000");
+                admin.setAtivo(true);
+                admin.setSenha(passwordEncoder.encode("PrimeiroAcesso@123"));
+                admin.setFotoPerfilUrl("");
+                admin.setGoogleId("");
+                admin.setSituacao(Usuario.SituacaoUsuario.ATIVO);
+                admin.setDataCriacao(LocalDateTime.now());
+                admin.setPermissoes(List.of(Cargo.CEO, Cargo.CFO, Cargo.CSO, Cargo.CMO));
+                usuarioRepository.save(admin);
+            }
+
             if (empresaRepository.count() == 0 && usuarioRepository.count() == 0
                     && contratoRepository.count() == 0 && reuniaoRepository.count() == 0) {
 
@@ -52,11 +71,11 @@ public class DataInitializer {
                 Usuario usuario = new Usuario();
                 usuario.setNomeCompleto("Marcos Paulo");
                 usuario.setCargo(Cargo.ANALISTA_SENIOR);
-                usuario.setCpf("987.654.321-00");
+                usuario.setCpf("98765432100");
                 usuario.setEmail("marcos.paulo@residencia.com.br");
                 usuario.setTelefone("(79) 97777-7777");
                 usuario.setAtivo(true);
-                usuario.setSenha("senha123");
+                usuario.setSenha(passwordEncoder.encode("senha123"));
                 usuario.setFotoPerfilUrl("");
                 usuario.setGoogleId("");
                 usuario.setSituacao(Usuario.SituacaoUsuario.ATIVO);

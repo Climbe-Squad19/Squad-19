@@ -9,10 +9,9 @@ public class ApiIntegrationService {
 
     private final WebClient webClient;
 
-    @Value("${external.api.base-url:https://api.example.com}")
-    private String baseUrl;
-
-    public ApiIntegrationService(WebClient.Builder webClientBuilder) {
+    public ApiIntegrationService(
+            WebClient.Builder webClientBuilder,
+            @Value("${external.api.base-url:https://api.example.com}") String baseUrl) {
         this.webClient = webClientBuilder.baseUrl(baseUrl).build();
     }
 

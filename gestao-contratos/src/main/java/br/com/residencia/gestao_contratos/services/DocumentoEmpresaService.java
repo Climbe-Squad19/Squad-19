@@ -5,6 +5,7 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
@@ -29,6 +30,15 @@ public class DocumentoEmpresaService {
     @Autowired
     private UsuarioRepository usuarioRepository;
 
+    @Autowired(required = false)
+    private S3StorageService s3StorageService;
+
+    @Autowired
+    private GoogleDriveService googleDriveService;
+
+    @Value("${app.s3.enabled:false}")
+    private boolean s3Enabled;
+
 
     @Transactional
     public DocumentoEmpresaResponse upload(
@@ -45,11 +55,36 @@ public class DocumentoEmpresaService {
         documento.setNomeArquivo(arquivo.getOriginalFilename());
         documento.setTipoArquivo(arquivo.getContentType());
         documento.setTamanhoBytes(arquivo.getSize());
-        documento.setConteudo(arquivo.getBytes());
+        byte[] conteudo = arquivo.getBytes();
+        if (s3Enabled && s3StorageService != null) {
+            S3StorageService.StoredObject storedObject = s3StorageService.upload(
+                    conteudo,
+                    arquivo.getOriginalFilename(),
+                    arquivo.getContentType(),
+                    empresaId);
+            documento.setS3Key(storedObject.key());
+            documento.setS3Url(storedObject.url());
+            documento.setConteudo(null);
+        } else {
+            documento.setConteudo(conteudo);
+        }
         documento.setStatus(DocumentoEmpresa.StatusDocumento.PENDENTE);
         documento.setDataUpload(LocalDateTime.now());
 
         DocumentoEmpresa salvo = documentoRepository.save(documento);
+        try {
+            googleDriveService.uploadFileParaUsuarioLogado(
+                            arquivo.getOriginalFilename(),
+                            arquivo.getContentType(),
+                            conteudo)
+                    .ifPresent(result -> {
+                        salvo.setGoogleDriveFileId(result.fileId());
+                        salvo.setGoogleDriveWebViewLink(result.webViewLink());
+                        documentoRepository.save(salvo);
+                    });
+        } catch (Exception ignored) {
+            // Drive é opcional; não deve bloquear o upload principal.
+        }
         return converterParaResponse(salvo);
     }
 
@@ -84,7 +119,11 @@ public class DocumentoEmpresaService {
 
 
     public DocumentoEmpresa buscarParaDownload(Long id) {
-        return buscarPorId(id);
+        DocumentoEmpresa documento = buscarPorId(id);
+        if (s3Enabled && s3StorageService != null && documento.getS3Key() != null) {
+            documento.setConteudo(s3StorageService.download(documento.getS3Key()));
+        }
+        return documento;
     }
 
     public List<DocumentoEmpresaResponse> listarPorEmpresa(Long empresaId) {
@@ -134,6 +173,9 @@ public class DocumentoEmpresaService {
         response.setNomeArquivo(doc.getNomeArquivo());
         response.setTipoArquivo(doc.getTipoArquivo());
         response.setTamanhoBytes(doc.getTamanhoBytes());
+        response.setS3Url(doc.getS3Url());
+        response.setGoogleDriveFileId(doc.getGoogleDriveFileId());
+        response.setGoogleDriveWebViewLink(doc.getGoogleDriveWebViewLink());
         response.setMotivoRejeicao(doc.getMotivoRejeicao());
         response.setDataUpload(doc.getDataUpload());
         response.setDataValidacao(doc.getDataValidacao());

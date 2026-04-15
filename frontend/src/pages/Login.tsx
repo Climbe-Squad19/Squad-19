@@ -1,0 +1,107 @@
+import { FormEvent, useState } from 'react';
+import { login } from '../services/auth';
+
+interface LoginProps {
+  onLogin: (accessToken: string) => void;
+  onForgotPassword: () => void;
+}
+
+export default function Login({ onLogin, onForgotPassword }: LoginProps) {
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [feedback, setFeedback] = useState('');
+  const [feedbackError, setFeedbackError] = useState(false);
+
+  const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    setFeedback('');
+
+    try {
+      const response = await login({ email: email.trim(), senha: password });
+      onLogin(response.accessToken);
+    } catch (error) {
+      setFeedback(error instanceof Error ? error.message : 'Não foi possível realizar o login.');
+      setFeedbackError(true);
+    }
+  };
+
+  return (
+    <main className="screen login-screen">
+      <section className="login-panel login-panel--brand">
+        <div>
+          <span className="brand-tag">climbe</span>
+          <h1>O melhor investimento precisa da melhor orientação!</h1>
+          <p>
+            Acesse sua conta para gerenciar contratos, propostas e reuniões com
+            um fluxo intuitivo e focado em resultados.
+          </p>
+        </div>
+      </section>
+
+      <section className="login-panel login-panel--form">
+        <div className="login-card">
+          <small>Login e Autenticação</small>
+          <h2>Acessar sistema</h2>
+          <form onSubmit={handleSubmit} className="login-form">
+            <label>
+              Seu e-mail
+              <input
+                type="email"
+                placeholder="seu@email.com"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                required
+              />
+            </label>
+
+            <label>
+              Sua senha
+              <input
+                type="password"
+                placeholder="••••••••"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                required
+              />
+            </label>
+
+            <div className="login-actions">
+              <button type="submit" className="button button--primary">
+                Entrar
+              </button>
+              <a
+                href="#"
+                className="login-link"
+                onClick={(event) => {
+                  event.preventDefault();
+                  onForgotPassword();
+                  setFeedback('');
+                  setFeedbackError(false);
+                }}
+              >
+                Esqueceu a senha?
+              </a>
+            </div>
+          </form>
+
+          {feedback && (
+            <p className={feedbackError ? 'form-error' : ''} style={{ marginTop: 12 }}>
+              {feedback}
+            </p>
+          )}
+
+          <div style={{ marginTop: 14, padding: '12px 14px', borderRadius: 14, background: 'rgba(125, 253, 212, 0.08)', color: '#d7f7ef' }}>
+            <strong style={{ display: 'block', marginBottom: 6 }}>Primeiro acesso</strong>
+            <span style={{ display: 'block' }}>E-mail: admin@climbe.com</span>
+            <span style={{ display: 'block' }}>Senha: PrimeiroAcesso@123</span>
+          </div>
+
+          <div className="login-divider">ou</div>
+          <button type="button" className="button button--outline">
+            Continuar com Google
+          </button>
+        </div>
+      </section>
+    </main>
+  );
+}

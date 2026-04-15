@@ -33,14 +33,16 @@ public class Contrato {
     @ManyToOne
     private Usuario usuarioResponsavel;  
 
-    private String tipoServico;         
+    private String tipoServico;
 
     @Enumerated(EnumType.STRING)
-    private StatusContrato status;      
+    @Column(length = 32)
+    private StatusContrato status;
 
     private LocalDate dataInicio;
     private LocalDate dataFim;
-    private Integer diasAvisoVencimento; 
+    private Integer diasAvisoVencimento;
+    @Column(length = 512)
     private String linkContratoAssinado;
     private boolean renovacaoAutomatica;
     private String observacoes;

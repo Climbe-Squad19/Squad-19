@@ -173,3 +173,49 @@ GET /propostas/1/external
 - **Compatibilidade**: Nada quebrou, tudo continua funcionando
 - **Testes**: Rodei os testes e tudo passou
 
+---
+
+## Notificacao por Gmail
+
+As notificacoes por e-mail ja estao integradas no backend e sao disparadas no agendamento de reunioes.
+
+### Opcao recomendada (mais simples): Gmail SMTP
+
+1. Ative 2FA na conta Google.
+2. Gere uma App Password em Seguranca > Senhas de app.
+3. Exporte as variaveis de ambiente antes de subir o backend:
+
+```bash
+export MAIL_PROVIDER=smtp
+export MAIL_USERNAME=seuemail@gmail.com
+export MAIL_APP_PASSWORD=sua_app_password_google
+export MAIL_FROM=seuemail@gmail.com
+```
+
+4. Inicie o backend:
+
+```bash
+cd /Users/antonymichael/Squad-19/gestao-contratos
+./mvnw spring-boot:run
+```
+
+### Opcao avancada: Gmail API OAuth2
+
+```bash
+export MAIL_PROVIDER=gmail-api
+export MAIL_FROM=seuemail@gmail.com
+export GMAIL_API_ACCESS_TOKEN=seu_access_token_oauth2
+```
+
+### Como validar rapidamente
+
+1. Faça login no sistema.
+2. Crie uma reuniao na Agenda.
+3. O backend tentara enviar e-mail para:
+- email de contato da empresa
+- e-mails dos participantes da reuniao
+
+Se quiser testar com o usuario seed:
+- admin@climbe.com
+- PrimeiroAcesso@123
+

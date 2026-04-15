@@ -11,6 +11,8 @@ import br.com.residencia.gestao_contratos.classes.DocumentoEmpresa;
 public interface DocumentoEmpresaRepository
         extends JpaRepository<DocumentoEmpresa, Long> {
 
+    long countByStatus(DocumentoEmpresa.StatusDocumento status);
+
     List<DocumentoEmpresa> findByEmpresaId(Long empresaId);
 
     List<DocumentoEmpresa> findByEmpresaIdAndStatus(

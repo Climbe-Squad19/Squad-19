@@ -1,32 +1,42 @@
+# Stack local: MySQL 8 + API (perfil mysql + Flyway)
+# Uso: cd gestao-contratos && docker compose up --build
 services:
   mysql:
     image: mysql:8.0
-    container_name: mysql8
+    container_name: climbe-mysql
     environment:
-      MYSQL_ROOT_PASSWORD: root
-      MYSQL_DATABASE: climbe_db
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:-climbe_dev_root}
+      MYSQL_DATABASE: climbe
     ports:
-      - "3306:3306"
+      - "${MYSQL_HOST_PORT:-3306}:3306"
     volumes:
       - mysql_data:/var/lib/mysql
+    command: --character-set-server=utf8mb4 --collation-server=utf8mb4_unicode_ci
     healthcheck:
-      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-uroot", "-proot"]
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-uroot", "-p${MYSQL_ROOT_PASSWORD:-climbe_dev_root}"]
       interval: 10s
       timeout: 5s
-      retries: 5
+      retries: 8
 
-  app:
-    build: .
-    container_name: gestao-contratos
+  api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: climbe-api
     ports:
-      - "8080:8080"
+      - "${API_HOST_PORT:-8081}:${PORT:-8081}"
     depends_on:
       mysql:
         condition: service_healthy
     environment:
-      SPRING_DATASOURCE_URL: jdbc:mysql://mysql:3306/climbe_db
-      SPRING_DATASOURCE_USERNAME: root
-      SPRING_DATASOURCE_PASSWORD: root
+      SPRING_PROFILES_ACTIVE: mysql
+      PORT: ${PORT:-8081}
+      MYSQL_URL: jdbc:mysql://mysql:3306/climbe?createDatabaseIfNotExist=true&useUnicode=true&characterEncoding=utf8&serverTimezone=America/Sao_Paulo&allowPublicKeyRetrieval=true&useSSL=false
+      MYSQL_USERNAME: root
+      MYSQL_PASSWORD: ${MYSQL_ROOT_PASSWORD:-climbe_dev_root}
+      APP_FRONTEND_URL: ${APP_FRONTEND_URL:-http://localhost:5173}
+      CORS_ALLOWED_ORIGINS: ${CORS_ALLOWED_ORIGINS:-http://localhost:5173}
+      JWT_SECRET: ${JWT_SECRET:-climbe-dev-jwt-change-in-prod}
 
 volumes:
   mysql_data:

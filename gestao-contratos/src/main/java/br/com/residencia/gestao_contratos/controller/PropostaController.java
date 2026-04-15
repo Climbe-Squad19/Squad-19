@@ -45,9 +45,9 @@ public class PropostaController {
     }
 
     @PostMapping
-    public ResponseEntity<PropostaResponse> create(
+    public ResponseEntity<String> create(
             @RequestBody PropostaCriacaoRequest request) {
-        return new ResponseEntity<>(propostaService.criar(request), HttpStatus.CREATED);
+        return new ResponseEntity<>("Criação de nova proposta desativada.", HttpStatus.GONE);
     }
 
     @PutMapping("/{id}")

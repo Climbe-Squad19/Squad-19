@@ -9,6 +9,7 @@ import jakarta.persistence.Enumerated;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
+import jakarta.persistence.Lob;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
 import lombok.Data;
@@ -29,17 +30,31 @@ public class DocumentoEmpresa {
     private Usuario validadoPor;        
 
     @Enumerated(EnumType.STRING)
-    private TipoDocumento tipo;         
+    @Column(length = 64)
+    private TipoDocumento tipo;
 
     @Enumerated(EnumType.STRING)
+    @Column(length = 32)
     private StatusDocumento status;
 
+    @Column(length = 512)
     private String nomeArquivo;
-    private String tipoArquivo;         
+    @Column(length = 128)
+    private String tipoArquivo;
     private Long tamanhoBytes;
 
-    @Column(columnDefinition = "LONGBLOB")
-    private byte[] conteudo;           
+    @Lob
+    private byte[] conteudo;
+
+    @Column(length = 512)
+    private String s3Key;
+    @Column(length = 1024)
+    private String s3Url;
+
+    @Column(length = 255)
+    private String googleDriveFileId;
+    @Column(length = 1024)
+    private String googleDriveWebViewLink;
 
     private String motivoRejeicao;      
 

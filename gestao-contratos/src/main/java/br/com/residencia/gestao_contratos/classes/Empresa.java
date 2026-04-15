@@ -24,21 +24,29 @@ public class Empresa {
 
     private String nomeFantasia;
 
-    @Column(unique = true, nullable = false)
+    @Column(unique = true, nullable = false, length = 18)
     private String cnpj;
 
     private String logradouro;
+    @Column(length = 32)
     private String numero;
+    @Column(length = 128)
     private String bairro;
+    @Column(length = 128)
     private String cidade;
+    @Column(length = 2)
     private String uf;
+    @Column(length = 16)
     private String cep;
 
+    @Column(length = 50)
     private String telefone;
     private String emailContato;
 
     private String nomeRepresentante;
+    @Column(length = 14)
     private String cpfRepresentante;
+    @Column(length = 50)
     private String contatoRepresentante;
 
     private boolean ativa;              

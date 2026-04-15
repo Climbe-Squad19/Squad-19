@@ -13,16 +13,76 @@ import org.springframework.stereotype.Service;
 
 import br.com.residencia.gestao_contratos.dtos.response.AgendaEventResponse;
 import br.com.residencia.gestao_contratos.dtos.response.CalendarDayResponse;
+import br.com.residencia.gestao_contratos.dtos.response.DashboardOverviewResponse;
+import br.com.residencia.gestao_contratos.dtos.response.DashboardRecentContractResponse;
+import br.com.residencia.gestao_contratos.dtos.response.DashboardUpcomingDueDateResponse;
+import br.com.residencia.gestao_contratos.classes.Contrato;
+import br.com.residencia.gestao_contratos.classes.DocumentoEmpresa;
+import br.com.residencia.gestao_contratos.classes.Proposta;
 import br.com.residencia.gestao_contratos.classes.Reuniao;
+import br.com.residencia.gestao_contratos.repository.ContratoRepository;
+import br.com.residencia.gestao_contratos.repository.DocumentoEmpresaRepository;
+import br.com.residencia.gestao_contratos.repository.PropostaRepository;
 import br.com.residencia.gestao_contratos.repository.ReuniaoRepository;
 
 @Service
 public class DashboardService {
 
     private final ReuniaoRepository reuniaoRepository;
+    private final PropostaRepository propostaRepository;
+    private final ContratoRepository contratoRepository;
+    private final DocumentoEmpresaRepository documentoEmpresaRepository;
 
-    public DashboardService(ReuniaoRepository reuniaoRepository) {
+    public DashboardService(
+            ReuniaoRepository reuniaoRepository,
+            PropostaRepository propostaRepository,
+            ContratoRepository contratoRepository,
+            DocumentoEmpresaRepository documentoEmpresaRepository) {
         this.reuniaoRepository = reuniaoRepository;
+        this.propostaRepository = propostaRepository;
+        this.contratoRepository = contratoRepository;
+        this.documentoEmpresaRepository = documentoEmpresaRepository;
+    }
+
+    public DashboardOverviewResponse obterVisaoGeral() {
+        LocalDate hoje = LocalDate.now();
+        LocalDateTime inicioSemana = hoje.atStartOfDay();
+        LocalDateTime fimSemana = hoje.plusDays(7).atTime(LocalTime.MAX);
+
+        long propostasPendentes = propostaRepository.countByStatusIn(List.of(
+                Proposta.StatusProposta.ELABORACAO,
+                Proposta.StatusProposta.ENVIADA));
+        long contratosAtivos = contratoRepository.countByStatus(Contrato.StatusContrato.ATIVO);
+        long documentosPendentes = documentoEmpresaRepository.countByStatus(DocumentoEmpresa.StatusDocumento.PENDENTE);
+        long reunioesSemana = reuniaoRepository.countByDataHoraBetweenAndStatusNot(
+                inicioSemana,
+                fimSemana,
+                Reuniao.StatusReuniao.CANCELADA);
+
+        List<DashboardRecentContractResponse> ultimosContratos = contratoRepository.findTop5ByOrderByDataCriacaoDesc()
+                .stream()
+                .map(contrato -> new DashboardRecentContractResponse(
+                        contrato.getEmpresa() != null ? contrato.getEmpresa().getRazaoSocial() : "Empresa",
+                        contrato.getTipoServico(),
+                        contrato.getDataCriacao()))
+                .collect(Collectors.toList());
+
+        List<DashboardUpcomingDueDateResponse> proximosVencimentos = contratoRepository
+                .findTop10ByStatusAndDataFimGreaterThanEqualOrderByDataFimAsc(Contrato.StatusContrato.ATIVO, hoje)
+                .stream()
+                .map(contrato -> new DashboardUpcomingDueDateResponse(
+                        contrato.getEmpresa() != null ? contrato.getEmpresa().getRazaoSocial() : "Empresa",
+                        contrato.getTipoServico(),
+                        contrato.getDataFim()))
+                .collect(Collectors.toList());
+
+        return new DashboardOverviewResponse(
+                propostasPendentes,
+                contratosAtivos,
+                documentosPendentes,
+                reunioesSemana,
+                ultimosContratos,
+                proximosVencimentos);
     }
 
     public List<AgendaEventResponse> obterAgendaDoDia(LocalDate date) {

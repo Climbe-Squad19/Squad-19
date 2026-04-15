@@ -12,6 +12,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 import br.com.residencia.gestao_contratos.dtos.response.AgendaEventResponse;
 import br.com.residencia.gestao_contratos.dtos.response.CalendarDayResponse;
+import br.com.residencia.gestao_contratos.dtos.response.DashboardOverviewResponse;
 import br.com.residencia.gestao_contratos.services.DashboardService;
 
 @RestController
@@ -36,5 +37,10 @@ public class DashboardController {
         YearMonth targetMonth = month != null ? YearMonth.parse(month)
                 : YearMonth.from(LocalDate.now());
         return dashboardService.obterCalendarioDoMes(targetMonth);
+    }
+
+    @GetMapping("/overview")
+    public DashboardOverviewResponse getVisaoGeral() {
+        return dashboardService.obterVisaoGeral();
     }
 }

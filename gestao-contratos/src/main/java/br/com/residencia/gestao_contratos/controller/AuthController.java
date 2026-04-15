@@ -12,11 +12,14 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import br.com.residencia.gestao_contratos.Security.JwtService;
-import br.com.residencia.gestao_contratos.Security.UserDetailsServiceImpl;
 import br.com.residencia.gestao_contratos.classes.Usuario;
 import br.com.residencia.gestao_contratos.dtos.request.AutenticacaoRequest;
+import br.com.residencia.gestao_contratos.dtos.request.ForgotPasswordRequest;
+import br.com.residencia.gestao_contratos.dtos.request.ResetPasswordRequest;
 import br.com.residencia.gestao_contratos.dtos.response.TokenResponse;
 import br.com.residencia.gestao_contratos.repository.UsuarioRepository;
+import br.com.residencia.gestao_contratos.services.PasswordResetService;
+import jakarta.validation.Valid;
 
 @RestController
 @RequestMapping("/auth")
@@ -29,10 +32,10 @@ public class AuthController {
     private JwtService jwtService;
 
     @Autowired
-    private UserDetailsServiceImpl userDetailsService;
-
-    @Autowired
     private UsuarioRepository usuarioRepository;
+
+        @Autowired
+        private PasswordResetService passwordResetService;
 
     @PostMapping("/login")
     public ResponseEntity<?> login(@RequestBody AutenticacaoRequest request) {
@@ -71,4 +74,20 @@ public class AuthController {
 
         return ResponseEntity.ok(response);
     }
+
+        @PostMapping("/forgot-password")
+        public ResponseEntity<String> forgotPassword(@RequestBody @Valid ForgotPasswordRequest request) {
+                passwordResetService.solicitarReset(request.getEmail());
+                return ResponseEntity.ok("Se o e-mail existir, enviaremos instruções para redefinir sua senha.");
+        }
+
+        @PostMapping("/reset-password")
+        public ResponseEntity<?> resetPassword(@RequestBody @Valid ResetPasswordRequest request) {
+                try {
+                        passwordResetService.redefinirSenha(request.getToken(), request.getNovaSenha());
+                        return ResponseEntity.ok("Senha redefinida com sucesso.");
+                } catch (RuntimeException ex) {
+                        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(ex.getMessage());
+                }
+        }
 }

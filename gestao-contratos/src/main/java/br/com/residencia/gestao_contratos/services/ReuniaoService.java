@@ -1,7 +1,10 @@
 package br.com.residencia.gestao_contratos.services;
 
 import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 import org.springframework.beans.factory.annotation.Autowired;
@@ -11,12 +14,14 @@ import org.springframework.transaction.annotation.Transactional;
 import br.com.residencia.gestao_contratos.classes.Contrato;
 import br.com.residencia.gestao_contratos.classes.Empresa;
 import br.com.residencia.gestao_contratos.classes.Reuniao;
+import br.com.residencia.gestao_contratos.classes.Usuario;
 import br.com.residencia.gestao_contratos.dtos.request.ReuniaoAtualizacaoRequest;
 import br.com.residencia.gestao_contratos.dtos.request.ReuniaoCriacaoRequest;
 import br.com.residencia.gestao_contratos.dtos.response.ReuniaoResponse;
 import br.com.residencia.gestao_contratos.repository.ContratoRepository;
 import br.com.residencia.gestao_contratos.repository.EmpresaRepository;
 import br.com.residencia.gestao_contratos.repository.ReuniaoRepository;
+import br.com.residencia.gestao_contratos.repository.UsuarioRepository;
 
 @Service
 public class ReuniaoService {
@@ -29,6 +34,15 @@ public class ReuniaoService {
 
     @Autowired
     private ContratoRepository contratoRepository;
+
+    @Autowired
+    private UsuarioRepository usuarioRepository;
+
+    @Autowired
+    private EmailService emailService;
+
+    @Autowired
+    private GoogleCalendarService googleCalendarService;
 
     @Transactional
     public ReuniaoResponse agendar(ReuniaoCriacaoRequest request) {
@@ -52,6 +66,12 @@ public class ReuniaoService {
         reuniao.setDataCriacao(LocalDateTime.now());
 
         Reuniao salva = reuniaoRepository.save(reuniao);
+        enviarNotificacaoAgendamento(salva);
+        try {
+            googleCalendarService.criarEventoParaUsuarioLogado(salva);
+        } catch (Exception ignored) {
+            // Calendar é opcional; não deve bloquear o agendamento.
+        }
         return converterParaResponse(salva);
     }
 
@@ -113,5 +133,41 @@ public class ReuniaoService {
         response.setParticipantesIds(reuniao.getParticipantesIds());
         response.setDataCriacao(reuniao.getDataCriacao());
         return response;
+    }
+
+    private void enviarNotificacaoAgendamento(Reuniao reuniao) {
+        try {
+            Set<String> destinatarios = new LinkedHashSet<>();
+
+            if (reuniao.getEmpresa().getEmailContato() != null
+                    && !reuniao.getEmpresa().getEmailContato().isBlank()) {
+                destinatarios.add(reuniao.getEmpresa().getEmailContato());
+            }
+
+            List<Long> participantes = reuniao.getParticipantesIds() != null
+                    ? reuniao.getParticipantesIds()
+                    : new ArrayList<>();
+
+            if (!participantes.isEmpty()) {
+                List<Usuario> usuarios = usuarioRepository.findAllById(participantes);
+                destinatarios.addAll(
+                        usuarios.stream()
+                                .map(Usuario::getEmail)
+                                .filter(email -> email != null && !email.isBlank())
+                                .toList());
+            }
+
+            String assunto = "Nova reunião agendada - " + reuniao.getPauta();
+            String conteudo = "A reunião foi agendada com os seguintes dados:\n\n"
+                    + "Pauta: " + reuniao.getPauta() + "\n"
+                    + "Empresa: " + reuniao.getEmpresa().getRazaoSocial() + "\n"
+                    + "Data/Hora: " + reuniao.getDataHora() + "\n"
+                    + "Modalidade: " + (reuniao.isPresencial() ? "Presencial" : "Online") + "\n"
+                    + (reuniao.isPresencial() ? "Sala: " + reuniao.getSala() : "Link: " + reuniao.getLinkOnline()) + "\n";
+
+            destinatarios.forEach(destinatario -> emailService.enviarEmail(destinatario, assunto, conteudo));
+        } catch (Exception ignored) {
+            // Email não deve interromper o agendamento da reunião.
+        }
     }
 }
