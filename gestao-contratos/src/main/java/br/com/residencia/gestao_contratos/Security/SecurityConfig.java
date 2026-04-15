@@ -63,7 +63,6 @@ public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
                 .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
             .requestMatchers("/auth/**").permitAll()
             .requestMatchers("/integracoes/google/callback").permitAll()
-            .requestMatchers(HttpMethod.POST, "/usuarios").permitAll()
             .requestMatchers("/actuator/health", "/actuator/info").permitAll()
             .anyRequest().authenticated()
         )

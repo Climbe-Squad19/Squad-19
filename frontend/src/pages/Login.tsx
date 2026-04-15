@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { API_BASE_URL } from '../services/api';
 import { login } from '../services/auth';
 
 interface LoginProps {
@@ -91,7 +92,13 @@ export default function Login({ onLogin, onForgotPassword }: LoginProps) {
           )}
 
           <div className="login-divider">ou</div>
-          <button type="button" className="button button--outline">
+          <button
+            type="button"
+            className="button button--outline"
+            onClick={() => {
+              window.location.href = `${API_BASE_URL}/auth/google`;
+            }}
+          >
             Continuar com Google
           </button>
         </div>

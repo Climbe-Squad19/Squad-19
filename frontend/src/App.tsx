@@ -26,6 +26,27 @@ function App() {
     return () => window.removeEventListener('popstate', syncRoute);
   }, []);
 
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const token = params.get('climbe_token');
+    const pending = params.get('oauth_pending');
+    const err = params.get('oauth_error');
+    if (token) {
+      localStorage.setItem(ACCESS_TOKEN_KEY, token);
+      setAuthenticated(true);
+      window.history.replaceState({}, '', window.location.pathname);
+      return;
+    }
+    if (pending === '1') {
+      window.alert('Cadastro recebido. Aguarde a aprovação de um administrador.');
+      window.history.replaceState({}, '', window.location.pathname);
+    }
+    if (err) {
+      window.alert(`Login com Google: ${decodeURIComponent(err)}`);
+      window.history.replaceState({}, '', window.location.pathname);
+    }
+  }, []);
+
   function handleLogin(accessToken: string) {
     localStorage.setItem(ACCESS_TOKEN_KEY, accessToken);
     setAuthenticated(true);

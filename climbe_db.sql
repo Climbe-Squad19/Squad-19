@@ -230,4 +230,18 @@ CREATE TABLE password_reset_tokens (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
 COMMENT='Recuperação de senha; invalidar após uso ou expiração';
 
+CREATE TABLE IF NOT EXISTS notificacoes_internas (
+    id BIGINT NOT NULL AUTO_INCREMENT,
+    usuario_id BIGINT NOT NULL,
+    mensagem VARCHAR(1024) NOT NULL,
+    lida TINYINT(1) NOT NULL DEFAULT 0,
+    criada_em DATETIME(6) NOT NULL,
+    PRIMARY KEY (id),
+    KEY idx_notif_internas_usuario (usuario_id),
+    CONSTRAINT fk_notif_internas_usuario FOREIGN KEY (usuario_id) REFERENCES usuarios (id)
+        ON DELETE CASCADE
+        ON UPDATE RESTRICT
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
+COMMENT='Notificações in-app (ex.: cadastro Google pendente)';
+
 SET FOREIGN_KEY_CHECKS = 1;

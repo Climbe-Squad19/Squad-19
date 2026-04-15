@@ -28,19 +28,24 @@ public class UserDetailsServiceImpl implements UserDetailsService {
                 .orElseThrow(() -> new UsernameNotFoundException(
                         "Usuário não encontrado: " + email));
 
-        if (!usuario.isAtivo()) {
-            throw new UsernameNotFoundException("Usuário inativo: " + email);
-        }
+        Usuario.SituacaoUsuario sit = usuario.getSituacao() != null
+                ? usuario.getSituacao()
+                : Usuario.SituacaoUsuario.ATIVO;
+        boolean contaHabilitada = usuario.isAtivo()
+                && sit != Usuario.SituacaoUsuario.PENDENTE
+                && sit != Usuario.SituacaoUsuario.INATIVO;
 
-        List<SimpleGrantedAuthority> authorities = usuario.getPermissoes()
+        List<SimpleGrantedAuthority> authorities = usuario.getPermissoes() == null ? List.of()
+                : usuario.getPermissoes()
                 .stream()
                 .map(cargo -> new SimpleGrantedAuthority("ROLE_" + cargo.name()))
                 .collect(Collectors.toList());
 
-        return new User(
-                usuario.getEmail(),
-                usuario.getSenha(),
-                authorities
-        );
+        return User.builder()
+                .username(usuario.getEmail())
+                .password(usuario.getSenha() != null ? usuario.getSenha() : "")
+                .authorities(authorities)
+                .disabled(!contaHabilitada)
+                .build();
     }
 }

@@ -25,8 +25,15 @@ public class UsuarioService {
     @Autowired
     private PasswordEncoder passwordEncoder;
 
+    @Autowired
+    private AdministrativoAuthorizationService administrativoAuthorizationService;
+
+    @Autowired
+    private EmailService emailService;
+
     @Transactional
     public UsuarioResponse criar(UsuarioCriacaoRequest request) {
+        administrativoAuthorizationService.exigirPodeGerenciarUsuarios();
 
         if (usuarioRepository.existsByCpf(request.getCpf()))
             throw new RuntimeException("CPF já cadastrado");
@@ -47,7 +54,42 @@ public class UsuarioService {
         usuario.setDataCriacao(LocalDateTime.now());
 
         Usuario salvo = usuarioRepository.save(usuario);
+        try {
+            emailService.enviarBoasVindasNovoColaborador(salvo.getEmail(), salvo.getNomeCompleto());
+        } catch (Exception ignored) {
+            // SMTP não configurado não deve impedir o cadastro
+        }
         return converterParaResponse(salvo);
+    }
+
+    public List<UsuarioResponse> listarPendentes() {
+        administrativoAuthorizationService.exigirPodeGerenciarUsuarios();
+        return usuarioRepository.findBySituacao(Usuario.SituacaoUsuario.PENDENTE).stream()
+                .map(this::converterParaResponse)
+                .collect(Collectors.toList());
+    }
+
+    @Transactional
+    public UsuarioResponse aprovarCadastro(Long id) {
+        administrativoAuthorizationService.exigirPodeGerenciarUsuarios();
+        Usuario usuario = usuarioRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Usuário não encontrado"));
+        if (usuario.getSituacao() != Usuario.SituacaoUsuario.PENDENTE) {
+            throw new RuntimeException("Somente contas pendentes podem ser aprovadas.");
+        }
+        usuario.setSituacao(Usuario.SituacaoUsuario.ATIVO);
+        usuario.setAtivo(true);
+        if (usuario.getCargo() == null) {
+            usuario.setCargo(Cargo.ANALISTA_TRAINEE);
+            usuario.setPermissoes(List.of(Cargo.ANALISTA_TRAINEE));
+        }
+        usuarioRepository.save(usuario);
+        try {
+            emailService.enviarBoasVindasNovoColaborador(usuario.getEmail(), usuario.getNomeCompleto());
+        } catch (Exception ignored) {
+            // idem
+        }
+        return converterParaResponse(usuario);
     }
 
     @Transactional
@@ -117,6 +159,7 @@ public class UsuarioService {
         response.setEmail(usuario.getEmail());
         response.setTelefone(usuario.getTelefone());
         response.setAtivo(usuario.isAtivo());
+        response.setSituacao(usuario.getSituacao());
         response.setFotoPerfilUrl(usuario.getFotoPerfilUrl());
         response.setDataCriacao(usuario.getDataCriacao());
 

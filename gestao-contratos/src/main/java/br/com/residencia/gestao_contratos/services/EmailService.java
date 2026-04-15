@@ -1,6 +1,7 @@
 package br.com.residencia.gestao_contratos.services;
 
 import java.nio.charset.StandardCharsets;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
@@ -15,6 +16,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.reactive.function.client.WebClient;
 
 import br.com.residencia.gestao_contratos.classes.IntegracaoOAuthToken;
+import br.com.residencia.gestao_contratos.classes.Usuario;
 
 @Service
 public class EmailService {
@@ -138,5 +140,35 @@ public class EmailService {
                 .toBodilessEntity()
                 .block();
         return true;
+    }
+
+    /** RF 10.d — boas-vindas após cadastro pelo administrador. */
+    public void enviarBoasVindasNovoColaborador(String emailDestino, String nome) {
+        if (emailDestino == null || emailDestino.isBlank()) {
+            return;
+        }
+        enviarEmail(
+                emailDestino,
+                "Bem-vindo ao Climbe",
+                "Olá " + nome + ",\n\n"
+                        + "Seu cadastro foi concluído no sistema Climbe. Utilize seu e-mail e a senha definida pelo administrador para acessar.\n\n"
+                        + "Equipe Climbe\n");
+    }
+
+    /** RF 2.d — avisar administradores sobre novo cadastro Google pendente. */
+    public void notificarAdministradoresNovoCadastroGoogle(String nomeNovo, String emailNovo,
+            List<Usuario> administradores) {
+        if (administradores == null || administradores.isEmpty()) {
+            return;
+        }
+        String corpo = "Novo cadastro via Google aguardando aprovação:\n\n"
+                + "Nome: " + nomeNovo + "\n"
+                + "E-mail: " + emailNovo + "\n\n"
+                + "Acesse o sistema em Usuários pendentes para aprovar.\n";
+        for (Usuario admin : administradores) {
+            if (admin.getEmail() != null && !admin.getEmail().isBlank()) {
+                enviarEmail(admin.getEmail(), "[Climbe] Cadastro pendente de aprovação", corpo);
+            }
+        }
     }
 }

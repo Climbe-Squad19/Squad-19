@@ -6,6 +6,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
@@ -48,6 +49,11 @@ public class UsuarioController {
         )));
     }
 
+    @GetMapping("/pendentes")
+    public ResponseEntity<List<UsuarioResponse>> listarPendentes() {
+        return ResponseEntity.ok(usuarioService.listarPendentes());
+    }
+
     @GetMapping("/{id}")
     public ResponseEntity<UsuarioResponse> getById(@PathVariable Long id) {
         return ResponseEntity.ok(usuarioService.buscarPorId(id));
@@ -64,6 +70,11 @@ public class UsuarioController {
             @PathVariable Long id,
             @RequestBody UsuarioAtualizacaoRequest request) {
         return ResponseEntity.ok(usuarioService.atualizar(id, request));
+    }
+
+    @PatchMapping("/{id}/aprovar")
+    public ResponseEntity<UsuarioResponse> aprovar(@PathVariable Long id) {
+        return ResponseEntity.ok(usuarioService.aprovarCadastro(id));
     }
 
     @DeleteMapping("/{id}")
