@@ -46,8 +46,9 @@ public class DataInitializer {
                 usuarioRepository.save(admin);
             }
 
-            if (empresaRepository.count() == 0 && usuarioRepository.count() == 0
-                    && contratoRepository.count() == 0 && reuniaoRepository.count() == 0) {
+            // Só exige DB "vazio" de empresas — o admin já pode existir (bloco anterior).
+            if (empresaRepository.count() == 0 && contratoRepository.count() == 0
+                    && reuniaoRepository.count() == 0) {
 
                 Empresa empresa = new Empresa();
                 empresa.setRazaoSocial("Residência Consultoria Ltda.");
