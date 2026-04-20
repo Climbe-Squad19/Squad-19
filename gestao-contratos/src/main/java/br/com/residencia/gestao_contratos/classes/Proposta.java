@@ -34,10 +34,12 @@ public class Proposta {
     private BigDecimal valorMensal;
     private BigDecimal valorSetup;
     private LocalDate dataEmissao;
+    @Column(length = 512)
     private String linkGoogleDrive;
-    private String motivoRecusa;        
+    private String motivoRecusa;
 
     @Enumerated(EnumType.STRING)
+    @Column(length = 32)
     private StatusProposta status;
 
     @Column(updatable = false)

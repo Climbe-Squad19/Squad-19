@@ -18,6 +18,7 @@ import br.com.residencia.gestao_contratos.classes.Proposta;
 import br.com.residencia.gestao_contratos.dtos.request.PropostaAtualizacaoRequest;
 import br.com.residencia.gestao_contratos.dtos.request.PropostaCriacaoRequest;
 import br.com.residencia.gestao_contratos.dtos.response.PropostaResponse;
+import br.com.residencia.gestao_contratos.services.ApiIntegrationService;
 import br.com.residencia.gestao_contratos.services.PropostaService;
 
 @RestController
@@ -25,9 +26,12 @@ import br.com.residencia.gestao_contratos.services.PropostaService;
 public class PropostaController {
 
     private final PropostaService propostaService;
+    private final ApiIntegrationService apiIntegrationService;
 
-    public PropostaController(PropostaService propostaService) {
+    public PropostaController(PropostaService propostaService,
+            ApiIntegrationService apiIntegrationService) {
         this.propostaService = propostaService;
+        this.apiIntegrationService = apiIntegrationService;
     }
 
     @GetMapping
@@ -41,9 +45,9 @@ public class PropostaController {
     }
 
     @PostMapping
-    public ResponseEntity<PropostaResponse> create(
+    public ResponseEntity<String> create(
             @RequestBody PropostaCriacaoRequest request) {
-        return new ResponseEntity<>(propostaService.criar(request), HttpStatus.CREATED);
+        return new ResponseEntity<>("Criação de nova proposta desativada.", HttpStatus.GONE);
     }
 
     @PutMapping("/{id}")
@@ -60,6 +64,11 @@ public class PropostaController {
             @RequestParam(required = false) String motivoRecusa) {
         return ResponseEntity.ok(
                 propostaService.atualizarStatus(id, status, motivoRecusa));
+    }
+
+    @GetMapping("/{id}/external")
+    public ResponseEntity<String> getPropostaExterna(@PathVariable Long id) {
+        return ResponseEntity.ok(apiIntegrationService.buscarPropostaExterna(id));
     }
 
     @DeleteMapping("/{id}")

@@ -1,13 +1,15 @@
-# Estágio de Compilação (Build)
-FROM maven:3.8.4-openjdk-17-slim AS build
+# Build
+FROM maven:3.9-eclipse-temurin-17 AS build
 WORKDIR /app
 COPY pom.xml .
 COPY src ./src
-RUN mvn clean package -DskipTests
+RUN mvn -q -DskipTests package \
+    && cp /app/target/gestao-contratos-*.jar /app/app.jar
 
-# Estágio de Execução (Runtime) - Mudamos para a versão JRE padrão
+# Run (PORT vem do ambiente: Render, Docker Compose, etc.)
 FROM eclipse-temurin:17-jre
 WORKDIR /app
-COPY --from=build /app/target/*.jar app.jar
-EXPOSE 8080
-ENTRYPOINT ["java","-jar","app.jar"]
+COPY --from=build /app/app.jar app.jar
+EXPOSE 8081
+ENV PORT=8081
+ENTRYPOINT ["java", "-jar", "/app/app.jar"]

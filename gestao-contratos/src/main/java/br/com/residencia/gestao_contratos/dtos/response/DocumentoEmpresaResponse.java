@@ -18,6 +18,9 @@ public class DocumentoEmpresaResponse {
     private String nomeArquivo;
     private String tipoArquivo;
     private Long tamanhoBytes;
+    private String s3Url;
+    private String googleDriveFileId;
+    private String googleDriveWebViewLink;
     private String motivoRejeicao;
     private Long validadoPorId;
     private String nomeValidadoPor;

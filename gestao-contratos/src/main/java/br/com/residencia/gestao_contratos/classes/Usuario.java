@@ -30,26 +30,31 @@ public class Usuario {
     private String nomeCompleto;
 
     @Enumerated(EnumType.STRING)
-    private Cargo cargo;                // cargo principal
+    @Column(length = 255)
+    private Cargo cargo;
 
-    @Column(unique = true, nullable = false)
+    @Column(unique = true, nullable = false, length = 14)
     private String cpf;
 
     @Column(unique = true, nullable = false)
     private String email;
 
+    @Column(length = 50)
     private String telefone;
 
     private boolean ativo;
 
     private String senha;
 
-    private String fotoPerfilUrl;       // Autenticação
+    @Column(length = 512)
+    private String fotoPerfilUrl;
 
-    private String googleId;            // Autenticação
+    @Column(length = 255)
+    private String googleId;
 
     @Enumerated(EnumType.STRING)
-    private SituacaoUsuario situacao;   
+    @Column(length = 32)
+    private SituacaoUsuario situacao;
 
     @Column(updatable = false)
     private LocalDateTime dataCriacao;

@@ -6,6 +6,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
@@ -15,6 +16,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 import br.com.residencia.gestao_contratos.dtos.request.ContratoAtualizacaoRequest;
 import br.com.residencia.gestao_contratos.dtos.request.ContratoCriacaoRequest;
+import br.com.residencia.gestao_contratos.dtos.request.ContratoResponsavelRequest;
 import br.com.residencia.gestao_contratos.dtos.response.ContratoResponse;
 import br.com.residencia.gestao_contratos.services.ContratoService;
 
@@ -49,6 +51,13 @@ public class ContratoController {
             @PathVariable Long id,
             @RequestBody ContratoAtualizacaoRequest request) {
         return ResponseEntity.ok(contratoService.atualizar(id, request));
+    }
+
+    @PatchMapping("/{id}/responsavel")
+    public ResponseEntity<ContratoResponse> atribuirResponsavel(
+            @PathVariable Long id,
+            @RequestBody ContratoResponsavelRequest request) {
+        return ResponseEntity.ok(contratoService.atribuirResponsavel(id, request.getUsuarioResponsavelId()));
     }
 
     @DeleteMapping("/{id}")

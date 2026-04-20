@@ -26,6 +26,7 @@ public class Reuniao {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
+    @Column(length = 512)
     private String pauta;
 
     @ManyToOne
@@ -35,14 +36,18 @@ public class Reuniao {
     private Contrato contrato;
 
     @Enumerated(EnumType.STRING)
-    private TipoReuniao tipo;         
+    @Column(length = 32)
+    private TipoReuniao tipo;
 
     private LocalDateTime dataHora;
     private boolean presencial;
+    @Column(length = 512)
     private String linkOnline;
+    @Column(length = 128)
     private String sala;
 
     @Enumerated(EnumType.STRING)
+    @Column(length = 32)
     private StatusReuniao status;
 
     @ElementCollection
