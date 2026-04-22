@@ -46,7 +46,6 @@ services:
   - type: web
     name: climbe-web
     runtime: static
-    region: oregon
     plan: free
     rootDir: frontend
     buildCommand: npm ci && npm run build
