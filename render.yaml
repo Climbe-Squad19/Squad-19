@@ -12,7 +12,6 @@ services:
     name: climbe-api
     runtime: docker
     region: oregon
-    plan: free
     dockerfilePath: ./gestao-contratos/Dockerfile
     dockerContext: ./gestao-contratos
     healthCheckPath: /actuator/health
@@ -35,7 +34,6 @@ services:
         sync: false
       - key: GOOGLE_REDIRECT_URI
         sync: false
-      # Callback do login com Google (PKCE) — ex.: https://SUA-API.onrender.com/auth/google/callback
       - key: GOOGLE_LOGIN_REDIRECT_URI
         sync: false
       - key: GOOGLE_CLIENT_ID
@@ -44,10 +42,11 @@ services:
         sync: false
 
   - type: web
-    name: climbe-api
-    runtime: docker
-    region: oregon
-    plan: starter
-    dockerfilePath: ./gestao-contratos/Dockerfile
-    dockerContext: ./gestao-contratos
-    healthCheckPath: /actuator/health
+    name: climbe-web
+    runtime: static
+    rootDir: frontend
+    buildCommand: npm ci && npm run build
+    staticPublishPath: dist
+    envVars:
+      - key: VITE_API_BASE_URL
+        sync: false
