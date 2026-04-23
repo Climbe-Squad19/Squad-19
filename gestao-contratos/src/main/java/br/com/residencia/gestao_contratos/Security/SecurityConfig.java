@@ -13,13 +13,9 @@ import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
-import org.springframework.http.MediaType;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 import org.springframework.web.cors.CorsConfiguration;
-
-import jakarta.servlet.http.HttpServletResponse;
-import java.nio.charset.StandardCharsets;
 import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 
@@ -29,6 +25,8 @@ import java.util.stream.Collectors;
 
 @Configuration
 public class SecurityConfig {
+
+    private static final String FALLBACK_ORIGIN = "http://localhost:5173";
 
     @Value("${app.cors.allowed-origins:http://localhost:5173}")
     private String corsAllowedOrigins;
@@ -59,57 +57,84 @@ public class SecurityConfig {
     }
 
     @Bean
-public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
-    http
-            .cors(cors -> cors.configurationSource(corsConfigurationSource()))
-        .csrf(csrf -> csrf.disable())
-        .authorizeHttpRequests(auth -> auth
-                .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
-            .requestMatchers(HttpMethod.GET, "/auth/me").authenticated()
-            .requestMatchers("/auth/**").permitAll()
-            .requestMatchers("/integracoes/google/callback").permitAll()
-            .requestMatchers("/actuator/health", "/actuator/info").permitAll()
-            .anyRequest().authenticated()
-        )
-        .sessionManagement(session -> session
-            .sessionCreationPolicy(SessionCreationPolicy.STATELESS)
-        )
-        .authenticationProvider(authenticationProvider())
-        .addFilterBefore(jwtAuthFilter,
-                UsernamePasswordAuthenticationFilter.class)
-        .exceptionHandling(ex -> ex
-                .authenticationEntryPoint((request, response, authException) -> {
-                    response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
-                    response.setContentType(MediaType.APPLICATION_JSON_VALUE);
-                    response.setCharacterEncoding(StandardCharsets.UTF_8.name());
-                    response.getWriter().write(
-                            "{\"message\":\"Não autenticado.\",\"detail\":\"Envie Authorization: Bearer <token> válido.\"}");
-                })
-                .accessDeniedHandler((request, response, accessDeniedException) -> {
-                    response.setStatus(HttpServletResponse.SC_FORBIDDEN);
-                    response.setContentType(MediaType.APPLICATION_JSON_VALUE);
-                    response.setCharacterEncoding(StandardCharsets.UTF_8.name());
-                    response.getWriter().write(
-                            "{\"message\":\"Acesso negado.\",\"detail\":\"Sem permissão para esta ação. "
-                                    + "Aprovar cadastros exige perfil CEO, Compliance ou Membro do Conselho no banco de dados.\"}");
-                }));
+    public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
+        http
+                .cors(cors -> cors.configurationSource(corsConfigurationSource()))
+                .csrf(csrf -> csrf.disable())
+                .authorizeHttpRequests(auth -> auth
+                        .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
+                        .requestMatchers("/auth/**").permitAll()
+                        .requestMatchers("/integracoes/google/callback").permitAll()
+                        .requestMatchers("/actuator/health", "/actuator/info").permitAll()
+                        .anyRequest().authenticated()
+                )
+                .sessionManagement(session -> session
+                        .sessionCreationPolicy(SessionCreationPolicy.STATELESS)
+                )
+                .authenticationProvider(authenticationProvider())
+                .addFilterBefore(jwtAuthFilter,
+                        UsernamePasswordAuthenticationFilter.class);
 
-    return http.build();
-}
+        return http.build();
+    }
 
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration configuration = new CorsConfiguration();
-        List<String> origins = Arrays.stream(corsAllowedOrigins.split(","))
+
+        List<String> origensValidas = Arrays.stream(corsAllowedOrigins.split(","))
                 .map(String::trim)
-                .filter(s -> !s.isEmpty())
+                .filter(origem -> {
+                    if (origem.isEmpty()) {
+                        return false;
+                    }
+                    if ("*".equals(origem)) {
+                        System.err.println(
+                                "[CORS] AVISO: origem '*' ignorada. " +
+                                "Configure CORS_ALLOWED_ORIGINS com URLs explícitas."
+                        );
+                        return false;
+                    }
+                    // Garante que é uma URL real (http ou https)
+                    if (!origem.startsWith("http://") && !origem.startsWith("https://")) {
+                        System.err.println(
+                                "[CORS] AVISO: origem ignorada por formato inválido: " + origem
+                        );
+                        return false;
+                    }
+                    return true;
+                })
                 .collect(Collectors.toList());
-        // allowedOriginPatterns aceita URLs exatas e padrões (ex.: http://localhost:* quando o Vite usa porta != 5173)
-        configuration.setAllowedOriginPatterns(origins);
-        configuration.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"));
-        configuration.setAllowedHeaders(List.of("Authorization", "Content-Type", "Accept"));
+
+        if (origensValidas.isEmpty()) {
+            System.err.println(
+                    "[CORS] ERRO: Nenhuma origem válida encontrada em CORS_ALLOWED_ORIGINS. " +
+                    "Usando fallback: " + FALLBACK_ORIGIN + ". " +
+                    "Em produção, defina a variável CORS_ALLOWED_ORIGINS corretamente."
+            );
+            origensValidas = List.of(FALLBACK_ORIGIN);
+        } else {
+            System.out.println("[CORS] Origens permitidas: " + origensValidas);
+        }
+
+        configuration.setAllowedOrigins(origensValidas);
+
+        configuration.setAllowedMethods(List.of(
+                "GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"
+        ));
+
+        configuration.setAllowedHeaders(List.of(
+                "Authorization",
+                "Content-Type",
+                "Accept",
+                "X-Requested-With"
+        ));
+
         configuration.setExposedHeaders(List.of("Authorization"));
+
         configuration.setAllowCredentials(true);
+
+        configuration.setMaxAge(3600L);
 
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
         source.registerCorsConfiguration("/**", configuration);

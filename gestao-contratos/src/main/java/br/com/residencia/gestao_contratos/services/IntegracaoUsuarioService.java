@@ -35,6 +35,9 @@ public class IntegracaoUsuarioService {
     private final String googleClientSecret;
     private final String googleRedirectUri;
     private final String frontendUrl;
+
+    private final TokenEncryptionService tokenEncryptionService;
+
     private final Map<String, PendingOAuthState> pendingStates = new ConcurrentHashMap<>();
     private static final long STATE_EXPIRATION_MINUTES = 10;
     private static final String GOOGLE_AUTH_URL = "https://accounts.google.com/o/oauth2/v2/auth";
@@ -45,6 +48,7 @@ public class IntegracaoUsuarioService {
             IntegracaoOAuthTokenRepository integracaoOAuthTokenRepository,
             UsuarioRepository usuarioRepository,
             WebClient.Builder webClientBuilder,
+            TokenEncryptionService tokenEncryptionService, // <- adicionado
             @Value("${app.integrations.google.client-id:}") String googleClientId,
             @Value("${app.integrations.google.client-secret:}") String googleClientSecret,
             @Value("${app.integrations.google.redirect-uri:http://localhost:8081/integracoes/google/callback}") String googleRedirectUri,
@@ -53,6 +57,7 @@ public class IntegracaoUsuarioService {
         this.integracaoOAuthTokenRepository = integracaoOAuthTokenRepository;
         this.usuarioRepository = usuarioRepository;
         this.webClient = webClientBuilder.build();
+        this.tokenEncryptionService = tokenEncryptionService; // <- adicionado
         this.googleClientId = googleClientId;
         this.googleClientSecret = googleClientSecret;
         this.googleRedirectUri = googleRedirectUri;
@@ -131,10 +136,16 @@ public class IntegracaoUsuarioService {
             return frontendUrl + "/?integration_error=token_exchange_failed";
         }
 
-        String accessToken = String.valueOf(tokenResponse.get("access_token"));
-        String refreshToken = tokenResponse.get("refresh_token") != null
+        String accessTokenPlain = String.valueOf(tokenResponse.get("access_token"));
+        String refreshTokenPlain = tokenResponse.get("refresh_token") != null
                 ? String.valueOf(tokenResponse.get("refresh_token"))
                 : null;
+
+        String accessTokenEncrypted = tokenEncryptionService.encrypt(accessTokenPlain);
+        String refreshTokenEncrypted = refreshTokenPlain != null && !refreshTokenPlain.isBlank()
+                ? tokenEncryptionService.encrypt(refreshTokenPlain)
+                : null;
+
         String tokenType = tokenResponse.get("token_type") != null
                 ? String.valueOf(tokenResponse.get("token_type"))
                 : null;
@@ -150,9 +161,9 @@ public class IntegracaoUsuarioService {
                 .orElseGet(IntegracaoOAuthToken::new);
         item.setUsuario(usuario);
         item.setProvedor(pending.provedor());
-        item.setAccessToken(accessToken);
-        if (refreshToken != null && !refreshToken.isBlank()) {
-            item.setRefreshToken(refreshToken);
+        item.setAccessToken(accessTokenEncrypted);       // <- salva criptografado
+        if (refreshTokenEncrypted != null) {
+            item.setRefreshToken(refreshTokenEncrypted); // <- salva criptografado
         }
         item.setTokenType(tokenType);
         item.setScope(scope);

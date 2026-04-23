@@ -27,15 +27,19 @@ public class GoogleOAuthTokenService {
     private final String googleClientId;
     private final String googleClientSecret;
 
+    private final TokenEncryptionService tokenEncryptionService;
+
     public GoogleOAuthTokenService(
             IntegracaoOAuthTokenRepository integracaoOAuthTokenRepository,
             UsuarioRepository usuarioRepository,
             WebClient.Builder webClientBuilder,
+            TokenEncryptionService tokenEncryptionService, // <- adicionado
             @Value("${app.integrations.google.client-id:}") String googleClientId,
             @Value("${app.integrations.google.client-secret:}") String googleClientSecret) {
         this.integracaoOAuthTokenRepository = integracaoOAuthTokenRepository;
         this.usuarioRepository = usuarioRepository;
         this.webClient = webClientBuilder.build();
+        this.tokenEncryptionService = tokenEncryptionService; // <- adicionado
         this.googleClientId = googleClientId;
         this.googleClientSecret = googleClientSecret;
     }
@@ -59,8 +63,16 @@ public class GoogleOAuthTokenService {
             return Optional.empty();
         }
 
-        if (token.getExpiresAt() != null && token.getExpiresAt().isBefore(LocalDateTime.now().plusMinutes(1))) {
-            if (token.getRefreshToken() == null || token.getRefreshToken().isBlank()
+        String accessTokenPlain   = tokenEncryptionService.decrypt(token.getAccessToken());
+        String refreshTokenPlain  = token.getRefreshToken() != null
+                ? tokenEncryptionService.decrypt(token.getRefreshToken())
+                : null;
+
+        boolean expirado = token.getExpiresAt() != null
+                && token.getExpiresAt().isBefore(LocalDateTime.now().plusMinutes(1));
+
+        if (expirado) {
+            if (refreshTokenPlain == null || refreshTokenPlain.isBlank()
                     || googleClientId == null || googleClientId.isBlank()
                     || googleClientSecret == null || googleClientSecret.isBlank()) {
                 return Optional.empty();
@@ -72,7 +84,7 @@ public class GoogleOAuthTokenService {
                     .body(BodyInserters.fromFormData("client_id", googleClientId)
                             .with("client_secret", googleClientSecret)
                             .with("grant_type", "refresh_token")
-                            .with("refresh_token", token.getRefreshToken()))
+                            .with("refresh_token", refreshTokenPlain)) // <- texto puro na chamada HTTP
                     .retrieve()
                     .bodyToMono(Map.class)
                     .block();
@@ -81,11 +93,15 @@ public class GoogleOAuthTokenService {
                 return Optional.empty();
             }
 
-            token.setAccessToken(String.valueOf(refreshed.get("access_token")));
+            String novoAccessTokenPlain = String.valueOf(refreshed.get("access_token"));
             Integer expiresIn = refreshed.get("expires_in") instanceof Number
                     ? ((Number) refreshed.get("expires_in")).intValue()
                     : null;
-            token.setExpiresAt(expiresIn != null ? LocalDateTime.now().plusSeconds(expiresIn) : null);
+
+            token.setAccessToken(tokenEncryptionService.encrypt(novoAccessTokenPlain));
+            token.setExpiresAt(expiresIn != null
+                    ? LocalDateTime.now().plusSeconds(expiresIn)
+                    : null);
             if (refreshed.get("scope") != null) {
                 token.setScope(String.valueOf(refreshed.get("scope")));
             }
@@ -93,8 +109,10 @@ public class GoogleOAuthTokenService {
                 token.setTokenType(String.valueOf(refreshed.get("token_type")));
             }
             integracaoOAuthTokenRepository.save(token);
+
+            return Optional.of(novoAccessTokenPlain);
         }
 
-        return Optional.ofNullable(token.getAccessToken());
+        return Optional.ofNullable(accessTokenPlain);
     }
 }
