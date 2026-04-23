@@ -1,0 +1,12 @@
+{
+  "name": "squad-19-climbe",
+  "private": true,
+  "description": "Scripts npm opcionais para subir API + frontend no dev",
+  "scripts": {
+    "init": "bash scripts/init-local.sh",
+    "install:all": "cd frontend && npm install",
+    "dev:api": "bash -c 'cd gestao-contratos && exec ./run-dev-mysql.sh'",
+    "dev:web": "bash -c 'cd frontend && exec npm run dev'",
+    "validate": "bash scripts/validate-local.sh"
+  }
+}

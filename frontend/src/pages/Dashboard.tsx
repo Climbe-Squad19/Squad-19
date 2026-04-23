@@ -1,10 +1,19 @@
-import { FormEvent, MouseEvent, useEffect, useMemo, useState } from 'react';
+import { FormEvent, Fragment, MouseEvent, useCallback, useEffect, useMemo, useState } from 'react';
 import { Avatar, Divider, ListItemIcon, Menu, MenuItem as MuiMenuItem, Tooltip, Zoom } from '@mui/material';
 import ProfileDrawer from '../components/ProfileDrawer';
 import { fetchAgenda, fetchCalendar, createMeeting, fetchDashboardOverview, AgendaApiItem, CalendarApiDay } from '../services/dashboard';
+import { getSundayWeekDateStrings } from '../utils/calendarWeek';
+import { TEAM_CARGO_OPTIONS, formatCargoDisplay, normalizeCargoFromApi } from '../utils/cargo';
 import { createEmpresa, fetchEmpresas, EmpresaApiResponse } from '../services/empresas';
-import { createUsuario, fetchUsuarios, UsuarioApiResponse } from '../services/usuarios';
+import {
+  aprovarUsuario,
+  createUsuario,
+  fetchUsuarios,
+  fetchUsuariosPendentes,
+  UsuarioApiResponse,
+} from '../services/usuarios';
 import { fetchContratos, fetchDocumentosByEmpresa, fetchPropostas, fetchReunioes, PropostaApiResponse } from '../services/business';
+import { fetchGoogleOAuthDisponivel } from '../services/auth';
 import { fetchMinhasIntegracoes, getGoogleIntegrationAuthUrl, updateIntegracao } from '../services/integracoes';
 import { useAppDispatch, useAppSelector } from '../store/hooks';
 import { updateProfile } from '../store/profileSlice';
@@ -204,19 +213,8 @@ const teamMembers: TeamMember[] = [
   }
 ];
 
-const teamRoleOptions = [
-  { value: 'CEO', label: 'CEO' },
-  { value: 'CFO', label: 'CFO' },
-  { value: 'CMO', label: 'CMO' },
-  { value: 'CSO', label: 'CSO' },
-  { value: 'COMPLIANCE', label: 'Compliance' },
-  { value: 'MEMBRO_CONSELHO', label: 'Membro do Conselho' },
-  { value: 'ANALISTA_TRAINEE', label: 'Analista Trainee' },
-  { value: 'ANALISTA_JUNIOR', label: 'Analista Junior' },
-  { value: 'ANALISTA_PLENO', label: 'Analista Pleno' },
-  { value: 'ANALISTA_SENIOR', label: 'Analista Senior' },
-  { value: 'ANALISTA_BPO', label: 'Analista BPO' },
-] as const;
+/** Cargos: mesma lista e labels que `utils/cargo.ts` (enum do backend). */
+const teamRoleOptions = TEAM_CARGO_OPTIONS;
 
 const clientCompanies: ClientCompany[] = [
   {
@@ -362,6 +360,22 @@ function getTodayIso() {
   return formatLocalDate(new Date());
 }
 
+const CALENDAR_WEEKDAY_LABELS = ['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb'] as const;
+const GC_EVENT_COLORS = ['#4285F4', '#0B8043', '#D50000', '#F4511E', '#8E24AA', '#039BE5', '#7986CB'] as const;
+
+function truncateCalendarText(text: string, max = 26): string {
+  if (text.length <= max) {
+    return text;
+  }
+  return `${text.slice(0, max - 1)}…`;
+}
+
+function formatSelectedDayLong(iso: string): string {
+  const [y, m, d] = iso.split('-').map(Number);
+  const dt = new Date(y, m - 1, d);
+  return dt.toLocaleDateString('pt-BR', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
+}
+
 export default function Dashboard({ onLogout }: DashboardProps) {
   const dispatch = useAppDispatch();
   const profile = useAppSelector((state) => state.profile);
@@ -372,6 +386,9 @@ export default function Dashboard({ onLogout }: DashboardProps) {
   const [selectedDate, setSelectedDate] = useState(getTodayIso());
   const [loadingAgenda, setLoadingAgenda] = useState(false);
   const [loadingCalendar, setLoadingCalendar] = useState(false);
+  const [calendarLoadError, setCalendarLoadError] = useState<string | null>(null);
+  const [weekAgendaByDate, setWeekAgendaByDate] = useState<Record<string, AgendaApiItem[]>>({});
+  const [loadingWeekAgenda, setLoadingWeekAgenda] = useState(false);
   const [summaryCards, setSummaryCards] = useState<SummaryCard[]>(defaultSummaryCards);
   const [recentContracts, setRecentContracts] = useState<ContractItem[]>(defaultRecentContracts);
   const [upcomingItems, setUpcomingItems] = useState<UpcomingItem[]>(defaultUpcomingItems);
@@ -433,6 +450,7 @@ export default function Dashboard({ onLogout }: DashboardProps) {
     gmail: true,
   });
   const [integrationsLoading, setIntegrationsLoading] = useState(false);
+  const [googleOAuthDisponivel, setGoogleOAuthDisponivel] = useState<boolean | null>(null);
   const [selectedTeamMember, setSelectedTeamMember] = useState<TeamMember | null>(null);
   const [showTeamCreateModal, setShowTeamCreateModal] = useState(false);
   const [teamFormName, setTeamFormName] = useState('');
@@ -446,6 +464,17 @@ export default function Dashboard({ onLogout }: DashboardProps) {
   const [teamFormSubmitting, setTeamFormSubmitting] = useState(false);
   const [teamFormError, setTeamFormError] = useState('');
   const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
+  const [cadastrosPendentes, setCadastrosPendentes] = useState<UsuarioApiResponse[]>([]);
+  const [cadastrosPendentesLoading, setCadastrosPendentesLoading] = useState(false);
+  const [aprovarCadastroId, setAprovarCadastroId] = useState<number | null>(null);
+  const [cadastroApproveFeedback, setCadastroApproveFeedback] = useState<{ tone: 'success' | 'error'; message: string } | null>(null);
+
+  /** Mantém Configurações > Meu Perfil alinhado ao Redux após GET /auth/me (evita dados fictícios “piscando”). */
+  useEffect(() => {
+    setSettingsName(profile.fullName);
+    setSettingsPhone(profile.phone);
+    setSettingsEmail(profile.email);
+  }, [profile.fullName, profile.phone, profile.email]);
 
   const mapEmpresaToCard = (empresa: EmpresaApiResponse): ClientCompany => ({
     id: empresa.id,
@@ -486,26 +515,67 @@ export default function Dashboard({ onLogout }: DashboardProps) {
     return 'Baixa';
   };
 
-  const formatCargoLabel = (cargo: string) =>
-    cargo
-      .toLowerCase()
-      .split('_')
-      .map((part) => (part ? part.charAt(0).toUpperCase() + part.slice(1) : ''))
-      .join(' ');
+  const mapUsuarioToTeamMember = (usuario: UsuarioApiResponse): TeamMember => {
+    const cargoKey = normalizeCargoFromApi(usuario.cargo);
+    return {
+      id: usuario.id,
+      name: usuario.nomeCompleto,
+      role: formatCargoDisplay(cargoKey),
+      status: usuario.ativo ? 'Online' : 'Offline',
+      email: usuario.email || 'sem-email@empresa.com',
+      phone: usuario.telefone || '(00) 00000-0000',
+      cpf: usuario.cpf || '000.000.000-00',
+      permissions:
+        usuario.permissoes && usuario.permissoes.length > 0
+          ? usuario.permissoes.map((p) => formatCargoDisplay(normalizeCargoFromApi(p)))
+          : [`Cargo: ${formatCargoDisplay(cargoKey)}`],
+    };
+  };
 
-  const mapUsuarioToTeamMember = (usuario: UsuarioApiResponse): TeamMember => ({
-    id: usuario.id,
-    name: usuario.nomeCompleto,
-    role: formatCargoLabel(usuario.cargo),
-    status: usuario.ativo ? 'Online' : 'Offline',
-    email: usuario.email || 'sem-email@empresa.com',
-    phone: usuario.telefone || '(00) 00000-0000',
-    cpf: usuario.cpf || '000.000.000-00',
-    permissions:
-      usuario.permissoes && usuario.permissoes.length > 0
-        ? usuario.permissoes.map((p) => formatCargoLabel(p))
-        : [`Cargo: ${formatCargoLabel(usuario.cargo)}`],
-  });
+  const refreshCadastrosPendentes = useCallback(async () => {
+    setCadastrosPendentesLoading(true);
+    try {
+      const list = await fetchUsuariosPendentes();
+      setCadastrosPendentes(list === null ? [] : list);
+    } catch {
+      setCadastrosPendentes([]);
+    } finally {
+      setCadastrosPendentesLoading(false);
+    }
+  }, []);
+
+  const handleAprovarCadastroUsuario = useCallback(
+    async (id: number) => {
+      setCadastroApproveFeedback(null);
+      setAprovarCadastroId(id);
+      try {
+        await aprovarUsuario(id);
+        // Remove já da UI (evita lista obsoleta se o browser cachear o GET /pendentes).
+        setCadastrosPendentes((prev) => prev.filter((u) => u.id !== id));
+        await refreshCadastrosPendentes();
+        const okMsg = 'Cadastro aprovado. O usuário já pode entrar.';
+        dispatch(openNotifications(okMsg));
+        setCadastroApproveFeedback({ tone: 'success', message: okMsg });
+        try {
+          const usuarios = await fetchUsuarios();
+          setMembers(usuarios.map(mapUsuarioToTeamMember));
+        } catch (teamErr) {
+          console.error('Lista da equipe não atualizou após aprovar', teamErr);
+          setCadastroApproveFeedback({
+            tone: 'success',
+            message: `${okMsg} (Recarregue a página se a equipe não atualizar.)`,
+          });
+        }
+      } catch (error) {
+        const msg = error instanceof Error ? error.message : 'Não foi possível aprovar.';
+        dispatch(openNotifications(msg));
+        setCadastroApproveFeedback({ tone: 'error', message: msg });
+      } finally {
+        setAprovarCadastroId(null);
+      }
+    },
+    [dispatch, refreshCadastrosPendentes]
+  );
 
   const statusToProposalStage = (status: string) => {
     const normalized = status.toUpperCase();
@@ -554,6 +624,19 @@ export default function Dashboard({ onLogout }: DashboardProps) {
 
   const selectedMonth = selectedDate.slice(0, 7);
   const searchTerm = search.trim().toLowerCase();
+  const weekDatesForAgenda = useMemo(() => getSundayWeekDateStrings(selectedDate), [selectedDate]);
+
+  const filterAgendaList = useCallback(
+    (items: AgendaApiItem[]) => {
+      if (!searchTerm) {
+        return items;
+      }
+      return items.filter((item) =>
+        `${item.title} ${item.company} ${item.status}`.toLowerCase().includes(searchTerm)
+      );
+    },
+    [searchTerm]
+  );
 
   const firstName = useMemo(() => profile.fullName.split(' ')[0] ?? profile.fullName, [profile.fullName]);
   const userInitials = useMemo(
@@ -679,32 +762,103 @@ export default function Dashboard({ onLogout }: DashboardProps) {
     showNotifications,
   ]);
 
+  /** Mês do calendário: só refetch quando o mês (AAAA-MM) muda — evita GET duplicado ao mudar só o dia. */
   useEffect(() => {
-    async function loadData() {
-      setLoadingCalendar(true);
-      setLoadingAgenda(true);
-
-      try {
-        const calendar = await fetchCalendar(selectedMonth);
-        setCalendarDays(calendar);
-      } catch (error) {
+    let cancelled = false;
+    setLoadingCalendar(true);
+    setCalendarLoadError(null);
+    fetchCalendar(selectedMonth)
+      .then((cal) => {
+        if (!cancelled) {
+          setCalendarDays(cal);
+        }
+      })
+      .catch((error) => {
         console.error('Erro ao carregar calendário', error);
-      } finally {
-        setLoadingCalendar(false);
-      }
+        if (!cancelled) {
+          setCalendarLoadError('Não foi possível carregar o calendário. Verifique a conexão e tente outra vez.');
+        }
+      })
+      .finally(() => {
+        if (!cancelled) {
+          setLoadingCalendar(false);
+        }
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [selectedMonth]);
 
-      try {
-        const agenda = await fetchAgenda(selectedDate);
-        setAgendaItems(agenda);
-      } catch (error) {
-        console.error('Erro ao carregar agenda', error);
-      } finally {
-        setLoadingAgenda(false);
-      }
+  /**
+   * Agenda do dia: em visão semanal da Agenda, os 7 dias são carregados no efeito seguinte
+   * (evita 1 + 7 chamadas GET /agenda para o mesmo dia).
+   */
+  useEffect(() => {
+    if (activeMenuItem === 'Agenda' && agendaViewMode === 'semanal') {
+      return;
     }
+    let cancelled = false;
+    setLoadingAgenda(true);
+    fetchAgenda(selectedDate)
+      .then((agenda) => {
+        if (!cancelled) {
+          setAgendaItems(agenda);
+        }
+      })
+      .catch((error) => {
+        console.error('Erro ao carregar agenda do dia', error);
+        if (!cancelled) {
+          setAgendaItems([]);
+        }
+      })
+      .finally(() => {
+        if (!cancelled) {
+          setLoadingAgenda(false);
+        }
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [selectedDate, activeMenuItem, agendaViewMode]);
 
-    loadData();
-  }, [selectedDate, selectedMonth]);
+  useEffect(() => {
+    if (activeMenuItem !== 'Agenda' || agendaViewMode !== 'semanal') {
+      setWeekAgendaByDate({});
+      return;
+    }
+    let cancelled = false;
+    setLoadingWeekAgenda(true);
+    setLoadingAgenda(true);
+    const dates = getSundayWeekDateStrings(selectedDate);
+    Promise.all(dates.map((d) => fetchAgenda(d)))
+      .then((results) => {
+        if (cancelled) {
+          return;
+        }
+        const map: Record<string, AgendaApiItem[]> = {};
+        dates.forEach((d, i) => {
+          map[d] = results[i];
+        });
+        setWeekAgendaByDate(map);
+        setAgendaItems(map[selectedDate] ?? []);
+      })
+      .catch((error) => {
+        console.error('Erro ao carregar semana da agenda', error);
+        if (!cancelled) {
+          setAgendaItems([]);
+          setWeekAgendaByDate({});
+        }
+      })
+      .finally(() => {
+        if (!cancelled) {
+          setLoadingWeekAgenda(false);
+          setLoadingAgenda(false);
+        }
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [selectedDate, agendaViewMode, activeMenuItem]);
 
   useEffect(() => {
     async function loadOverview() {
@@ -846,6 +1000,14 @@ export default function Dashboard({ onLogout }: DashboardProps) {
   }, []);
 
   useEffect(() => {
+    if (!profile.podeGerenciarCadastros) {
+      setCadastrosPendentes([]);
+      return;
+    }
+    refreshCadastrosPendentes();
+  }, [profile.podeGerenciarCadastros, activeMenuItem, refreshCadastrosPendentes]);
+
+  useEffect(() => {
     async function loadIntegrations() {
       setIntegrationsLoading(true);
       try {
@@ -859,6 +1021,16 @@ export default function Dashboard({ onLogout }: DashboardProps) {
     }
 
     loadIntegrations();
+  }, []);
+
+  useEffect(() => {
+    let cancelled = false;
+    fetchGoogleOAuthDisponivel().then((ok) => {
+      if (!cancelled) setGoogleOAuthDisponivel(ok);
+    });
+    return () => {
+      cancelled = true;
+    };
   }, []);
 
   useEffect(() => {
@@ -877,6 +1049,92 @@ export default function Dashboard({ onLogout }: DashboardProps) {
   function formatMonthLabel(monthString: string) {
     const [year, month] = monthString.split('-').map(Number);
     return new Date(year, month - 1).toLocaleString('pt-BR', { month: 'long', year: 'numeric' });
+  }
+
+  function buildCalendarGrid(placement: 'overview' | 'agenda') {
+    const [year, month] = selectedMonth.split('-').map(Number);
+    const firstWeekday = new Date(year, month - 1, 1).getDay();
+    const todayIso = getTodayIso();
+    const titleMax = placement === 'agenda' ? 34 : 24;
+
+    return (
+      <>
+        {CALENDAR_WEEKDAY_LABELS.map((d) => (
+          <span key={`${placement}-wd-${d}`} className="calendar-day label gc-calendar-weekday-label">
+            {d}
+          </span>
+        ))}
+        {Array.from({ length: firstWeekday }).map((_, index) => (
+          <span key={`${placement}-empty-${index}`} className="calendar-day calendar-day--empty" />
+        ))}
+        {calendarDays.map((day) => {
+          const formattedDate = `${selectedMonth}-${String(day.day).padStart(2, '0')}`;
+          const isToday = formattedDate === todayIso;
+          const events = day.events ?? [];
+          const shown = events.slice(0, 3);
+          const useFallbackChips = shown.length === 0 && (day.eventCount > 0 || day.hasEvents);
+          const chipsToRender = useFallbackChips
+            ? [{ id: -(day.day + 1000), title: `${day.eventCount || 1} compromisso(s)`, time: '' }]
+            : shown;
+          const moreCount = useFallbackChips ? 0 : day.eventCount > 3 ? day.eventCount - shown.length : 0;
+
+          const tip =
+            events.length > 0
+              ? events.map((e) => `${e.time} · ${e.title}`).join('\n')
+              : useFallbackChips
+                ? `${day.eventCount || 1} compromisso(s) neste dia — abra a agenda do dia para ver detalhes.`
+                : '';
+
+          const dayBtn = (
+            <button
+              type="button"
+              className={`gc-calendar-day ${selectedDate === formattedDate ? 'gc-calendar-day--selected' : ''} ${isToday ? 'gc-calendar-day--today' : ''}`}
+              onClick={() => setSelectedDate(formattedDate)}
+            >
+              <div className="gc-calendar-day__num-row">
+                <span className="gc-calendar-day__num">{day.day}</span>
+              </div>
+              <div className="gc-calendar-day__chips">
+                {chipsToRender.map((ev, i) => (
+                  <div
+                    key={ev.id}
+                    className={`gc-event-chip ${!ev.time ? 'gc-event-chip--compact' : ''}`}
+                    style={{ borderLeftColor: GC_EVENT_COLORS[i % GC_EVENT_COLORS.length] }}
+                  >
+                    {ev.time ? <span className="gc-event-chip__time">{ev.time}</span> : null}
+                    <span className="gc-event-chip__title">{truncateCalendarText(ev.title, titleMax)}</span>
+                  </div>
+                ))}
+                {moreCount > 0 ? <div className="gc-event-more">+{moreCount} mais</div> : null}
+              </div>
+            </button>
+          );
+
+          if (tip) {
+            return (
+              <Tooltip
+                key={`${placement}-day-${day.day}`}
+                title={
+                  <span style={{ whiteSpace: 'pre-line', display: 'block', maxWidth: 280 }}>
+                    {tip}
+                  </span>
+                }
+                arrow
+                slots={{ transition: Zoom }}
+              >
+                {dayBtn}
+              </Tooltip>
+            );
+          }
+
+          return (
+            <Fragment key={`${placement}-day-${day.day}`}>
+              {dayBtn}
+            </Fragment>
+          );
+        })}
+      </>
+    );
   }
 
   function changeMonth(direction: 'prev' | 'next') {
@@ -1093,7 +1351,6 @@ export default function Dashboard({ onLogout }: DashboardProps) {
       } catch (error) {
         const message = error instanceof Error ? error.message : 'Falha ao iniciar autenticação Google.';
         dispatch(openNotifications(message));
-        window.alert(message);
         return;
       }
     }
@@ -1109,7 +1366,6 @@ export default function Dashboard({ onLogout }: DashboardProps) {
       }));
       const message = error instanceof Error ? error.message : 'Falha ao atualizar integração.';
       dispatch(openNotifications(message));
-      window.alert(message);
     }
   }
 
@@ -1238,8 +1494,11 @@ export default function Dashboard({ onLogout }: DashboardProps) {
   }
 
   function getAgendaWeekItems(dayIndex: number) {
-    const labels = ['Seg', 'Ter', 'Qua', 'Qui', 'Sex'];
-    return filteredAgendaItems.filter((_, index) => index % labels.length === dayIndex);
+    const iso = weekDatesForAgenda[dayIndex];
+    if (!iso) {
+      return [];
+    }
+    return filterAgendaList(weekAgendaByDate[iso] ?? []);
   }
 
   function handleViewReport() {
@@ -1289,6 +1548,18 @@ export default function Dashboard({ onLogout }: DashboardProps) {
 
       setCalendarDays(calendar);
       setAgendaItems(agenda);
+      setCalendarLoadError(null);
+
+      if (agendaViewMode === 'semanal') {
+        const dates = getSundayWeekDateStrings(selectedDate);
+        const weekAgendas = await Promise.all(dates.map((d) => fetchAgenda(d)));
+        const map: Record<string, AgendaApiItem[]> = {};
+        dates.forEach((d, i) => {
+          map[d] = weekAgendas[i];
+        });
+        setWeekAgendaByDate(map);
+        setAgendaItems(map[selectedDate] ?? []);
+      }
       setFormTitle('Nova reunião');
       setFormTime('09:00');
       setFormLocation('Sala 2');
@@ -1358,63 +1629,27 @@ export default function Dashboard({ onLogout }: DashboardProps) {
         </div>
 
         <div className="dashboard-grid dashboard-main-grid">
-          <section className="panel calendar-panel">
+          <section className="panel calendar-panel gc-calendar-panel">
             <div className="panel-header calendar-header">
               <div>
                 <h3>Calendário</h3>
                 <span>{formatMonthLabel(selectedMonth)}</span>
               </div>
               <div className="calendar-nav">
-                <button type="button" className="icon-button" onClick={() => changeMonth('prev')}>
+                <button type="button" className="button button--text gc-calendar-today-btn" onClick={() => setSelectedDate(getTodayIso())}>
+                  Hoje
+                </button>
+                <button type="button" className="icon-button" aria-label="Mês anterior" onClick={() => changeMonth('prev')}>
                   ◀
                 </button>
-                <button type="button" className="icon-button" onClick={() => changeMonth('next')}>
+                <button type="button" className="icon-button" aria-label="Próximo mês" onClick={() => changeMonth('next')}>
                   ▶
                 </button>
               </div>
             </div>
-            <div className="calendar-grid">
-              {['D', 'S', 'T', 'Q', 'Q', 'S', 'S'].map((day) => (
-                <span key={day} className="calendar-day label">{day}</span>
-              ))}
-              {(() => {
-                const [year, month] = selectedMonth.split('-').map(Number);
-                const firstWeekday = new Date(year, month - 1, 1).getDay();
-                return [
-                  ...Array(firstWeekday).fill(null).map((_, index) => (
-                    <span key={`empty-${index}`} className="calendar-day calendar-day--empty" />
-                  )),
-                  ...calendarDays.map((day) => {
-                    const formattedDate = `${selectedMonth}-${String(day.day).padStart(2, '0')}`;
-                    const dayButton = (
-                      <button
-                        key={day.day}
-                        type="button"
-                        className={`calendar-day ${selectedDate === formattedDate ? 'active' : ''}`}
-                        onClick={() => setSelectedDate(formattedDate)}
-                      >
-                        <span>{day.day}</span>
-                        {day.hasEvents && <span className="event-badge">{day.eventCount}</span>}
-                      </button>
-                    );
-
-                    if (!day.hasEvents) {
-                      return dayButton;
-                    }
-
-                    return (
-                      <Tooltip
-                        key={day.day}
-                        title={`${day.eventCount} compromisso(s) em ${String(day.day).padStart(2, '0')}/${selectedMonth.slice(5, 7)}/${selectedMonth.slice(0, 4)}`}
-                        arrow
-                        slots={{ transition: Zoom }}
-                      >
-                        {dayButton}
-                      </Tooltip>
-                    );
-                  }),
-                ];
-              })()}
+            {calendarLoadError && <p className="calendar-load-error">{calendarLoadError}</p>}
+            <div className={`calendar-grid gc-calendar-grid ${loadingCalendar ? 'gc-calendar-grid--loading' : ''}`}>
+              {buildCalendarGrid('overview')}
             </div>
           </section>
 
@@ -1481,51 +1716,97 @@ export default function Dashboard({ onLogout }: DashboardProps) {
       { key: 'mensal', label: 'Agenda mensal' },
     ];
 
+    const renderAgendaDayInsightPanel = () => {
+      if (agendaViewMode !== 'mensal') {
+        return null;
+      }
+      const list = filteredAgendaItems;
+      const totalRaw = agendaItems.length;
+      const filteredBySearch = search.trim().length > 0 && list.length !== totalRaw;
+
+      return (
+        <section className="panel agenda-day-insight" aria-labelledby="agenda-day-insight-heading">
+          <div className="agenda-day-insight__head">
+            <div>
+              <h4 id="agenda-day-insight-heading" className="agenda-day-insight__title">
+                Detalhe do dia
+              </h4>
+              <p className="agenda-day-insight__date">{formatSelectedDayLong(selectedDate)}</p>
+            </div>
+            <span className="agenda-day-insight__badge">
+              {loadingAgenda ? 'Carregando…' : `${list.length} compromisso(s)`}
+            </span>
+          </div>
+          {calendarLoadError && <p className="calendar-load-error calendar-load-error--inline">{calendarLoadError}</p>}
+          <p className="agenda-day-insight__hint">
+            O dia selecionado no calendário acima é o mesmo usado em &quot;+ Novo evento&quot;. Clique em outro dia para trocar.
+          </p>
+          {filteredBySearch && (
+            <p className="agenda-day-insight__filter-note">
+              Filtro da barra de busca: mostrando {list.length} de {totalRaw} neste dia.
+            </p>
+          )}
+          {!loadingAgenda && list.length === 0 && (
+            <p className="panel-empty">
+              {search.trim()
+                ? 'Nenhum compromisso deste dia corresponde ao filtro de busca.'
+                : 'Nenhum compromisso neste dia.'}
+            </p>
+          )}
+          {list.length > 0 && (
+            <ul className="agenda-day-insight__list">
+              {list.map((item) => (
+                <li key={item.id} className="agenda-day-insight__item">
+                  <div className="agenda-day-insight__item-main">
+                    <strong className="agenda-day-insight__time">{item.time}</strong>
+                    <span className="agenda-day-insight__event-title">{item.title}</span>
+                  </div>
+                  <div className="agenda-day-insight__meta">
+                    <small>{item.company}</small>
+                    <span
+                      className={`agenda-day-insight__tag ${item.presencial ? 'agenda-day-insight__tag--in' : 'agenda-day-insight__tag--out'}`}
+                    >
+                      {item.presencial ? 'Presencial' : 'Online'}
+                    </span>
+                    {item.status ? (
+                      <span className="agenda-day-insight__status">{item.status}</span>
+                    ) : null}
+                  </div>
+                </li>
+              ))}
+            </ul>
+          )}
+        </section>
+      );
+    };
+
     const renderAgendaMonthCalendar = () => (
-      <section className="panel calendar-panel agenda-month-panel">
-        <div className="panel-header calendar-header">
-          <div>
-            <h3>Agenda mensal</h3>
-            <span>{formatMonthLabel(selectedMonth)}</span>
+      <>
+        <section className="panel calendar-panel agenda-month-panel gc-calendar-panel">
+          <div className="panel-header calendar-header">
+            <div>
+              <h3>Agenda mensal</h3>
+              <span>{formatMonthLabel(selectedMonth)}</span>
+            </div>
+            <div className="calendar-nav">
+              <button type="button" className="button button--text gc-calendar-today-btn" onClick={() => setSelectedDate(getTodayIso())}>
+                Hoje
+              </button>
+              <button type="button" className="icon-button" aria-label="Mês anterior" onClick={() => changeMonth('prev')}>
+                ◀
+              </button>
+              <button type="button" className="icon-button" aria-label="Próximo mês" onClick={() => changeMonth('next')}>
+                ▶
+              </button>
+            </div>
           </div>
-          <div className="calendar-nav">
-            <button type="button" className="icon-button" onClick={() => changeMonth('prev')}>
-              ◀
-            </button>
-            <button type="button" className="icon-button" onClick={() => changeMonth('next')}>
-              ▶
-            </button>
+          {calendarLoadError && <p className="calendar-load-error">{calendarLoadError}</p>}
+          <div className={`calendar-grid gc-calendar-grid ${loadingCalendar ? 'gc-calendar-grid--loading' : ''}`}>
+            {buildCalendarGrid('agenda')}
           </div>
-        </div>
-        <div className="calendar-grid">
-          {['D', 'S', 'T', 'Q', 'Q', 'S', 'S'].map((day) => (
-            <span key={day} className="calendar-day label">{day}</span>
-          ))}
-          {(() => {
-            const [year, month] = selectedMonth.split('-').map(Number);
-            const firstWeekday = new Date(year, month - 1, 1).getDay();
-            return [
-              ...Array(firstWeekday).fill(null).map((_, index) => (
-                <span key={`month-empty-${index}`} className="calendar-day calendar-day--empty" />
-              )),
-              ...calendarDays.map((day) => {
-                const formattedDate = `${selectedMonth}-${String(day.day).padStart(2, '0')}`;
-                return (
-                  <button
-                    key={`month-${day.day}`}
-                    type="button"
-                    className={`calendar-day ${selectedDate === formattedDate ? 'active' : ''}`}
-                    onClick={() => setSelectedDate(formattedDate)}
-                  >
-                    <span>{day.day}</span>
-                    {day.hasEvents && <span className="event-badge">{day.eventCount}</span>}
-                  </button>
-                );
-              }),
-            ];
-          })()}
-        </div>
-      </section>
+        </section>
+        {renderAgendaDayInsightPanel()}
+      </>
     );
 
     const renderAgendaCreatePanel = () => (
@@ -1607,20 +1888,38 @@ export default function Dashboard({ onLogout }: DashboardProps) {
           <section className="agenda-create-layout">
             <div>
               {agendaViewMode === 'semanal' ? (
-                <section className="agenda-week-board">
-                  {['Seg', 'Ter', 'Qua', 'Qui', 'Sex'].map((day, index) => {
+                <section className="agenda-week-board agenda-week-board--gc">
+                  {weekDatesForAgenda.map((iso, index) => {
                     const items = getAgendaWeekItems(index);
+                    const dayNum = Number(iso.slice(8, 10));
+                    const dayLabel = CALENDAR_WEEKDAY_LABELS[index];
 
                     return (
-                      <article key={day} className="agenda-week-column">
+                      <article
+                        key={iso}
+                        className={`agenda-week-column ${iso === selectedDate ? 'agenda-week-column--selected' : ''}`}
+                      >
                         <header className="agenda-week-column-header">
-                          <strong>{day}</strong>
-                          <small>{items.length} item(ns)</small>
+                          <button
+                            type="button"
+                            className="agenda-week-column-head-btn"
+                            onClick={() => setSelectedDate(iso)}
+                            title="Definir este dia para novos eventos"
+                          >
+                            <strong>
+                              {dayLabel} {dayNum}
+                            </strong>
+                            <small>
+                              {loadingWeekAgenda
+                                ? 'Carregando…'
+                                : `${items.length} evento${items.length === 1 ? '' : 's'}`}
+                            </small>
+                          </button>
                         </header>
                         <div className="agenda-week-column-list">
                           {items.length > 0 ? (
                             items.map((item) => (
-                              <article key={`${day}-${item.id}`} className="agenda-week-item-card">
+                              <article key={`${iso}-${item.id}`} className="agenda-week-item-card">
                                 <strong>{item.title}</strong>
                                 <small>{item.company}</small>
                                 <span>{item.time}</span>
@@ -1641,20 +1940,38 @@ export default function Dashboard({ onLogout }: DashboardProps) {
             {renderAgendaCreatePanel()}
           </section>
         ) : agendaViewMode === 'semanal' ? (
-          <section className="agenda-week-board">
-            {['Seg', 'Ter', 'Qua', 'Qui', 'Sex'].map((day, index) => {
+          <section className="agenda-week-board agenda-week-board--gc">
+            {weekDatesForAgenda.map((iso, index) => {
               const items = getAgendaWeekItems(index);
+              const dayNum = Number(iso.slice(8, 10));
+              const dayLabel = CALENDAR_WEEKDAY_LABELS[index];
 
               return (
-                <article key={day} className="agenda-week-column">
+                <article
+                  key={iso}
+                  className={`agenda-week-column ${iso === selectedDate ? 'agenda-week-column--selected' : ''}`}
+                >
                   <header className="agenda-week-column-header">
-                    <strong>{day}</strong>
-                    <small>{items.length} item(ns)</small>
+                    <button
+                      type="button"
+                      className="agenda-week-column-head-btn"
+                      onClick={() => setSelectedDate(iso)}
+                      title="Definir este dia para novos eventos"
+                    >
+                      <strong>
+                        {dayLabel} {dayNum}
+                      </strong>
+                      <small>
+                        {loadingWeekAgenda
+                          ? 'Carregando…'
+                          : `${items.length} evento${items.length === 1 ? '' : 's'}`}
+                      </small>
+                    </button>
                   </header>
                   <div className="agenda-week-column-list">
                     {items.length > 0 ? (
                       items.map((item) => (
-                        <article key={`${day}-${item.id}`} className="agenda-week-item-card">
+                        <article key={`${iso}-${item.id}`} className="agenda-week-item-card">
                           <strong>{item.title}</strong>
                           <small>{item.company}</small>
                           <span>{item.time}</span>
@@ -2110,6 +2427,23 @@ export default function Dashboard({ onLogout }: DashboardProps) {
           </div>
         </div>
 
+        {!profile.podeGerenciarCadastros && (
+          <p
+            style={{
+              marginBottom: 16,
+              padding: '12px 16px',
+              borderRadius: 8,
+              background: 'rgba(255, 180, 80, 0.1)',
+              border: '1px solid rgba(255, 180, 80, 0.35)',
+              fontSize: '0.95rem',
+            }}
+          >
+            <strong>Aprovar cadastros pendentes</strong> (ex.: login Google) só é permitido para{' '}
+            <strong>CEO</strong>, <strong>Compliance</strong> ou <strong>Membro do Conselho</strong>, conforme o cadastro na API.
+            Sessão atual: <strong>{profile.email}</strong> — cargo: <strong>{profile.role}</strong>.
+          </p>
+        )}
+
         <div className="team-highlights-grid">
           {teamHighlights.map((item) => (
             <article key={item.label} className="team-highlight-card">
@@ -2119,6 +2453,87 @@ export default function Dashboard({ onLogout }: DashboardProps) {
             </article>
           ))}
         </div>
+
+        {profile.podeGerenciarCadastros && (
+          <div
+            className="pending-approvals-banner"
+            style={{
+              marginBottom: 20,
+              padding: '16px 20px',
+              borderRadius: 12,
+              border: '1px solid rgba(66, 190, 232, 0.35)',
+              background: 'rgba(66, 190, 232, 0.08)',
+            }}
+          >
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 12 }}>
+              <div>
+                <strong style={{ display: 'block', marginBottom: 4 }}>Cadastros aguardando aprovação</strong>
+                <small style={{ opacity: 0.85 }}>
+                  Apenas CEO, Compliance ou Membro do Conselho podem aprovar novos acessos (ex.: login com Google).
+                </small>
+              </div>
+            </div>
+            {cadastroApproveFeedback && (
+              <p
+                role="status"
+                style={{
+                  marginTop: 12,
+                  marginBottom: 0,
+                  padding: '10px 12px',
+                  borderRadius: 8,
+                  fontSize: '0.92rem',
+                  background:
+                    cadastroApproveFeedback.tone === 'success'
+                      ? 'rgba(34, 197, 94, 0.12)'
+                      : 'rgba(248, 113, 113, 0.12)',
+                  border:
+                    cadastroApproveFeedback.tone === 'success'
+                      ? '1px solid rgba(34, 197, 94, 0.35)'
+                      : '1px solid rgba(248, 113, 113, 0.4)',
+                  color: cadastroApproveFeedback.tone === 'success' ? '#bbf7d0' : '#fecaca',
+                }}
+              >
+                {cadastroApproveFeedback.message}
+              </p>
+            )}
+            {cadastrosPendentesLoading && <p style={{ marginTop: 12, marginBottom: 0 }}>Carregando…</p>}
+            {!cadastrosPendentesLoading && cadastrosPendentes.length === 0 && (
+              <p style={{ marginTop: 12, marginBottom: 0, opacity: 0.85 }}>Nenhuma conta pendente no momento.</p>
+            )}
+            {!cadastrosPendentesLoading && cadastrosPendentes.length > 0 && (
+              <ul style={{ listStyle: 'none', padding: 0, margin: '12px 0 0', display: 'flex', flexDirection: 'column', gap: 10 }}>
+                {cadastrosPendentes.map((u) => (
+                  <li
+                    key={u.id}
+                    style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'space-between',
+                      gap: 12,
+                      flexWrap: 'wrap',
+                      padding: '10px 12px',
+                      borderRadius: 8,
+                      background: 'rgba(0,0,0,0.2)',
+                    }}
+                  >
+                    <span>
+                      <strong>{u.nomeCompleto}</strong>
+                      <small style={{ display: 'block', opacity: 0.85 }}>{u.email}</small>
+                    </span>
+                    <button
+                      type="button"
+                      className="button button--primary"
+                      disabled={aprovarCadastroId === u.id}
+                      onClick={() => handleAprovarCadastroUsuario(u.id)}
+                    >
+                      {aprovarCadastroId === u.id ? 'Aprovando…' : 'Aprovar'}
+                    </button>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </div>
+        )}
 
         <div className="team-grid">
           {filteredTeamMembers.map((member) => (
@@ -2387,12 +2802,20 @@ export default function Dashboard({ onLogout }: DashboardProps) {
 
         {settingsSection === 'Integrações' && (
           <div className="settings-grid">
+            {googleOAuthDisponivel === false && (
+              <p className="settings-item settings-item--full form-error" style={{ marginBottom: 8 }}>
+                Integrações Google exigem <code>GOOGLE_CLIENT_ID</code> e <code>GOOGLE_CLIENT_SECRET</code> na API.
+                Reinicie o back-end após configurar.
+              </p>
+            )}
             <article className="settings-item">
               <span>Google Drive</span>
               <button
                 type="button"
                 className="button button--outline"
-                disabled={integrationsLoading}
+                disabled={
+                  integrationsLoading || (googleOAuthDisponivel !== true && !integrations.googleDrive)
+                }
                 onClick={() => toggleIntegration('googleDrive')}
               >
                 {integrations.googleDrive ? 'Conectado' : 'Conectar'}
@@ -2403,7 +2826,9 @@ export default function Dashboard({ onLogout }: DashboardProps) {
               <button
                 type="button"
                 className="button button--outline"
-                disabled={integrationsLoading}
+                disabled={
+                  integrationsLoading || (googleOAuthDisponivel !== true && !integrations.googleCalendar)
+                }
                 onClick={() => toggleIntegration('googleCalendar')}
               >
                 {integrations.googleCalendar ? 'Conectado' : 'Conectar'}
@@ -2414,7 +2839,9 @@ export default function Dashboard({ onLogout }: DashboardProps) {
               <button
                 type="button"
                 className="button button--outline"
-                disabled={integrationsLoading}
+                disabled={
+                  integrationsLoading || (googleOAuthDisponivel !== true && !integrations.googleSheets)
+                }
                 onClick={() => toggleIntegration('googleSheets')}
               >
                 {integrations.googleSheets ? 'Conectado' : 'Conectar'}
@@ -2425,7 +2852,9 @@ export default function Dashboard({ onLogout }: DashboardProps) {
               <button
                 type="button"
                 className="button button--outline"
-                disabled={integrationsLoading}
+                disabled={
+                  integrationsLoading || (googleOAuthDisponivel !== true && !integrations.gmail)
+                }
                 onClick={() => toggleIntegration('gmail')}
               >
                 {integrations.gmail ? 'Conectado' : 'Conectar'}
@@ -2509,7 +2938,27 @@ export default function Dashboard({ onLogout }: DashboardProps) {
                 onClick={() => handleMenuClick(item)}
               >
                 <span className="sidebar-link-indicator" />
-                {item.label}
+                <span style={{ display: 'inline-flex', alignItems: 'center', gap: 8 }}>
+                  {item.label}
+                  {item.label === 'Equipe' && profile.podeGerenciarCadastros && cadastrosPendentes.length > 0 ? (
+                    <span
+                      style={{
+                        minWidth: 22,
+                        height: 22,
+                        padding: '0 6px',
+                        borderRadius: 999,
+                        fontSize: 12,
+                        fontWeight: 700,
+                        lineHeight: '22px',
+                        textAlign: 'center',
+                        background: '#42bee8',
+                        color: '#04121f',
+                      }}
+                    >
+                      {cadastrosPendentes.length}
+                    </span>
+                  ) : null}
+                </span>
               </button>
             ))}
           </nav>

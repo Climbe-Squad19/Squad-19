@@ -11,6 +11,8 @@ export interface ProfileState {
   documentNumber: string;
   company: string;
   status: 'Online' | 'Em reunião' | 'Offline';
+  /** Vem do GET /auth/me — CEO, Compliance ou Membro do Conselho. */
+  podeGerenciarCadastros: boolean;
 }
 
 const initialState: ProfileState = {
@@ -22,6 +24,7 @@ const initialState: ProfileState = {
   documentNumber: '123.456.789-00',
   company: 'Climb Consultoria',
   status: 'Online',
+  podeGerenciarCadastros: false,
 };
 
 const profileSlice = createSlice({

@@ -13,9 +13,13 @@ import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.http.MediaType;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 import org.springframework.web.cors.CorsConfiguration;
+
+import jakarta.servlet.http.HttpServletResponse;
+import java.nio.charset.StandardCharsets;
 import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 
@@ -61,6 +65,7 @@ public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
         .csrf(csrf -> csrf.disable())
         .authorizeHttpRequests(auth -> auth
                 .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
+            .requestMatchers(HttpMethod.GET, "/auth/me").authenticated()
             .requestMatchers("/auth/**").permitAll()
             .requestMatchers("/integracoes/google/callback").permitAll()
             .requestMatchers("/actuator/health", "/actuator/info").permitAll()
@@ -71,7 +76,23 @@ public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
         )
         .authenticationProvider(authenticationProvider())
         .addFilterBefore(jwtAuthFilter,
-                UsernamePasswordAuthenticationFilter.class);
+                UsernamePasswordAuthenticationFilter.class)
+        .exceptionHandling(ex -> ex
+                .authenticationEntryPoint((request, response, authException) -> {
+                    response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
+                    response.setContentType(MediaType.APPLICATION_JSON_VALUE);
+                    response.setCharacterEncoding(StandardCharsets.UTF_8.name());
+                    response.getWriter().write(
+                            "{\"message\":\"Não autenticado.\",\"detail\":\"Envie Authorization: Bearer <token> válido.\"}");
+                })
+                .accessDeniedHandler((request, response, accessDeniedException) -> {
+                    response.setStatus(HttpServletResponse.SC_FORBIDDEN);
+                    response.setContentType(MediaType.APPLICATION_JSON_VALUE);
+                    response.setCharacterEncoding(StandardCharsets.UTF_8.name());
+                    response.getWriter().write(
+                            "{\"message\":\"Acesso negado.\",\"detail\":\"Sem permissão para esta ação. "
+                                    + "Aprovar cadastros exige perfil CEO, Compliance ou Membro do Conselho no banco de dados.\"}");
+                }));
 
     return http.build();
 }
@@ -83,7 +104,8 @@ public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
                 .map(String::trim)
                 .filter(s -> !s.isEmpty())
                 .collect(Collectors.toList());
-        configuration.setAllowedOrigins(origins);
+        // allowedOriginPatterns aceita URLs exatas e padrões (ex.: http://localhost:* quando o Vite usa porta != 5173)
+        configuration.setAllowedOriginPatterns(origins);
         configuration.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"));
         configuration.setAllowedHeaders(List.of("Authorization", "Content-Type", "Accept"));
         configuration.setExposedHeaders(List.of("Authorization"));

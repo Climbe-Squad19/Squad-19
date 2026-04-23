@@ -5,14 +5,19 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.server.ResponseStatusException;
 
 import br.com.residencia.gestao_contratos.classes.Cargo;
 import br.com.residencia.gestao_contratos.classes.Usuario;
 import br.com.residencia.gestao_contratos.dtos.request.UsuarioAtualizacaoRequest;
 import br.com.residencia.gestao_contratos.dtos.request.UsuarioCriacaoRequest;
+import br.com.residencia.gestao_contratos.dtos.response.AuthMeResponse;
 import br.com.residencia.gestao_contratos.dtos.response.UsuarioResponse;
 import br.com.residencia.gestao_contratos.repository.UsuarioRepository;
 
@@ -73,9 +78,10 @@ public class UsuarioService {
     public UsuarioResponse aprovarCadastro(Long id) {
         administrativoAuthorizationService.exigirPodeGerenciarUsuarios();
         Usuario usuario = usuarioRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Usuário não encontrado"));
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Usuário não encontrado."));
         if (usuario.getSituacao() != Usuario.SituacaoUsuario.PENDENTE) {
-            throw new RuntimeException("Somente contas pendentes podem ser aprovadas.");
+            throw new ResponseStatusException(HttpStatus.CONFLICT,
+                    "Somente contas pendentes podem ser aprovadas.");
         }
         usuario.setSituacao(Usuario.SituacaoUsuario.ATIVO);
         usuario.setAtivo(true);
@@ -131,6 +137,19 @@ public class UsuarioService {
                 Cargo.ANALISTA_SENIOR,
                 Cargo.ANALISTA_BPO
         ));
+    }
+
+    /** Dados do usuário logado + se pode aprovar cadastros (CEO / Compliance / Conselho). */
+    public AuthMeResponse authMe() {
+        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+        if (auth == null || !auth.isAuthenticated()) {
+            throw new ResponseStatusException(HttpStatus.UNAUTHORIZED);
+        }
+        String email = auth.getName();
+        Usuario u = usuarioRepository.findByEmailIgnoreCase(email)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND));
+        boolean pode = administrativoAuthorizationService.podeGerenciarUsuarios(u);
+        return new AuthMeResponse(converterParaResponse(u), pode);
     }
 
     public UsuarioResponse buscarPorId(Long id) {
