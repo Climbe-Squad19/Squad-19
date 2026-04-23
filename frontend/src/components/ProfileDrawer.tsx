@@ -12,7 +12,7 @@ import {
   Typography,
 } from '@mui/material';
 import { Controller, useForm } from 'react-hook-form';
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useAppDispatch, useAppSelector } from '../store/hooks';
 import { updateProfile } from '../store/profileSlice';
 import { ProfileFormValues, profileSchema } from '../features/profile/profileSchema';
@@ -27,6 +27,7 @@ export default function ProfileDrawer({ open, onClose }: ProfileDrawerProps) {
   const dispatch = useAppDispatch();
   const profile = useAppSelector((state) => state.profile);
   const [savedMessage, setSavedMessage] = useState('');
+  const wasOpenRef = useRef(false);
 
   const {
     control,
@@ -48,8 +49,17 @@ export default function ProfileDrawer({ open, onClose }: ProfileDrawerProps) {
   });
 
   const documentType = watch('documentType');
+  const documentNumberVal = watch('documentNumber');
+  const docMasked =
+    documentNumberVal.trim() === '***' || documentNumberVal.startsWith('***');
 
+  /** Só sincroniza ao abrir o drawer — evita reset a cada GET /auth/me (parecia edição/flicker). */
   useEffect(() => {
+    const justOpened = open && !wasOpenRef.current;
+    wasOpenRef.current = open;
+    if (!justOpened) {
+      return;
+    }
     reset({
       fullName: profile.fullName,
       email: profile.email,
@@ -59,7 +69,8 @@ export default function ProfileDrawer({ open, onClose }: ProfileDrawerProps) {
       documentType: profile.documentType,
       documentNumber: profile.documentNumber,
     });
-  }, [profile, reset]);
+    setSavedMessage('');
+  }, [open, profile, reset]);
 
   const initials = profile.fullName
     .split(' ')
@@ -69,7 +80,13 @@ export default function ProfileDrawer({ open, onClose }: ProfileDrawerProps) {
     .join('');
 
   async function onSubmit(values: ProfileFormValues) {
-    dispatch(updateProfile({ ...profile, ...values }));
+    dispatch(
+      updateProfile({
+        ...profile,
+        ...values,
+        role: profile.role,
+      })
+    );
     setSavedMessage('Perfil atualizado com sucesso.');
   }
 
@@ -129,7 +146,17 @@ export default function ProfileDrawer({ open, onClose }: ProfileDrawerProps) {
           name="role"
           control={control}
           render={({ field }) => (
-            <TextField {...field} label="Cargo" error={!!errors.role} helperText={errors.role?.message} fullWidth />
+            <TextField
+              {...field}
+              label="Cargo"
+              error={!!errors.role}
+              helperText="Definido pela organização (somente leitura)."
+              fullWidth
+              slotProps={{
+                input: { readOnly: true },
+              }}
+              sx={{ '& .MuiInputBase-input': { cursor: 'default' } }}
+            />
           )}
         />
 
@@ -162,7 +189,14 @@ export default function ProfileDrawer({ open, onClose }: ProfileDrawerProps) {
             name="documentType"
             control={control}
             render={({ field }) => (
-              <TextField {...field} select label="Tipo de documento" fullWidth>
+              <TextField
+                {...field}
+                select
+                label="Tipo de documento"
+                fullWidth
+                disabled={docMasked}
+                helperText={docMasked ? 'Definido no cadastro.' : undefined}
+              >
                 <MenuItem value="CPF">CPF</MenuItem>
                 <MenuItem value="CNPJ">CNPJ</MenuItem>
               </TextField>
@@ -179,8 +213,16 @@ export default function ProfileDrawer({ open, onClose }: ProfileDrawerProps) {
                 value={field.value}
                 onChange={(event) => field.onChange(maskDocument(event.target.value, documentType))}
                 error={!!errors.documentNumber}
-                helperText={errors.documentNumber?.message}
+                helperText={
+                  docMasked
+                    ? 'CPF/CNPJ completo não é exibido por privacidade.'
+                    : errors.documentNumber?.message
+                }
                 fullWidth
+                slotProps={{
+                  input: { readOnly: docMasked },
+                }}
+                sx={docMasked ? { '& .MuiInputBase-input': { cursor: 'default' } } : undefined}
               />
             )}
           />

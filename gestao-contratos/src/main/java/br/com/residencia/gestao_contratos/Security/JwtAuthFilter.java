@@ -40,11 +40,14 @@ public class JwtAuthFilter extends OncePerRequestFilter {
         final String token = authHeader.substring(7);
         final String email = jwtService.extrairEmail(token);
 
-        if (email != null &&
-                SecurityContextHolder.getContext().getAuthentication() == null) {
-
-            UserDetails userDetails =
-                    userDetailsService.loadUserByUsername(email);
+        /*
+         * Não exigir getAuthentication() == null: filtros anteriores podem já ter colocado
+         * AnonymousAuthenticationToken; nesse caso o JWT era ignorado e rotas autenticadas
+         * falhavam de forma inconsistente (ex.: GET ok, POST 403).
+         * Com Bearer válido, sempre substituímos o contexto pelo usuário do token.
+         */
+        if (email != null) {
+            UserDetails userDetails = userDetailsService.loadUserByUsername(email);
 
             if (jwtService.tokenValido(token, userDetails.getUsername())) {
                 UsernamePasswordAuthenticationToken authToken =

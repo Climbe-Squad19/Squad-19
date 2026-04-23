@@ -1,6 +1,6 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { API_BASE_URL } from '../services/api';
-import { login } from '../services/auth';
+import { fetchGoogleOAuthDisponivel, login } from '../services/auth';
 
 interface LoginProps {
   onLogin: (accessToken: string) => void;
@@ -12,6 +12,17 @@ export default function Login({ onLogin, onForgotPassword }: LoginProps) {
   const [password, setPassword] = useState('');
   const [feedback, setFeedback] = useState('');
   const [feedbackError, setFeedbackError] = useState(false);
+  const [googleOAuthDisponivel, setGoogleOAuthDisponivel] = useState<boolean | null>(null);
+
+  useEffect(() => {
+    let cancelled = false;
+    fetchGoogleOAuthDisponivel().then((ok) => {
+      if (!cancelled) setGoogleOAuthDisponivel(ok);
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -92,9 +103,21 @@ export default function Login({ onLogin, onForgotPassword }: LoginProps) {
           )}
 
           <div className="login-divider">ou</div>
+          {googleOAuthDisponivel === false && (
+            <p className="form-error" style={{ marginBottom: 12, fontSize: '0.9rem' }}>
+              Login com Google está indisponível: configure <code>GOOGLE_CLIENT_ID</code> e{' '}
+              <code>GOOGLE_CLIENT_SECRET</code> no ambiente da API e reinicie o back-end.
+            </p>
+          )}
           <button
             type="button"
             className="button button--outline"
+            disabled={googleOAuthDisponivel !== true}
+            title={
+              googleOAuthDisponivel === false
+                ? 'Credenciais Google OAuth não configuradas na API'
+                : undefined
+            }
             onClick={() => {
               window.location.href = `${API_BASE_URL}/auth/google`;
             }}

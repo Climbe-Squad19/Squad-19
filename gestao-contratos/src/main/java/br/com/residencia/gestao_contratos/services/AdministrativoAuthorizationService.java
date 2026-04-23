@@ -42,7 +42,11 @@ public class AdministrativoAuthorizationService {
         if (usuario == null || !usuario.isAtivo()) {
             return false;
         }
-        if (usuario.getSituacao() != Usuario.SituacaoUsuario.ATIVO) {
+        /* Alinhado ao login e UserDetailsServiceImpl: null no banco = tratado como ATIVO. */
+        Usuario.SituacaoUsuario sit = usuario.getSituacao() != null
+                ? usuario.getSituacao()
+                : Usuario.SituacaoUsuario.ATIVO;
+        if (sit != Usuario.SituacaoUsuario.ATIVO) {
             return false;
         }
         if (usuario.getCargo() != null && CARGOS_ADMINISTRATIVOS.contains(usuario.getCargo())) {
@@ -54,7 +58,7 @@ public class AdministrativoAuthorizationService {
 
     private Usuario usuarioAtual() {
         String email = SecurityContextHolder.getContext().getAuthentication().getName();
-        return usuarioRepository.findByEmail(email)
+        return usuarioRepository.findByEmailIgnoreCase(email)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Sessão inválida"));
     }
 }

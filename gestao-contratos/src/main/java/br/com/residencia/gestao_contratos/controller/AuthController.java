@@ -3,6 +3,7 @@ package br.com.residencia.gestao_contratos.controller;
 import java.io.IOException;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
+import java.util.Map;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
@@ -27,8 +28,10 @@ import br.com.residencia.gestao_contratos.dtos.request.ForgotPasswordRequest;
 import br.com.residencia.gestao_contratos.dtos.request.ResetPasswordRequest;
 import br.com.residencia.gestao_contratos.dtos.response.TokenResponse;
 import br.com.residencia.gestao_contratos.repository.UsuarioRepository;
+import br.com.residencia.gestao_contratos.dtos.response.AuthMeResponse;
 import br.com.residencia.gestao_contratos.services.GoogleOAuthLoginService;
 import br.com.residencia.gestao_contratos.services.PasswordResetService;
+import br.com.residencia.gestao_contratos.services.UsuarioService;
 import jakarta.validation.Valid;
 
 @RestController
@@ -50,6 +53,9 @@ public class AuthController {
     @Autowired
     private GoogleOAuthLoginService googleOAuthLoginService;
 
+    @Autowired
+    private UsuarioService usuarioService;
+
     @Value("${app.frontend.url:http://localhost:5173}")
     private String frontendUrl;
 
@@ -68,7 +74,7 @@ public class AuthController {
                     .body("Email ou senha inválidos");
         }
 
-        Usuario usuario = usuarioRepository.findByEmail(request.getEmail())
+        Usuario usuario = usuarioRepository.findByEmailIgnoreCase(request.getEmail())
                 .orElseThrow(() -> new RuntimeException("Usuário não encontrado"));
 
         if (!usuario.isAtivo()) {
@@ -116,6 +122,20 @@ public class AuthController {
                         return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(ex.getMessage());
                 }
         }
+
+    /**
+     * Indica se login e integrações Google podem ser usados (credenciais OAuth no servidor).
+     */
+    @GetMapping("/google/disponivel")
+    public ResponseEntity<Map<String, Boolean>> googleOAuthDisponivel() {
+        return ResponseEntity.ok(Map.of("disponivel", googleOAuthLoginService.isOAuthConfigured()));
+    }
+
+    /** Usuário autenticado + permissão de aprovar cadastros pendentes (alinhado ao JWT e ao banco). */
+    @GetMapping("/me")
+    public ResponseEntity<AuthMeResponse> me() {
+        return ResponseEntity.ok(usuarioService.authMe());
+    }
 
     @GetMapping("/google")
     public void iniciarLoginGoogle(HttpServletResponse response) throws IOException {

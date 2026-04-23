@@ -12,10 +12,18 @@ type AgendaApiItem = {
   dateTime: string;
 };
 
+type CalendarEventSnippet = {
+  id: number;
+  title: string;
+  time: string;
+};
+
 type CalendarApiDay = {
   day: number;
   eventCount: number;
   hasEvents: boolean;
+  /** Compromissos do dia (ordenados), para chips estilo Google Calendar */
+  events?: CalendarEventSnippet[];
 };
 
 type CreateMeetingPayload = {
@@ -47,7 +55,8 @@ type DashboardOverviewApiResponse = {
 };
 
 export async function fetchAgenda(date: string): Promise<AgendaApiItem[]> {
-  const response = await fetch(`${API_BASE_URL}/dashboard/agenda?date=${date}`, {
+  const response = await fetch(`${API_BASE_URL}/dashboard/agenda?date=${encodeURIComponent(date)}`, {
+    cache: 'no-store',
     headers: buildAuthHeaders(),
   });
 
@@ -59,7 +68,8 @@ export async function fetchAgenda(date: string): Promise<AgendaApiItem[]> {
 }
 
 export async function fetchCalendar(month: string): Promise<CalendarApiDay[]> {
-  const response = await fetch(`${API_BASE_URL}/dashboard/calendar?month=${month}`, {
+  const response = await fetch(`${API_BASE_URL}/dashboard/calendar?month=${encodeURIComponent(month)}`, {
+    cache: 'no-store',
     headers: buildAuthHeaders(),
   });
 
@@ -96,4 +106,4 @@ export async function fetchDashboardOverview(): Promise<DashboardOverviewApiResp
   return response.json();
 }
 
-export type { AgendaApiItem, CalendarApiDay, CreateMeetingPayload, DashboardOverviewApiResponse };
+export type { AgendaApiItem, CalendarApiDay, CalendarEventSnippet, CreateMeetingPayload, DashboardOverviewApiResponse };

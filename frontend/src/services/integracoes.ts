@@ -43,12 +43,19 @@ export async function getGoogleIntegrationAuthUrl(integracao: IntegracaoKey): Pr
 
   if (!response.ok) {
     const raw = await response.text();
+    let message = 'Erro ao iniciar autenticação Google';
     try {
       const parsed = JSON.parse(raw) as { authUrl?: string; message?: string };
-      throw new Error(parsed.message || parsed.authUrl || 'Erro ao iniciar autenticação Google');
+      if (parsed.message) {
+        message = parsed.message;
+      } else if (parsed.authUrl) {
+        // legado: erro antigo vinha no campo authUrl
+        message = parsed.authUrl.startsWith('http') ? message : parsed.authUrl;
+      }
     } catch {
-      throw new Error(raw || 'Erro ao iniciar autenticação Google');
+      message = raw || message;
     }
+    throw new Error(message);
   }
 
   const data = await response.json() as { authUrl: string };

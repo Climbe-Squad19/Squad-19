@@ -2,7 +2,10 @@ import { useEffect, useMemo, useState } from 'react';
 import Login from './pages/Login';
 import Dashboard from './pages/Dashboard';
 import ForgotPassword from './pages/ForgotPassword';
+import { fetchAuthMe, profileFromAuthMe } from './services/auth';
 import { ACCESS_TOKEN_KEY } from './services/api';
+import { useAppDispatch } from './store/hooks';
+import { updateProfile } from './store/profileSlice';
 
 type AuthRoute = '/login' | '/forgot-password';
 
@@ -16,6 +19,7 @@ function navigateTo(path: AuthRoute) {
 }
 
 function App() {
+  const dispatch = useAppDispatch();
   const initialAuthenticated = useMemo(() => !!localStorage.getItem(ACCESS_TOKEN_KEY), []);
   const [authenticated, setAuthenticated] = useState(initialAuthenticated);
   const [authRoute, setAuthRoute] = useState<AuthRoute>(getAuthRoute);
@@ -46,6 +50,21 @@ function App() {
       window.history.replaceState({}, '', window.location.pathname);
     }
   }, []);
+
+  useEffect(() => {
+    if (!authenticated || !localStorage.getItem(ACCESS_TOKEN_KEY)) {
+      return;
+    }
+    let cancelled = false;
+    fetchAuthMe()
+      .then((me) => {
+        if (!cancelled) dispatch(updateProfile(profileFromAuthMe(me)));
+      })
+      .catch(() => {});
+    return () => {
+      cancelled = true;
+    };
+  }, [authenticated, dispatch]);
 
   function handleLogin(accessToken: string) {
     localStorage.setItem(ACCESS_TOKEN_KEY, accessToken);

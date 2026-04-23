@@ -4,6 +4,8 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.time.YearMonth;
+import java.time.format.DateTimeFormatter;
+import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -12,6 +14,7 @@ import java.util.stream.IntStream;
 import org.springframework.stereotype.Service;
 
 import br.com.residencia.gestao_contratos.dtos.response.AgendaEventResponse;
+import br.com.residencia.gestao_contratos.dtos.response.CalendarEventSnippetResponse;
 import br.com.residencia.gestao_contratos.dtos.response.CalendarDayResponse;
 import br.com.residencia.gestao_contratos.dtos.response.DashboardOverviewResponse;
 import br.com.residencia.gestao_contratos.dtos.response.DashboardRecentContractResponse;
@@ -106,15 +109,29 @@ public class DashboardService {
         LocalDateTime startOfMonth = start.atStartOfDay();
         LocalDateTime endOfMonth = end.atTime(LocalTime.MAX);
 
-        Map<Integer, Long> eventosPorDia = reuniaoRepository.findAll().stream()
-                .map(Reuniao::getDataHora)
-                .filter(dataHora -> dataHora != null && !dataHora.isBefore(startOfMonth) && !dataHora.isAfter(endOfMonth))
-                .collect(Collectors.groupingBy(LocalDateTime::getDayOfMonth, Collectors.counting()));
+        Map<Integer, List<Reuniao>> reunioesPorDia = reuniaoRepository.findAll().stream()
+                .filter(reuniao -> {
+                    LocalDateTime dataHora = reuniao.getDataHora();
+                    return dataHora != null && !dataHora.isBefore(startOfMonth) && !dataHora.isAfter(endOfMonth);
+                })
+                .collect(Collectors.groupingBy(r -> r.getDataHora().getDayOfMonth()));
 
+        DateTimeFormatter timeFmt = DateTimeFormatter.ofPattern("HH:mm");
         return IntStream.rangeClosed(1, month.lengthOfMonth())
-                .mapToObj(day -> new CalendarDayResponse(day,
-                        eventosPorDia.getOrDefault(day, 0L),
-                        eventosPorDia.containsKey(day)))
+                .mapToObj(day -> {
+                    List<Reuniao> doDia = reunioesPorDia.getOrDefault(day, List.of()).stream()
+                            .sorted(Comparator.comparing(Reuniao::getDataHora))
+                            .toList();
+                    long count = doDia.size();
+                    List<CalendarEventSnippetResponse> snippets = doDia.stream()
+                            .limit(8)
+                            .map(r -> new CalendarEventSnippetResponse(
+                                    r.getId(),
+                                    r.getPauta() != null && !r.getPauta().isBlank() ? r.getPauta() : "Reunião",
+                                    r.getDataHora().toLocalTime().format(timeFmt)))
+                            .toList();
+                    return new CalendarDayResponse(day, count, count > 0, snippets);
+                })
                 .collect(Collectors.toList());
     }
 

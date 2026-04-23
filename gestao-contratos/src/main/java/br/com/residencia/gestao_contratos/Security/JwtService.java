@@ -50,7 +50,10 @@ public class JwtService {
 
     public boolean tokenValido(String token, String email) {
         final String emailToken = extrairEmail(token);
-        return emailToken.equals(email) && !tokenExpirado(token);
+        return emailToken != null
+                && email != null
+                && emailToken.equalsIgnoreCase(email)
+                && !tokenExpirado(token);
     }
 
     private boolean tokenExpirado(String token) {

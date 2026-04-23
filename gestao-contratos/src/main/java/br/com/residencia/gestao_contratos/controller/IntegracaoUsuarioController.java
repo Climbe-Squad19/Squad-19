@@ -1,5 +1,8 @@
 package br.com.residencia.gestao_contratos.controller;
 
+import java.util.Map;
+
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -38,12 +41,13 @@ public class IntegracaoUsuarioController {
     }
 
     @GetMapping("/google/authorize")
-    public ResponseEntity<IntegracaoAuthUrlResponse> getGoogleAuthUrl(@RequestParam String provider) {
+    public ResponseEntity<?> getGoogleAuthUrl(@RequestParam String provider) {
         try {
             String authUrl = integracaoUsuarioService.gerarUrlAutorizacaoGoogle(provider);
             return ResponseEntity.ok(new IntegracaoAuthUrlResponse(authUrl));
         } catch (RuntimeException ex) {
-            return ResponseEntity.badRequest().body(new IntegracaoAuthUrlResponse(ex.getMessage()));
+            String msg = ex.getMessage() != null ? ex.getMessage() : "Erro ao gerar URL do Google";
+            return ResponseEntity.status(HttpStatus.SERVICE_UNAVAILABLE).body(Map.of("message", msg));
         }
     }
 

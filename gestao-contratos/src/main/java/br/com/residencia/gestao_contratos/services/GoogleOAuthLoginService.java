@@ -77,9 +77,16 @@ public class GoogleOAuthLoginService {
         this.frontendUrl = frontendUrl;
     }
 
+    /** Indica se Client ID e Secret estão definidos (variáveis GOOGLE_* ou app.integrations.google.*). */
+    public boolean isOAuthConfigured() {
+        return clientId != null && !clientId.isBlank()
+                && clientSecret != null && !clientSecret.isBlank();
+    }
+
     public String buildAuthorizationRedirectUrl() {
-        if (clientId == null || clientId.isBlank() || clientSecret == null || clientSecret.isBlank()) {
-            throw new IllegalStateException("Configure GOOGLE_CLIENT_ID e GOOGLE_CLIENT_SECRET para login com Google.");
+        if (!isOAuthConfigured()) {
+            throw new IllegalStateException(
+                    "Defina GOOGLE_CLIENT_ID e GOOGLE_CLIENT_SECRET no ambiente da API e reinicie o servidor.");
         }
         String state = UUID.randomUUID().toString();
         byte[] random = new byte[32];
@@ -158,7 +165,7 @@ public class GoogleOAuthLoginService {
             return frontendUrl + "/?oauth_error=" + enc("email_not_verified");
         }
 
-        return usuarioRepository.findByEmail(email)
+        return usuarioRepository.findByEmailIgnoreCase(email)
                 .map(u -> tratarUsuarioExistente(u, nome, picture, sub))
                 .orElseGet(() -> criarNovoPendente(email, nome, picture, sub));
     }
