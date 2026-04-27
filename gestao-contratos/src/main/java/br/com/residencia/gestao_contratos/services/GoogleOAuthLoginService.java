@@ -123,7 +123,7 @@ public class GoogleOAuthLoginService {
             return frontendUrl + "/?oauth_error=" + enc("invalid_or_expired_state");
         }
 
-        Map<String, Object> tokenResponse;
+Map<String, Object> tokenResponse;
 try {
     tokenResponse = webClient.post()
             .uri(GOOGLE_TOKEN)
@@ -143,34 +143,7 @@ try {
 
 if (tokenResponse == null || tokenResponse.get("access_token") == null) {
     return frontendUrl + "/?oauth_error=" + enc("token_exchange_failed");
-}(tokenResponse == null || tokenResponse.get("access_token") == null) {
-            return frontendUrl + "/?oauth_error=" + enc("token_exchange_failed");
-        }
-
-        String accessToken = String.valueOf(tokenResponse.get("access_token"));
-
-        Map<String, Object> profile = webClient.get()
-                .uri(USERINFO)
-                .header("Authorization", "Bearer " + accessToken)
-                .retrieve()
-                .bodyToMono(Map.class)
-                .block();
-
-        if (profile == null || profile.get("email") == null) {
-            return frontendUrl + "/?oauth_error=" + enc("profile_email_missing");
-        }
-
-        String email = String.valueOf(profile.get("email")).trim().toLowerCase();
-        String sub = profile.get("sub") != null ? String.valueOf(profile.get("sub")) : "";
-        String nome = profile.get("name") != null ? String.valueOf(profile.get("name")) : email;
-        String picture = profile.get("picture") != null ? String.valueOf(profile.get("picture")) : "";
-
-        boolean emailVerified = Boolean.TRUE.equals(profile.get("email_verified"))
-                || "true".equalsIgnoreCase(String.valueOf(profile.get("email_verified")));
-
-        if (!emailVerified) {
-            return frontendUrl + "/?oauth_error=" + enc("email_not_verified");
-        }
+}
 
         return usuarioRepository.findByEmailIgnoreCase(email)
                 .map(u -> tratarUsuarioExistente(u, nome, picture, sub))
