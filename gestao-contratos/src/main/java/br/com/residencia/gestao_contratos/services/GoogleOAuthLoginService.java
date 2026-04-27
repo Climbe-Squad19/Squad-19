@@ -123,20 +123,27 @@ public class GoogleOAuthLoginService {
             return frontendUrl + "/?oauth_error=" + enc("invalid_or_expired_state");
         }
 
-        Map<String, Object> tokenResponse = webClient.post()
-                .uri(GOOGLE_TOKEN)
-                .contentType(MediaType.APPLICATION_FORM_URLENCODED)
-                .body(BodyInserters.fromFormData("code", code)
-                        .with("client_id", clientId)
-                        .with("client_secret", clientSecret)
-                        .with("redirect_uri", loginRedirectUri)
-                        .with("grant_type", "authorization_code")
-                        .with("code_verifier", pending.codeVerifier))
-                .retrieve()
-                .bodyToMono(Map.class)
-                .block();
+        Map<String, Object> tokenResponse;
+try {
+    tokenResponse = webClient.post()
+            .uri(GOOGLE_TOKEN)
+            .contentType(MediaType.APPLICATION_FORM_URLENCODED)
+            .body(BodyInserters.fromFormData("code", code)
+                    .with("client_id", clientId)
+                    .with("client_secret", clientSecret)
+                    .with("redirect_uri", loginRedirectUri)
+                    .with("grant_type", "authorization_code")
+                    .with("code_verifier", pending.codeVerifier))
+            .retrieve()
+            .bodyToMono(Map.class)
+            .block();
+} catch (Exception e) {
+    return frontendUrl + "/?oauth_error=" + enc("token_exchange_failed: " + e.getMessage());
+}
 
-        if (tokenResponse == null || tokenResponse.get("access_token") == null) {
+if (tokenResponse == null || tokenResponse.get("access_token") == null) {
+    return frontendUrl + "/?oauth_error=" + enc("token_exchange_failed");
+}(tokenResponse == null || tokenResponse.get("access_token") == null) {
             return frontendUrl + "/?oauth_error=" + enc("token_exchange_failed");
         }
 
