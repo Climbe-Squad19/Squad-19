@@ -2,26 +2,22 @@ package br.com.residencia.gestao_contratos.services;
 
 import java.util.EnumSet;
 import java.util.Set;
-
 import org.springframework.http.HttpStatus;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.web.server.ResponseStatusException;
-
 import br.com.residencia.gestao_contratos.classes.Cargo;
 import br.com.residencia.gestao_contratos.classes.Usuario;
 import br.com.residencia.gestao_contratos.repository.UsuarioRepository;
 
-/**
- * Perfis que podem cadastrar usuários e aprovar contas (RF 10 do documento Climbe).
- */
 @Service
 public class AdministrativoAuthorizationService {
 
     private static final Set<Cargo> CARGOS_ADMINISTRATIVOS = EnumSet.of(
             Cargo.CEO,
             Cargo.COMPLIANCE,
-            Cargo.MEMBRO_CONSELHO
+            Cargo.MEMBRO_CONSELHO,
+            Cargo.ANALISTA_SENIOR
     );
 
     private final UsuarioRepository usuarioRepository;
@@ -34,7 +30,7 @@ public class AdministrativoAuthorizationService {
         Usuario atual = usuarioAtual();
         if (!podeGerenciarUsuarios(atual)) {
             throw new ResponseStatusException(HttpStatus.FORBIDDEN,
-                    "Apenas perfis administrativos (CEO, Compliance ou Membro do Conselho) podem realizar esta ação.");
+                    "Apenas perfis administrativos (CEO, Compliance, Membro do Conselho ou Analista Sênior) podem realizar esta ação.");
         }
     }
 
@@ -42,7 +38,6 @@ public class AdministrativoAuthorizationService {
         if (usuario == null || !usuario.isAtivo()) {
             return false;
         }
-        /* Alinhado ao login e UserDetailsServiceImpl: null no banco = tratado como ATIVO. */
         Usuario.SituacaoUsuario sit = usuario.getSituacao() != null
                 ? usuario.getSituacao()
                 : Usuario.SituacaoUsuario.ATIVO;
