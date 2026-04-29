@@ -1922,7 +1922,7 @@ export default function Dashboard({ onLogout }: DashboardProps) {
                               <article key={`${iso}-${item.id}`} className="agenda-week-item-card">
                                 <strong>{item.title}</strong>
                                 <small>{item.company}</small>
-                                <span>{item.time}</span>
+                                <span>{item.time ? item.time.slice(0, 5) : ''}</span>
                               </article>
                             ))
                           ) : (
@@ -1974,7 +1974,7 @@ export default function Dashboard({ onLogout }: DashboardProps) {
                         <article key={`${iso}-${item.id}`} className="agenda-week-item-card">
                           <strong>{item.title}</strong>
                           <small>{item.company}</small>
-                          <span>{item.time}</span>
+                          <span>{item.time ? item.time.slice(0, 5) : ''}</span>
                         </article>
                       ))
                     ) : (

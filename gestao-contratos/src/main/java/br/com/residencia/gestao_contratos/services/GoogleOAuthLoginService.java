@@ -26,10 +26,6 @@ import br.com.residencia.gestao_contratos.classes.Cargo;
 import br.com.residencia.gestao_contratos.classes.Usuario;
 import br.com.residencia.gestao_contratos.repository.UsuarioRepository;
 
-/**
- * Login OAuth2 com Google (Authorization Code + PKCE), conforme requisitos de segurança.
- * Callback dedicado: {@code /auth/google/callback} (registrar no Google Cloud junto ao de integrações).
- */
 @Service
 public class GoogleOAuthLoginService {
 
@@ -77,7 +73,6 @@ public class GoogleOAuthLoginService {
         this.frontendUrl = frontendUrl;
     }
 
-    /** Indica se Client ID e Secret estão definidos (variáveis GOOGLE_* ou app.integrations.google.*). */
     public boolean isOAuthConfigured() {
         return clientId != null && !clientId.isBlank()
                 && clientSecret != null && !clientSecret.isBlank();
@@ -123,18 +118,23 @@ public class GoogleOAuthLoginService {
             return frontendUrl + "/?oauth_error=" + enc("invalid_or_expired_state");
         }
 
-        Map<String, Object> tokenResponse = webClient.post()
-                .uri(GOOGLE_TOKEN)
-                .contentType(MediaType.APPLICATION_FORM_URLENCODED)
-                .body(BodyInserters.fromFormData("code", code)
-                        .with("client_id", clientId)
-                        .with("client_secret", clientSecret)
-                        .with("redirect_uri", loginRedirectUri)
-                        .with("grant_type", "authorization_code")
-                        .with("code_verifier", pending.codeVerifier))
-                .retrieve()
-                .bodyToMono(Map.class)
-                .block();
+        Map<String, Object> tokenResponse;
+        try {
+            tokenResponse = webClient.post()
+                    .uri(GOOGLE_TOKEN)
+                    .contentType(MediaType.APPLICATION_FORM_URLENCODED)
+                    .body(BodyInserters.fromFormData("code", code)
+                            .with("client_id", clientId)
+                            .with("client_secret", clientSecret)
+                            .with("redirect_uri", loginRedirectUri)
+                            .with("grant_type", "authorization_code")
+                            .with("code_verifier", pending.codeVerifier))
+                    .retrieve()
+                    .bodyToMono(Map.class)
+                    .block();
+        } catch (Exception e) {
+            return frontendUrl + "/?oauth_error=" + enc("token_exchange_failed: " + e.getMessage());
+        }
 
         if (tokenResponse == null || tokenResponse.get("access_token") == null) {
             return frontendUrl + "/?oauth_error=" + enc("token_exchange_failed");
@@ -142,12 +142,17 @@ public class GoogleOAuthLoginService {
 
         String accessToken = String.valueOf(tokenResponse.get("access_token"));
 
-        Map<String, Object> profile = webClient.get()
-                .uri(USERINFO)
-                .header("Authorization", "Bearer " + accessToken)
-                .retrieve()
-                .bodyToMono(Map.class)
-                .block();
+        Map<String, Object> profile;
+        try {
+            profile = webClient.get()
+                    .uri(USERINFO)
+                    .header("Authorization", "Bearer " + accessToken)
+                    .retrieve()
+                    .bodyToMono(Map.class)
+                    .block();
+        } catch (Exception e) {
+            return frontendUrl + "/?oauth_error=" + enc("profile_fetch_failed: " + e.getMessage());
+        }
 
         if (profile == null || profile.get("email") == null) {
             return frontendUrl + "/?oauth_error=" + enc("profile_email_missing");
@@ -172,25 +177,16 @@ public class GoogleOAuthLoginService {
 
     private String tratarUsuarioExistente(Usuario u, String nomeGoogle, String picture, String sub) {
         if (u.getSituacao() == Usuario.SituacaoUsuario.PENDENTE) {
-            if (sub != null && !sub.isBlank()) {
-                u.setGoogleId(sub);
-            }
-            if (picture != null && !picture.isBlank()) {
-                u.setFotoPerfilUrl(picture);
-            }
+            if (sub != null && !sub.isBlank()) u.setGoogleId(sub);
+            if (picture != null && !picture.isBlank()) u.setFotoPerfilUrl(picture);
             usuarioRepository.save(u);
             return frontendUrl + "/?oauth_pending=1";
         }
         if (u.getSituacao() == Usuario.SituacaoUsuario.INATIVO || !u.isAtivo()) {
             return frontendUrl + "/?oauth_error=" + enc("account_inactive");
         }
-
-        if (sub != null && !sub.isBlank()) {
-            u.setGoogleId(sub);
-        }
-        if (picture != null && !picture.isBlank()) {
-            u.setFotoPerfilUrl(picture);
-        }
+        if (sub != null && !sub.isBlank()) u.setGoogleId(sub);
+        if (picture != null && !picture.isBlank()) u.setFotoPerfilUrl(picture);
         usuarioRepository.save(u);
 
         String cargo = u.getCargo() != null ? u.getCargo().name() : "NENHUM";
@@ -233,8 +229,7 @@ public class GoogleOAuthLoginService {
                 return digits;
             }
         }
-        String fallback = String.format("%011d", System.nanoTime() % 100000000000L);
-        return fallback;
+        return String.format("%011d", System.nanoTime() % 100000000000L);
     }
 
     private static String pkceChallengeS256(String codeVerifier) {
