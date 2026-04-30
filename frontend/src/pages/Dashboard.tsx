@@ -744,12 +744,12 @@ export default function Dashboard({ onLogout }: DashboardProps) {
 
     const highlighted = showNotifications && notificationMessage
       ? [{
-          title: 'Atualização recente',
-          description: notificationMessage,
-          tone: 'accent' as const,
-          channel: 'site' as const,
-          timeLabel: 'agora',
-        }]
+        title: 'Atualização recente',
+        description: notificationMessage,
+        tone: 'accent' as const,
+        channel: 'site' as const,
+        timeLabel: 'agora',
+      }]
       : [];
 
     return [...recentNotifications, ...highlighted, ...operationalItems].slice(0, 6);
@@ -2317,9 +2317,6 @@ export default function Dashboard({ onLogout }: DashboardProps) {
               <span>⌕</span>
               <input type="search" placeholder="Pesquisar..." value={search} onChange={(e) => setSearch(e.target.value)} />
             </label>
-            <button type="button" className="button button--primary section-create-button" onClick={handleOpenCompanyCreatePanel}>
-              ＋ Nova Empresa
-            </button>
           </div>
         </div>
 
@@ -2788,37 +2785,37 @@ export default function Dashboard({ onLogout }: DashboardProps) {
             <label className="settings-item" style={{ cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
               <span>Notificações no sistema</span>
               <div className="relative inline-flex items-center">
-                <input 
-                  type="checkbox" 
-                  className="sr-only peer" 
-                  checked={notificationsSystem} 
-                  onChange={() => setNotificationsSystem((v) => !v)} 
+                <input
+                  type="checkbox"
+                  className="sr-only peer"
+                  checked={notificationsSystem}
+                  onChange={() => setNotificationsSystem((v) => !v)}
                 />
                 <div className="w-11 h-6 bg-zinc-700 rounded-full peer peer-checked:after:translate-x-full after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-zinc-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-[#79C6C0]"></div>
               </div>
             </label>
-            
+
             <label className="settings-item" style={{ cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
               <span>Notificações no e-mail</span>
               <div className="relative inline-flex items-center">
-                <input 
-                  type="checkbox" 
-                  className="sr-only peer" 
-                  checked={notificationsEmail} 
-                  onChange={() => setNotificationsEmail((v) => !v)} 
+                <input
+                  type="checkbox"
+                  className="sr-only peer"
+                  checked={notificationsEmail}
+                  onChange={() => setNotificationsEmail((v) => !v)}
                 />
                 <div className="w-11 h-6 bg-zinc-700 rounded-full peer peer-checked:after:translate-x-full after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-zinc-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-[#79C6C0]"></div>
               </div>
             </label>
-            
+
             <label className="settings-item" style={{ cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
               <span>Alertas de prazo</span>
               <div className="relative inline-flex items-center">
-                <input 
-                  type="checkbox" 
-                  className="sr-only peer" 
-                  checked={notificationsAlerts} 
-                  onChange={() => setNotificationsAlerts((v) => !v)} 
+                <input
+                  type="checkbox"
+                  className="sr-only peer"
+                  checked={notificationsAlerts}
+                  onChange={() => setNotificationsAlerts((v) => !v)}
                 />
                 <div className="w-11 h-6 bg-zinc-700 rounded-full peer peer-checked:after:translate-x-full after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-zinc-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-[#79C6C0]"></div>
               </div>
