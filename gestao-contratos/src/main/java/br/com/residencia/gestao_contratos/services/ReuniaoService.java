@@ -59,19 +59,34 @@ public class ReuniaoService {
         reuniao.setTipo(request.getTipo());
         reuniao.setDataHora(request.getDataHora());
         reuniao.setPresencial(request.isPresencial());
-        reuniao.setLinkOnline(request.getLinkOnline());
         reuniao.setSala(request.getSala());
         reuniao.setParticipantesIds(request.getParticipantesIds());
         reuniao.setStatus(Reuniao.StatusReuniao.AGENDADA);
         reuniao.setDataCriacao(LocalDateTime.now());
 
+        // Só aceita link do frontend se for URL real conhecida
+        String linkFrontend = request.getLinkOnline();
+        if (linkFrontend != null && !linkFrontend.isBlank()
+                && (linkFrontend.startsWith("https://meet.google.com/")
+                || linkFrontend.startsWith("https://zoom.us/")
+                || linkFrontend.startsWith("https://teams.microsoft.com/"))) {
+            reuniao.setLinkOnline(linkFrontend);
+        }
+
         Reuniao salva = reuniaoRepository.save(reuniao);
         enviarNotificacaoAgendamento(salva);
+
         try {
-            googleCalendarService.criarEventoParaUsuarioLogado(salva);
+            String meetLink = googleCalendarService.criarEventoParaUsuarioLogado(salva);
+            if (meetLink != null) {
+                salva.setMeetLink(meetLink);
+                salva.setLinkOnline(meetLink);
+                reuniaoRepository.save(salva);
+            }
         } catch (Exception ignored) {
             // Calendar é opcional; não deve bloquear o agendamento.
         }
+
         return converterParaResponse(salva);
     }
 
@@ -82,9 +97,17 @@ public class ReuniaoService {
         reuniao.setPauta(request.getPauta());
         reuniao.setDataHora(request.getDataHora());
         reuniao.setPresencial(request.isPresencial());
-        reuniao.setLinkOnline(request.getLinkOnline());
         reuniao.setSala(request.getSala());
         reuniao.setParticipantesIds(request.getParticipantesIds());
+
+        // Mesmo critério para atualização
+        String linkFrontend = request.getLinkOnline();
+        if (linkFrontend != null && !linkFrontend.isBlank()
+                && (linkFrontend.startsWith("https://meet.google.com/")
+                || linkFrontend.startsWith("https://zoom.us/")
+                || linkFrontend.startsWith("https://teams.microsoft.com/"))) {
+            reuniao.setLinkOnline(linkFrontend);
+        }
 
         if (request.getStatus() != null) {
             reuniao.setStatus(Reuniao.StatusReuniao.valueOf(request.getStatus()));
@@ -163,9 +186,12 @@ public class ReuniaoService {
                     + "Empresa: " + reuniao.getEmpresa().getRazaoSocial() + "\n"
                     + "Data/Hora: " + reuniao.getDataHora() + "\n"
                     + "Modalidade: " + (reuniao.isPresencial() ? "Presencial" : "Online") + "\n"
-                    + (reuniao.isPresencial() ? "Sala: " + reuniao.getSala() : "Link: " + reuniao.getLinkOnline()) + "\n";
+                    + (reuniao.isPresencial()
+                        ? "Sala: " + reuniao.getSala()
+                        : "Link: " + reuniao.getLinkOnline()) + "\n";
 
-            destinatarios.forEach(destinatario -> emailService.enviarEmail(destinatario, assunto, conteudo));
+            destinatarios.forEach(destinatario ->
+                    emailService.enviarEmail(destinatario, assunto, conteudo));
         } catch (Exception ignored) {
             // Email não deve interromper o agendamento da reunião.
         }
