@@ -79,7 +79,6 @@ public class ReuniaoService {
         try {
             String meetLink = googleCalendarService.criarEventoParaUsuarioLogado(salva);
             if (meetLink != null) {
-                salva.setMeetLink(meetLink);
                 salva.setLinkOnline(meetLink);
                 reuniaoRepository.save(salva);
             }
