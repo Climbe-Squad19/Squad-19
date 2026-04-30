@@ -48,7 +48,7 @@ a {
 .screen {
   width: min(1440px, 100%);
   margin: 0 auto;
-  padding: 28px;
+  padding: 0;
 }
 
 .login-screen {
@@ -225,9 +225,9 @@ a {
   display: grid;
   grid-template-columns: 248px 1fr;
   gap: 0;
-  min-height: calc(100vh - 56px);
-  border: 1px solid rgba(255, 255, 255, 0.06);
-  border-radius: 18px;
+  height: 100vh;
+  border: none;
+  border-radius: 0;
   overflow: hidden;
   background: #08080a;
 }
@@ -235,6 +235,18 @@ a {
 .dashboard-screen--light {
   background: #f4f6fb;
   border-color: rgba(15, 23, 42, 0.08);
+}
+
+.sidebar {
+  height: 100vh;
+  background: #09090c;
+  border-right: 1px solid rgba(255, 255, 255, 0.08);
+  padding: 14px 0 18px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  z-index: 30;
+  overflow-y: auto;
 }
 
 .dashboard-screen--light .sidebar {
@@ -279,8 +291,8 @@ a {
 .dashboard-screen--light .profile-info-card small,
 .dashboard-screen--light .profile-strip-value,
 .dashboard-screen--light .company-status-row small span,
-.dashboard-screen--light .panel-header > div > span,
-.dashboard-screen--light .section-topbar > div > span {
+.dashboard-screen--light .panel-header>div>span,
+.dashboard-screen--light .section-topbar>div>span {
   color: #64748b;
 }
 
@@ -474,7 +486,7 @@ a {
 }
 
 .dashboard-screen--light .team-create-form label,
-.dashboard-screen--light .team-create-permissions > span {
+.dashboard-screen--light .team-create-permissions>span {
   color: #334155;
 }
 
@@ -611,7 +623,9 @@ a {
   align-content: start;
   gap: 16px;
   background: #0a0a0d;
+  overflow-y: auto;
   min-width: 0;
+  height: 100%;
 }
 
 .dashboard-toolbar {
@@ -846,8 +860,8 @@ a {
   margin: 0;
 }
 
-.panel-header > div > span,
-.section-topbar > div > span {
+.panel-header>div>span,
+.section-topbar>div>span {
   color: #7b93bb;
   font-size: var(--font-size-xs);
 }
@@ -1054,9 +1068,18 @@ a {
 }
 
 .agenda-form-row {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
   gap: 14px;
+}
+
+.agenda-form-row .agenda-checkbox {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: auto;
+  white-space: nowrap;
 }
 
 .agenda-form label {
@@ -2204,7 +2227,7 @@ a {
   color: #f8fafc;
 }
 
-.team-create-permissions > span {
+.team-create-permissions>span {
   color: #c7d2ff;
   font-size: 0.88rem;
 }
@@ -2238,7 +2261,7 @@ a {
   grid-column: 1 / -1;
 }
 
-.dashboard-content > * {
+.dashboard-content>* {
   animation: dashboardFadeUp 0.32s ease both;
 }
 
@@ -2307,6 +2330,7 @@ a {
 }
 
 @media (max-width: 1240px) {
+
   .proposal-board,
   .company-grid,
   .team-grid,
@@ -2330,6 +2354,7 @@ a {
 }
 
 @media (max-width: 1100px) {
+
   .login-screen,
   .dashboard-grid,
   .dashboard-main-grid {
@@ -2417,6 +2442,7 @@ a {
 }
 
 @media (max-width: 820px) {
+
   .proposal-board,
   .company-grid,
   .team-grid,
@@ -2485,7 +2511,7 @@ a {
   }
 
   .login-actions .button,
-  .login-panel--form > .login-card > .button {
+  .login-panel--form>.login-card>.button {
     width: 100%;
   }
 }
@@ -2566,7 +2592,7 @@ a {
   }
 
   .toolbar-labels,
-  .user-chip-button > div {
+  .user-chip-button>div {
     min-width: 0;
   }
 
