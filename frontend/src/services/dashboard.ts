@@ -81,17 +81,20 @@ export async function fetchCalendar(month: string): Promise<CalendarApiDay[]> {
 }
 
 export async function createMeeting(payload: CreateMeetingPayload): Promise<AgendaApiItem> {
-  const response = await fetch(`${API_BASE_URL}/reunioes`, {
-    method: 'POST',
-    headers: buildAuthHeaders(),
-    body: JSON.stringify(payload),
-  });
+  const response = await fetch(`${API_BASE_URL}/reunioes`, {
+    method: 'POST',
+    headers: {
+      ...buildAuthHeaders(),
+      'Content-Type': 'application/json' // <-- O pulo do gato!
+    },
+    body: JSON.stringify(payload),
+  });
 
-  if (!response.ok) {
-    throw new Error('Erro ao criar reunião');
-  }
+  if (!response.ok) {
+    throw new Error('Erro ao criar reunião');
+  }
 
-  return response.json();
+  return response.json();
 }
 
 export async function fetchDashboardOverview(): Promise<DashboardOverviewApiResponse> {
