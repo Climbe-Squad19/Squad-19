@@ -46,16 +46,20 @@ public class ReuniaoService {
 
     @Transactional
     public ReuniaoResponse agendar(ReuniaoCriacaoRequest request) {
-        Empresa empresa = empresaRepository.findById(request.getEmpresaId())
-                .orElseThrow(() -> new RuntimeException("Empresa não encontrada"));
+        Empresa empresa = request.getEmpresaId() != null
+                ? empresaRepository.findById(request.getEmpresaId())
+                        .orElseThrow(() -> new RuntimeException("Empresa não encontrada"))
+                : null;
 
-        Contrato contrato = contratoRepository.findById(request.getContratoId())
-                .orElseThrow(() -> new RuntimeException("Contrato não encontrado"));
+        Contrato contrato = request.getContratoId() != null
+                ? contratoRepository.findById(request.getContratoId())
+                        .orElseThrow(() -> new RuntimeException("Contrato não encontrado"))
+                : null;
 
         Reuniao reuniao = new Reuniao();
         reuniao.setPauta(request.getPauta());
-        reuniao.setEmpresa(empresa);
-        reuniao.setContrato(contrato);
+        if (empresa != null) reuniao.setEmpresa(empresa);
+        if (contrato != null) reuniao.setContrato(contrato);
         reuniao.setTipo(request.getTipo());
         reuniao.setDataHora(request.getDataHora());
         reuniao.setPresencial(request.isPresencial());
@@ -140,9 +144,9 @@ public class ReuniaoService {
         response.setId(reuniao.getId());
         response.setTipo(reuniao.getTipo());
         response.setPauta(reuniao.getPauta());
-        response.setEmpresaId(reuniao.getEmpresa().getId());
-        response.setNomeEmpresa(reuniao.getEmpresa().getRazaoSocial());
-        response.setContratoId(reuniao.getContrato().getId());
+        response.setEmpresaId(reuniao.getEmpresa() != null ? reuniao.getEmpresa().getId() : null);
+        response.setNomeEmpresa(reuniao.getEmpresa() != null ? reuniao.getEmpresa().getRazaoSocial() : null);
+        response.setContratoId(reuniao.getContrato() != null ? reuniao.getContrato().getId() : null);
         response.setDataHora(reuniao.getDataHora());
         response.setPresencial(reuniao.isPresencial());
         response.setLinkOnline(reuniao.getLinkOnline());
@@ -158,7 +162,8 @@ public class ReuniaoService {
         try {
             Set<String> destinatarios = new LinkedHashSet<>();
 
-            if (reuniao.getEmpresa().getEmailContato() != null
+            if (reuniao.getEmpresa() != null
+                    && reuniao.getEmpresa().getEmailContato() != null
                     && !reuniao.getEmpresa().getEmailContato().isBlank()) {
                 destinatarios.add(reuniao.getEmpresa().getEmailContato());
             }
@@ -176,7 +181,6 @@ public class ReuniaoService {
                                 .toList());
             }
 
-            // Todos os usuários ativos do sistema
             usuarioRepository.findAll().stream()
                     .filter(u -> u.isAtivo()
                             && u.getSituacao() == Usuario.SituacaoUsuario.ATIVO
@@ -188,7 +192,8 @@ public class ReuniaoService {
             String assunto = "Nova reunião agendada - " + reuniao.getPauta();
             String conteudo = "Uma nova reunião foi agendada no sistema Climbe:\n\n"
                     + "Pauta: " + reuniao.getPauta() + "\n"
-                    + "Empresa: " + reuniao.getEmpresa().getRazaoSocial() + "\n"
+                    + "Empresa: " + (reuniao.getEmpresa() != null
+                        ? reuniao.getEmpresa().getRazaoSocial() : "Não informada") + "\n"
                     + "Data/Hora: " + reuniao.getDataHora() + "\n"
                     + "Modalidade: " + (reuniao.isPresencial() ? "Presencial" : "Online") + "\n"
                     + (reuniao.isPresencial()
