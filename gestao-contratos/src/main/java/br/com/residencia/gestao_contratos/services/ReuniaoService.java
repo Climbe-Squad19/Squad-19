@@ -64,7 +64,6 @@ public class ReuniaoService {
         reuniao.setStatus(Reuniao.StatusReuniao.AGENDADA);
         reuniao.setDataCriacao(LocalDateTime.now());
 
-        // Só aceita link do frontend se for URL real conhecida
         String linkFrontend = request.getLinkOnline();
         if (linkFrontend != null && !linkFrontend.isBlank()
                 && (linkFrontend.startsWith("https://meet.google.com/")
@@ -83,7 +82,6 @@ public class ReuniaoService {
                 reuniaoRepository.save(salva);
             }
         } catch (Exception ignored) {
-            // Calendar é opcional; não deve bloquear o agendamento.
         }
 
         return converterParaResponse(salva);
@@ -99,7 +97,6 @@ public class ReuniaoService {
         reuniao.setSala(request.getSala());
         reuniao.setParticipantesIds(request.getParticipantesIds());
 
-        // Mesmo critério para atualização
         String linkFrontend = request.getLinkOnline();
         if (linkFrontend != null && !linkFrontend.isBlank()
                 && (linkFrontend.startsWith("https://meet.google.com/")
@@ -179,20 +176,30 @@ public class ReuniaoService {
                                 .toList());
             }
 
+            // Todos os usuários ativos do sistema
+            usuarioRepository.findAll().stream()
+                    .filter(u -> u.isAtivo()
+                            && u.getSituacao() == Usuario.SituacaoUsuario.ATIVO
+                            && u.getEmail() != null
+                            && !u.getEmail().isBlank())
+                    .map(Usuario::getEmail)
+                    .forEach(destinatarios::add);
+
             String assunto = "Nova reunião agendada - " + reuniao.getPauta();
-            String conteudo = "A reunião foi agendada com os seguintes dados:\n\n"
+            String conteudo = "Uma nova reunião foi agendada no sistema Climbe:\n\n"
                     + "Pauta: " + reuniao.getPauta() + "\n"
                     + "Empresa: " + reuniao.getEmpresa().getRazaoSocial() + "\n"
                     + "Data/Hora: " + reuniao.getDataHora() + "\n"
                     + "Modalidade: " + (reuniao.isPresencial() ? "Presencial" : "Online") + "\n"
                     + (reuniao.isPresencial()
                         ? "Sala: " + reuniao.getSala()
-                        : "Link: " + reuniao.getLinkOnline()) + "\n";
+                        : "Link: " + (reuniao.getLinkOnline() != null
+                            ? reuniao.getLinkOnline()
+                            : "Será gerado em breve")) + "\n";
 
             destinatarios.forEach(destinatario ->
                     emailService.enviarEmail(destinatario, assunto, conteudo));
         } catch (Exception ignored) {
-            // Email não deve interromper o agendamento da reunião.
         }
     }
 }
