@@ -81,20 +81,23 @@ export async function fetchCalendar(month: string): Promise<CalendarApiDay[]> {
 }
 
 export async function createMeeting(payload: CreateMeetingPayload): Promise<AgendaApiItem> {
-  const response = await fetch(`${API_BASE_URL}/reunioes`, {
-    method: 'POST',
-    headers: {
-      ...buildAuthHeaders(),
-      'Content-Type': 'application/json' // <-- O pulo do gato!
-    },
-    body: JSON.stringify(payload),
-  });
+  // Pega os headers de autenticação da sua função base
+  const headers = new Headers(buildAuthHeaders());
+  
+  // Adiciona o Content-Type de forma segura sem destruir o token
+  headers.append('Content-Type', 'application/json');
 
-  if (!response.ok) {
-    throw new Error('Erro ao criar reunião');
-  }
+  const response = await fetch(`${API_BASE_URL}/reunioes`, {
+    method: 'POST',
+    headers: headers, // Passa a variável garantida aqui
+    body: JSON.stringify(payload),
+  });
 
-  return response.json();
+  if (!response.ok) {
+    throw new Error('Erro ao criar reunião');
+  }
+
+  return response.json();
 }
 
 export async function fetchDashboardOverview(): Promise<DashboardOverviewApiResponse> {
