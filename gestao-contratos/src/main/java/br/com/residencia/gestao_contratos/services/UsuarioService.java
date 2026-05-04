@@ -64,6 +64,7 @@ public class UsuarioService {
             emailService.enviarBoasVindasNovoColaborador(salvo.getEmail(), salvo.getNomeCompleto());
         } catch (Exception ignored) {
         }
+        notificarTodosNovoColaborador(salvo.getNomeCompleto(), salvo.getEmail());
         return converterParaResponse(salvo);
     }
 
@@ -94,6 +95,7 @@ public class UsuarioService {
             emailService.enviarBoasVindasNovoColaborador(usuario.getEmail(), usuario.getNomeCompleto());
         } catch (Exception ignored) {
         }
+        notificarTodosNovoColaborador(usuario.getNomeCompleto(), usuario.getEmail());
         return converterParaResponse(usuario);
     }
 
@@ -163,6 +165,26 @@ public class UsuarioService {
         usuario.setAtivo(false);
         usuario.setSituacao(Usuario.SituacaoUsuario.INATIVO);
         usuarioRepository.save(usuario);
+    }
+
+    private void notificarTodosNovoColaborador(String nomeNovo, String emailNovo) {
+        try {
+            usuarioRepository.findAll().stream()
+                    .filter(u -> u.isAtivo()
+                            && u.getSituacao() == Usuario.SituacaoUsuario.ATIVO
+                            && u.getEmail() != null
+                            && !u.getEmail().isBlank()
+                            && !u.getEmail().equalsIgnoreCase(emailNovo))
+                    .forEach(u -> emailService.enviarEmail(
+                            u.getEmail(),
+                            "Novo colaborador no sistema - " + nomeNovo,
+                            "Olá!\n\nUm novo colaborador entrou para o sistema Climbe:\n\n"
+                                    + "Nome: " + nomeNovo + "\n"
+                                    + "Email: " + emailNovo + "\n\n"
+                                    + "Equipe Climbe"
+                    ));
+        } catch (Exception ignored) {
+        }
     }
 
     private UsuarioResponse converterParaResponse(Usuario usuario) {
