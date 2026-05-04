@@ -29,10 +29,10 @@ public class Reuniao {
     @Column(length = 512)
     private String pauta;
 
-    @ManyToOne
+    @ManyToOne(optional = true)
     private Empresa empresa;
 
-    @ManyToOne
+    @ManyToOne(optional = true)
     private Contrato contrato;
 
     @Enumerated(EnumType.STRING)
@@ -41,8 +41,10 @@ public class Reuniao {
 
     private LocalDateTime dataHora;
     private boolean presencial;
+
     @Column(length = 512)
     private String linkOnline;
+
     @Column(length = 128)
     private String sala;
 
@@ -61,8 +63,8 @@ public class Reuniao {
     private LocalDateTime dataCriacao;
 
     public enum TipoReuniao {
-        INICIAL,        
-        APRESENTACAO    
+        INICIAL,
+        APRESENTACAO
     }
 
     public enum StatusReuniao {
