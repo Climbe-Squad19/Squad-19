@@ -2921,7 +2921,7 @@ export default function Dashboard({ onLogout }: DashboardProps) {
 
       <aside className={`sidebar ${isMobileSidebarOpen ? 'sidebar--open' : ''}`}>
         <div className="sidebar-brand">
-          <span className="brand-tag">climbe</span>
+          <img src="/src/assets/climbe_logo.svg" alt="Climbe" style={{ height: '28px', width: 'auto' }} />
         </div>
 
         <div className="sidebar-search">
