@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { API_BASE_URL } from '../services/api';
 import { fetchGoogleOAuthDisponivel, login } from '../services/auth';
+import climbeLogo from '../assets/climbe_logo.svg';
 
 interface LoginProps {
   onLogin: (accessToken: string) => void;
@@ -41,7 +42,7 @@ export default function Login({ onLogin, onForgotPassword }: LoginProps) {
     <main className="screen login-screen">
       <section className="login-panel login-panel--brand">
         <div>
-          <img src="/src/assets/climbe_logo.svg" alt="Climbe" style={{ height: '32px', width: 'auto', marginBottom: '16px' }} />
+          <img src={climbeLogo} alt="Climbe" style={{ height: '32px', width: 'auto', marginBottom: '16px' }} />
           <h1>O melhor investimento precisa da melhor orientação!</h1>
           <p>
             Acesse sua conta para gerenciar contratos, propostas e reuniões com
