@@ -74,18 +74,18 @@ public class ReuniaoService {
         }
 
         Reuniao salva = reuniaoRepository.save(reuniao);
-        enviarNotificacaoAgendamento(salva);
 
         try {
             String meetLink = googleCalendarService.criarEventoParaUsuarioLogado(salva);
             if (meetLink != null) {
                 salva.setLinkOnline(meetLink);
-                reuniaoRepository.save(salva);
+                salva = reuniaoRepository.save(salva);
             }
         } catch (Exception ignored) {
             // Calendar é opcional; não deve bloquear o agendamento.
         }
 
+        enviarNotificacaoAgendamento(salva);
         return converterParaResponse(salva);
     }
 

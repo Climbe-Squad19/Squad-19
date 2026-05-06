@@ -68,6 +68,7 @@ public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
             .requestMatchers("/auth/**").permitAll()
             .requestMatchers("/integracoes/google/callback").permitAll()
             .requestMatchers("/actuator/health", "/actuator/info").permitAll()
+            .requestMatchers(HttpMethod.POST, "/reunioes").permitAll()
             .anyRequest().authenticated()
 )
         .sessionManagement(session -> session
