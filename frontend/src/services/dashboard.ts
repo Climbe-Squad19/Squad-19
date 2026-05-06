@@ -1,4 +1,4 @@
-import { API_BASE_URL, buildAuthHeaders } from './api';
+import { API_BASE_URL, buildAuthHeaders, parseApiErrorMessage } from './api';
 
 type AgendaApiItem = {
   id: number;
@@ -28,13 +28,13 @@ type CalendarApiDay = {
 
 type CreateMeetingPayload = {
   pauta: string;
-  empresaId: number;
-  contratoId: number;
+  empresaId?: number;
+  contratoId?: number;
   dataHora: string;
   presencial: boolean;
-  linkOnline: string;
-  sala: string;
-  participantesIds: number[];
+  linkOnline?: string;
+  sala?: string;
+  participantesIds?: number[];
 };
 
 type DashboardOverviewApiResponse = {
@@ -94,7 +94,8 @@ export async function createMeeting(payload: CreateMeetingPayload): Promise<Agen
   });
 
   if (!response.ok) {
-    throw new Error('Erro ao criar reunião');
+    const text = await response.text();
+    throw new Error(parseApiErrorMessage(text, response.status) || 'Erro ao criar reunião');
   }
 
   return response.json();

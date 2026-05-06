@@ -31,8 +31,13 @@ export async function fetchUsuarios(): Promise<UsuarioApiResponse[]> {
     headers: buildAuthHeaders(),
   });
 
+  if (response.status === 401 || response.status === 403) {
+    return [];
+  }
+
   if (!response.ok) {
-    throw new Error('Erro ao carregar usuarios');
+    const text = await response.text();
+    throw new Error(parseApiErrorMessage(text, response.status) || 'Erro ao carregar usuarios');
   }
 
   return response.json();

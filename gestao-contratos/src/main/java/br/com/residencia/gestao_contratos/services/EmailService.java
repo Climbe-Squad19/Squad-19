@@ -155,6 +155,21 @@ public class EmailService {
                         + "Equipe Climbe\n");
     }
 
+
+    /** Confirmação para contas Google recém-cadastradas e pendentes de aprovação. */
+    public void enviarCadastroPendenteGoogle(String emailDestino, String nome) {
+        if (emailDestino == null || emailDestino.isBlank()) {
+            return;
+        }
+        enviarEmail(
+                emailDestino,
+                "Cadastro recebido no Climbe",
+                "Olá " + nome + ",\n\n"
+                        + "Recebemos seu cadastro via Google e ele está pendente de aprovação administrativa. "
+                        + "Você receberá um novo aviso assim que a conta for liberada.\n\n"
+                        + "Equipe Climbe\n");
+    }
+
     /** RF 2.d — avisar administradores sobre novo cadastro Google pendente. */
     public void notificarAdministradoresNovoCadastroGoogle(String nomeNovo, String emailNovo,
             List<Usuario> administradores) {
