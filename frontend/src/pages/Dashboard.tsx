@@ -1531,14 +1531,11 @@ export default function Dashboard({ onLogout }: DashboardProps) {
 
     try {
       await createMeeting({
-        pauta: formTitle,
-        empresaId: 1,
-        contratoId: 1,
+        pauta: formTitle?.trim() || 'Nova reunião',
         dataHora: `${selectedDate}T${formTime}:00`,
         presencial: formPresencial,
-        linkOnline: formPresencial ? '' : formLinkOnline,
-        sala: formPresencial ? formLocation : '',
-        participantesIds: [1],
+        linkOnline: formPresencial ? undefined : (formLinkOnline?.trim() || undefined),
+        sala: formPresencial ? (formLocation?.trim() || '') : undefined,
       });
 
       const [calendar, agenda] = await Promise.all([
