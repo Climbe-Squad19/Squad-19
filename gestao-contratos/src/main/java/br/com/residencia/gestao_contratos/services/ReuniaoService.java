@@ -46,19 +46,17 @@ public class ReuniaoService {
 
     @Transactional
     public ReuniaoResponse agendar(ReuniaoCriacaoRequest request) {
-        Empresa empresa = request.getEmpresaId() != null
-                ? empresaRepository.findById(request.getEmpresaId()).orElse(null)
-                : null;
+        Empresa empresa = empresaRepository.findById(request.getEmpresaId())
+                .orElseThrow(() -> new RuntimeException("Empresa não encontrada"));
 
-        Contrato contrato = request.getContratoId() != null
-                ? contratoRepository.findById(request.getContratoId()).orElse(null)
-                : null;
+        Contrato contrato = contratoRepository.findById(request.getContratoId())
+                .orElseThrow(() -> new RuntimeException("Contrato não encontrado"));
 
         Reuniao reuniao = new Reuniao();
         reuniao.setPauta(request.getPauta());
-        if (empresa != null) reuniao.setEmpresa(empresa);
-        if (contrato != null) reuniao.setContrato(contrato);
-        reuniao.setTipo(request.getTipo() != null ? request.getTipo() : Reuniao.TipoReuniao.INICIAL);
+        reuniao.setEmpresa(empresa);
+        reuniao.setContrato(contrato);
+        reuniao.setTipo(request.getTipo());
         reuniao.setDataHora(request.getDataHora());
         reuniao.setPresencial(request.isPresencial());
         reuniao.setSala(request.getSala());
@@ -66,6 +64,7 @@ public class ReuniaoService {
         reuniao.setStatus(Reuniao.StatusReuniao.AGENDADA);
         reuniao.setDataCriacao(LocalDateTime.now());
 
+        // Só aceita link do frontend se for URL real conhecida
         String linkFrontend = request.getLinkOnline();
         if (linkFrontend != null && !linkFrontend.isBlank()
                 && (linkFrontend.startsWith("https://meet.google.com/")
@@ -75,17 +74,18 @@ public class ReuniaoService {
         }
 
         Reuniao salva = reuniaoRepository.save(reuniao);
+        enviarNotificacaoAgendamento(salva);
 
         try {
             String meetLink = googleCalendarService.criarEventoParaUsuarioLogado(salva);
             if (meetLink != null) {
                 salva.setLinkOnline(meetLink);
-                salva = reuniaoRepository.save(salva);
+                reuniaoRepository.save(salva);
             }
         } catch (Exception ignored) {
+            // Calendar é opcional; não deve bloquear o agendamento.
         }
 
-        enviarNotificacaoAgendamento(salva);
         return converterParaResponse(salva);
     }
 
@@ -99,6 +99,7 @@ public class ReuniaoService {
         reuniao.setSala(request.getSala());
         reuniao.setParticipantesIds(request.getParticipantesIds());
 
+        // Mesmo critério para atualização
         String linkFrontend = request.getLinkOnline();
         if (linkFrontend != null && !linkFrontend.isBlank()
                 && (linkFrontend.startsWith("https://meet.google.com/")
@@ -142,9 +143,9 @@ public class ReuniaoService {
         response.setId(reuniao.getId());
         response.setTipo(reuniao.getTipo());
         response.setPauta(reuniao.getPauta());
-        response.setEmpresaId(reuniao.getEmpresa() != null ? reuniao.getEmpresa().getId() : null);
-        response.setNomeEmpresa(reuniao.getEmpresa() != null ? reuniao.getEmpresa().getRazaoSocial() : null);
-        response.setContratoId(reuniao.getContrato() != null ? reuniao.getContrato().getId() : null);
+        response.setEmpresaId(reuniao.getEmpresa().getId());
+        response.setNomeEmpresa(reuniao.getEmpresa().getRazaoSocial());
+        response.setContratoId(reuniao.getContrato().getId());
         response.setDataHora(reuniao.getDataHora());
         response.setPresencial(reuniao.isPresencial());
         response.setLinkOnline(reuniao.getLinkOnline());
@@ -160,8 +161,7 @@ public class ReuniaoService {
         try {
             Set<String> destinatarios = new LinkedHashSet<>();
 
-            if (reuniao.getEmpresa() != null
-                    && reuniao.getEmpresa().getEmailContato() != null
+            if (reuniao.getEmpresa().getEmailContato() != null
                     && !reuniao.getEmpresa().getEmailContato().isBlank()) {
                 destinatarios.add(reuniao.getEmpresa().getEmailContato());
             }
@@ -179,30 +179,20 @@ public class ReuniaoService {
                                 .toList());
             }
 
-            usuarioRepository.findAll().stream()
-                    .filter(u -> u.isAtivo()
-                            && u.getSituacao() == Usuario.SituacaoUsuario.ATIVO
-                            && u.getEmail() != null
-                            && !u.getEmail().isBlank())
-                    .map(Usuario::getEmail)
-                    .forEach(destinatarios::add);
-
             String assunto = "Nova reunião agendada - " + reuniao.getPauta();
-            String conteudo = "Uma nova reunião foi agendada no sistema Climbe:\n\n"
+            String conteudo = "A reunião foi agendada com os seguintes dados:\n\n"
                     + "Pauta: " + reuniao.getPauta() + "\n"
-                    + "Empresa: " + (reuniao.getEmpresa() != null
-                        ? reuniao.getEmpresa().getRazaoSocial() : "Não informada") + "\n"
+                    + "Empresa: " + reuniao.getEmpresa().getRazaoSocial() + "\n"
                     + "Data/Hora: " + reuniao.getDataHora() + "\n"
                     + "Modalidade: " + (reuniao.isPresencial() ? "Presencial" : "Online") + "\n"
                     + (reuniao.isPresencial()
                         ? "Sala: " + reuniao.getSala()
-                        : "Link: " + (reuniao.getLinkOnline() != null
-                            ? reuniao.getLinkOnline()
-                            : "Será gerado em breve")) + "\n";
+                        : "Link: " + reuniao.getLinkOnline()) + "\n";
 
             destinatarios.forEach(destinatario ->
                     emailService.enviarEmail(destinatario, assunto, conteudo));
         } catch (Exception ignored) {
+            // Email não deve interromper o agendamento da reunião.
         }
     }
 }
