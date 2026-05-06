@@ -3,7 +3,7 @@ import Login from './pages/Login';
 import Dashboard from './pages/Dashboard';
 import ForgotPassword from './pages/ForgotPassword';
 import { fetchAuthMe, profileFromAuthMe } from './services/auth';
-import { ACCESS_TOKEN_KEY } from './services/api';
+import { ACCESS_TOKEN_KEY, getAccessToken } from './services/api';
 import { useAppDispatch } from './store/hooks';
 import { updateProfile } from './store/profileSlice';
 
@@ -20,7 +20,7 @@ function navigateTo(path: AuthRoute) {
 
 function App() {
   const dispatch = useAppDispatch();
-  const initialAuthenticated = useMemo(() => !!localStorage.getItem(ACCESS_TOKEN_KEY), []);
+  const initialAuthenticated = useMemo(() => !!getAccessToken(), []);
   const [authenticated, setAuthenticated] = useState(initialAuthenticated);
   const [authRoute, setAuthRoute] = useState<AuthRoute>(getAuthRoute);
 
@@ -52,7 +52,7 @@ function App() {
   }, []);
 
   useEffect(() => {
-    if (!authenticated || !localStorage.getItem(ACCESS_TOKEN_KEY)) {
+    if (!authenticated || !getAccessToken()) {
       return;
     }
     let cancelled = false;
