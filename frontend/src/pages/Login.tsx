@@ -41,7 +41,7 @@ export default function Login({ onLogin, onForgotPassword }: LoginProps) {
     <main className="screen login-screen">
       <section className="login-panel login-panel--brand">
         <div>
-          <span className="brand-tag">climbe</span>
+          <img src="/src/assets/climbe_logo.svg" alt="Climbe" style={{ height: '32px', width: 'auto', marginBottom: '16px' }} />
           <h1>O melhor investimento precisa da melhor orientação!</h1>
           <p>
             Acesse sua conta para gerenciar contratos, propostas e reuniões com

@@ -67,7 +67,7 @@ a {
 }
 
 .login-panel--brand {
-  background: linear-gradient(180deg, rgba(25, 118, 210, 0.95), rgba(11, 23, 44, 0.95));
+  background: linear-gradient(160deg, #79C6C0 0%, #4a9e98 40%, #1a3d3b 100%);
   box-shadow: 0 28px 70px rgba(1, 6, 16, 0.3);
 }
 
