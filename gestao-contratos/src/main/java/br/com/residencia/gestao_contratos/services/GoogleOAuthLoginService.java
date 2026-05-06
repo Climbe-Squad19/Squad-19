@@ -216,7 +216,6 @@ public class GoogleOAuthLoginService {
         emailService.notificarAdministradoresNovoCadastroGoogle(nome, email, admins);
         try {
             emailService.enviarCadastroPendenteGoogle(email, nome);
-            emailService.enviarBoasVindasNovoColaborador(email, nome);
         } catch (Exception ignored) {
         }
         notificacaoInternaService.notificarAdministradores(
