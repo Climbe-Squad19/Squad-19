@@ -18,6 +18,7 @@ import { fetchMinhasIntegracoes, getGoogleIntegrationAuthUrl, updateIntegracao }
 import { useAppDispatch, useAppSelector } from '../store/hooks';
 import { updateProfile } from '../store/profileSlice';
 import { ActiveMenuItem, closeNotifications, openNotifications, setActiveMenuItem, toggleExpandedSection } from '../store/uiSlice';
+import climbeLogo from '../assets/climbe_logo.svg';
 
 interface DashboardProps {
   onLogout: () => void;
@@ -2921,7 +2922,7 @@ export default function Dashboard({ onLogout }: DashboardProps) {
 
       <aside className={`sidebar ${isMobileSidebarOpen ? 'sidebar--open' : ''}`}>
         <div className="sidebar-brand">
-          <img src="/src/assets/climbe_logo.svg" alt="Climbe" style={{ height: '28px', width: 'auto' }} />
+          <img src={climbeLogo} alt="Climbe" style={{ height: '28px', width: 'auto' }} />
         </div>
 
         <div className="sidebar-search">
