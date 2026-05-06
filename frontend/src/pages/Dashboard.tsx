@@ -396,7 +396,7 @@ export default function Dashboard({ onLogout }: DashboardProps) {
   const [formTime, setFormTime] = useState('09:00');
   const [formPresencial, setFormPresencial] = useState(true);
   const [formLocation, setFormLocation] = useState('Sala 2');
-  const [formLinkOnline, setFormLinkOnline] = useState('https://meet.google.com/abc-defg-hij');
+  const [formLinkOnline, setFormLinkOnline] = useState('');
   const [formSubmitting, setFormSubmitting] = useState(false);
   const [formError, setFormError] = useState('');
   const [profileMenuAnchor, setProfileMenuAnchor] = useState<HTMLElement | null>(null);
@@ -1560,7 +1560,7 @@ export default function Dashboard({ onLogout }: DashboardProps) {
       setFormTitle('Nova reunião');
       setFormTime('09:00');
       setFormLocation('Sala 2');
-      setFormLinkOnline('https://meet.google.com/abc-defg-hij');
+      setFormLinkOnline('');
       setShowAgendaCreatePanel(false);
       if (expandedSection !== 'agenda') {
         dispatch(toggleExpandedSection('agenda'));
@@ -1844,7 +1844,7 @@ export default function Dashboard({ onLogout }: DashboardProps) {
           ) : (
             <label>
               Link online
-              <input type="url" value={formLinkOnline} onChange={(e) => setFormLinkOnline(e.target.value)} required />
+              <input type="url" value={formLinkOnline} onChange={(e) => setFormLinkOnline(e.target.value)} placeholder="Será gerado automaticamente (opcional)" />
             </label>
           )}
           {formError && <p className="form-error">{formError}</p>}
