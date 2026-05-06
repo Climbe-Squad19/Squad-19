@@ -2,6 +2,22 @@ export const API_BASE_URL = import.meta.env.VITE_API_BASE_URL ?? 'http://localho
 
 export const ACCESS_TOKEN_KEY = 'climbe_access_token';
 
+const LEGACY_TOKEN_KEYS = ['accessToken', 'token', 'climbe_token'];
+
+export function getAccessToken(): string | null {
+  const current = localStorage.getItem(ACCESS_TOKEN_KEY);
+  if (current) return current;
+
+  for (const key of LEGACY_TOKEN_KEYS) {
+    const legacy = localStorage.getItem(key);
+    if (legacy) {
+      localStorage.setItem(ACCESS_TOKEN_KEY, legacy);
+      return legacy;
+    }
+  }
+  return null;
+}
+
 /**
  * Corpo de erro da API (Spring Boot 3 / RFC 7807 usa `detail`; respostas antigas usam `message`).
  * @param httpStatus quando o corpo vem vazio (ex.: 403 do proxy), usa mensagem útil em PT.
@@ -41,7 +57,7 @@ export function parseApiErrorMessage(text: string, httpStatus?: number): string 
 }
 
 export function buildAuthHeaders(includeJsonContentType = true): HeadersInit {
-  const token = localStorage.getItem(ACCESS_TOKEN_KEY);
+  const token = getAccessToken();
   const headers: HeadersInit = {};
 
   if (includeJsonContentType) {
