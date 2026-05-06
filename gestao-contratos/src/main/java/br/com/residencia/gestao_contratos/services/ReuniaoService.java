@@ -47,20 +47,18 @@ public class ReuniaoService {
     @Transactional
     public ReuniaoResponse agendar(ReuniaoCriacaoRequest request) {
         Empresa empresa = request.getEmpresaId() != null
-                ? empresaRepository.findById(request.getEmpresaId())
-                        .orElseThrow(() -> new RuntimeException("Empresa não encontrada"))
+                ? empresaRepository.findById(request.getEmpresaId()).orElse(null)
                 : null;
 
         Contrato contrato = request.getContratoId() != null
-                ? contratoRepository.findById(request.getContratoId())
-                        .orElseThrow(() -> new RuntimeException("Contrato não encontrado"))
+                ? contratoRepository.findById(request.getContratoId()).orElse(null)
                 : null;
 
         Reuniao reuniao = new Reuniao();
         reuniao.setPauta(request.getPauta());
         if (empresa != null) reuniao.setEmpresa(empresa);
         if (contrato != null) reuniao.setContrato(contrato);
-        reuniao.setTipo(request.getTipo());
+        reuniao.setTipo(request.getTipo() != null ? request.getTipo() : Reuniao.TipoReuniao.INICIAL);
         reuniao.setDataHora(request.getDataHora());
         reuniao.setPresencial(request.isPresencial());
         reuniao.setSala(request.getSala());
@@ -77,17 +75,17 @@ public class ReuniaoService {
         }
 
         Reuniao salva = reuniaoRepository.save(reuniao);
-        enviarNotificacaoAgendamento(salva);
 
         try {
             String meetLink = googleCalendarService.criarEventoParaUsuarioLogado(salva);
             if (meetLink != null) {
                 salva.setLinkOnline(meetLink);
-                reuniaoRepository.save(salva);
+                salva = reuniaoRepository.save(salva);
             }
         } catch (Exception ignored) {
         }
 
+        enviarNotificacaoAgendamento(salva);
         return converterParaResponse(salva);
     }
 
