@@ -214,6 +214,11 @@ public class GoogleOAuthLoginService {
                 Usuario.SituacaoUsuario.ATIVO,
                 List.of(Cargo.CEO, Cargo.COMPLIANCE, Cargo.MEMBRO_CONSELHO));
         emailService.notificarAdministradoresNovoCadastroGoogle(nome, email, admins);
+        try {
+            emailService.enviarCadastroPendenteGoogle(email, nome);
+            emailService.enviarBoasVindasNovoColaborador(email, nome);
+        } catch (Exception ignored) {
+        }
         notificacaoInternaService.notificarAdministradores(
                 "Novo cadastro via Google aguardando aprovação: " + nome + " (" + email + ")");
 
