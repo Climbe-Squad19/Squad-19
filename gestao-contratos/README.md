@@ -1,6 +1,3 @@
-tarefa 1/2
-
-Fiz algumas implementações importantes no backend da gestão de contratos. Vou explicar o que foi feito de forma bem direta pra vocês entenderem o que mudou e como usar.
 
 ---
 
