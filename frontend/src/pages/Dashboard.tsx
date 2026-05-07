@@ -2671,7 +2671,7 @@ export default function Dashboard({ onLogout }: DashboardProps) {
         <div className="profile-overview-layout">
           <article className="profile-summary-card">
             <div className="profile-summary-main">
-              <Avatar sx={{ width: 56, height: 56, bgcolor: '#42bee8', color: '#04121f', fontWeight: 700 }}>{userInitials}</Avatar>
+              <Avatar sx={{ width: 56, height: 56, bgcolor: '#79C6C0', color: '#04121f', fontWeight: 700 }}>{userInitials}</Avatar>
               <div className="profile-summary-text">
                 <div className="profile-summary-heading">
                   <strong>{profile.fullName}</strong>
@@ -2975,7 +2975,7 @@ export default function Dashboard({ onLogout }: DashboardProps) {
                         fontWeight: 700,
                         lineHeight: '22px',
                         textAlign: 'center',
-                        background: '#42bee8',
+                        background: '#79C6C0',
                         color: '#04121f',
                       }}
                     >
