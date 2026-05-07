@@ -1,6 +1,6 @@
 # Squad 19 — Climbe Investimentos
 
-> Sistema de gestão e gerenciamento de contratos desenvolvido para a **Climbe Investimentos** em parceria com a **Universidade Tiradentes** e o **Porto Digital**, no âmbito da disciplina de **Residência de Software**.
+> Sistema de gestão e gerenciamento de contratos desenvolvido para a **Climbe Investimentos** em parceria com a **Universidade Tiradentes** e o **Porto Digital**, no âmbito da disciplina de **Residência de Software III**.
 
 ---
 
@@ -193,8 +193,8 @@ POST http://localhost:8081/auth/login
 Content-Type: application/json
 
 {
-  "email": "usuario@climbe.com",
-  "senha": "suasenha"
+  "email": "admin@climbe.com",
+  "senha": "PrimeiroAcesso@123"
 }
 ```
 
