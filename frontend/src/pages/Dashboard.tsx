@@ -69,6 +69,7 @@ type ClientCompany = {
 };
 
 type ProposalCardItem = {
+  id?: number;
   company: string;
   tag: 'BPO' | 'Financeiro' | 'Valuation';
   amount: string;
@@ -76,6 +77,13 @@ type ProposalCardItem = {
   rejectionReason?: string;
 };
 
+
+const PROPOSAL_STATUS_OVERRIDES_KEY = 'dashboard:proposal-status-overrides';
+
+type ProposalStatusOverride = {
+  status: 'ACEITA' | 'RECUSADA';
+  rejectionReason?: string;
+};
 type ProposalColumn = {
   title: string;
   items: ProposalCardItem[];
@@ -608,13 +616,40 @@ export default function Dashboard({ onLogout }: DashboardProps) {
     return 'BPO';
   };
 
+  const getProposalStatusOverrides = (): Record<number, ProposalStatusOverride> => {
+    try {
+      const raw = window.localStorage.getItem(PROPOSAL_STATUS_OVERRIDES_KEY);
+      if (!raw) {
+        return {};
+      }
+      return JSON.parse(raw) as Record<number, ProposalStatusOverride>;
+    } catch {
+      return {};
+    }
+  };
+
+  const saveProposalStatusOverride = (proposalId: number | undefined, override: ProposalStatusOverride) => {
+    if (!proposalId) {
+      return;
+    }
+    const current = getProposalStatusOverrides();
+    current[proposalId] = override;
+    window.localStorage.setItem(PROPOSAL_STATUS_OVERRIDES_KEY, JSON.stringify(current));
+  };
+
   const buildProposalColumns = (propostas: PropostaApiResponse[]): ProposalColumn[] => {
+    const overrides = getProposalStatusOverrides();
     const stages = ['Rascunhos', 'Aguardando Aprovação', 'Em Revisão (Recusados)', 'Aceitas (Contratos gerados)'];
     return stages.map((stage) => ({
       title: stage,
       items: propostas
-        .filter((proposta) => statusToProposalStage(proposta.status) === stage)
+        .filter((proposta) => {
+          const override = proposta.id ? overrides[proposta.id] : undefined;
+          const currentStatus = override?.status ?? proposta.status;
+          return statusToProposalStage(currentStatus) === stage;
+        })
         .map((proposta) => ({
+          id: proposta.id,
           company: proposta.nomeEmpresa,
           tag: serviceTagFromText(proposta.servicoContratado || ''),
           amount: `R$ ${Number(proposta.valorMensal || 0).toLocaleString('pt-BR')}`,
@@ -622,7 +657,11 @@ export default function Dashboard({ onLogout }: DashboardProps) {
             ? `criada em ${new Date(proposta.dataCriacao).toLocaleDateString('pt-BR')}`
             : 'criada recentemente',
           rejectionReason:
-            proposta.motivoRecusa || proposta.motivoDaRecusa || proposta.justificativaRecusa || undefined,
+            (proposta.id ? overrides[proposta.id]?.rejectionReason : undefined) ||
+            proposta.motivoRecusa ||
+            proposta.motivoDaRecusa ||
+            proposta.justificativaRecusa ||
+            undefined,
         })),
     }));
   };
@@ -1278,10 +1317,7 @@ export default function Dashboard({ onLogout }: DashboardProps) {
 
       const itemIndex = fromColumn.items.findIndex(
         (candidate) =>
-          candidate.company === item.company &&
-          candidate.amount === item.amount &&
-          candidate.createdLabel === item.createdLabel &&
-          candidate.tag === item.tag
+          candidate.id === item.id
       );
 
       if (itemIndex < 0) {
@@ -1308,6 +1344,7 @@ export default function Dashboard({ onLogout }: DashboardProps) {
       return;
     }
 
+    saveProposalStatusOverride(selectedProposalDetail.id, { status: 'ACEITA' });
     updateProposalStage(selectedProposalDetail, 'Aceitas (Contratos gerados)');
     setSelectedProposalDetail((prev) =>
       prev ? { ...prev, stage: 'Aceitas (Contratos gerados)', rejectionReason: undefined } : prev
@@ -1327,6 +1364,7 @@ export default function Dashboard({ onLogout }: DashboardProps) {
       return;
     }
 
+    saveProposalStatusOverride(selectedProposalDetail.id, { status: 'RECUSADA', rejectionReason: reason });
     updateProposalStage(selectedProposalDetail, 'Em Revisão (Recusados)', reason);
     setSelectedProposalDetail((prev) =>
       prev ? { ...prev, stage: 'Em Revisão (Recusados)', rejectionReason: reason } : prev
