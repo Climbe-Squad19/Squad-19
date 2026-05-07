@@ -713,7 +713,7 @@ a {
   display: grid;
   place-items: center;
   border-radius: 999px;
-  background: linear-gradient(135deg, #66f7d9, #3fa9ff);
+  background: linear-gradient(135deg,#79C6C0, #4a9e98);
   color: #020617;
   font-weight: 700;
 }
@@ -1627,7 +1627,7 @@ a {
   display: grid;
   place-items: center;
   border-radius: 8px;
-  background: linear-gradient(135deg, #7ad0c9, #3fa9ff);
+  background: linear-gradient(135deg, #79C6C0, #4a9e98);
   color: #04121f;
   font-weight: 700;
   flex: 0 0 auto;
