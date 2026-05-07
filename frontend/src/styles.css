@@ -853,6 +853,7 @@ a {
 .proposal-column-list {
   display: grid;
   gap: 14px;
+  margin: 0 20px;
 }
 
 .panel-header h3,
