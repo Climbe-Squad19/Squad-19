@@ -73,6 +73,7 @@ type ProposalCardItem = {
   tag: 'BPO' | 'Financeiro' | 'Valuation';
   amount: string;
   createdLabel: string;
+  rejectionReason?: string;
 };
 
 type ProposalColumn = {
@@ -619,6 +620,8 @@ export default function Dashboard({ onLogout }: DashboardProps) {
           createdLabel: proposta.dataCriacao
             ? `criada em ${new Date(proposta.dataCriacao).toLocaleDateString('pt-BR')}`
             : 'criada recentemente',
+          rejectionReason:
+            proposta.motivoRecusa || proposta.motivoDaRecusa || proposta.justificativaRecusa || undefined,
         })),
     }));
   };
@@ -3357,6 +3360,12 @@ export default function Dashboard({ onLogout }: DashboardProps) {
                 <article className="team-member-meta-item team-member-meta-item--full">
                   <span>Histórico</span>
                   <strong>{selectedProposalDetail.createdLabel}</strong>
+                  {selectedProposalDetail.rejectionReason && (
+                    <>
+                      <span style={{ marginTop: 12 }}>Motivo da recusa</span>
+                      <strong>{selectedProposalDetail.rejectionReason}</strong>
+                    </>
+                  )}
                 </article>
               </div>
 
