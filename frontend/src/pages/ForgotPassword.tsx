@@ -1,19 +1,18 @@
-import { FormEvent, useMemo, useState } from 'react';
+import React, { FormEvent, useMemo, useState } from 'react';
+import { Link, useNavigate } from 'react-router-dom'; // Trazendo navegação por rota
 import { forgotPassword, resetPassword } from '../services/auth';
 
-interface ForgotPasswordProps {
-  onBackToLogin: () => void;
-}
-
-export default function ForgotPassword({ onBackToLogin }: ForgotPasswordProps) {
+export default function ForgotPassword() {
   const [email, setEmail] = useState('');
   const [token, setToken] = useState('');
   const [newPassword, setNewPassword] = useState('');
   const [feedback, setFeedback] = useState('');
   const [feedbackError, setFeedbackError] = useState(false);
-  const tokenFromUrl = useMemo(() => new URLSearchParams(window.location.search).get('token') ?? '', []);
 
+  const tokenFromUrl = useMemo(() => new URLSearchParams(window.location.search).get('token') ?? '', []);
   const tokenValue = token || tokenFromUrl;
+
+  const navigate = useNavigate();
 
   const handleRequestReset = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -44,73 +43,69 @@ export default function ForgotPassword({ onBackToLogin }: ForgotPasswordProps) {
   };
 
   return (
-    <main className="screen login-screen">
-      <section className="login-panel login-panel--brand">
-        <div>
-          <span className="brand-tag">climbe</span>
-          <h1>Recupere seu acesso em poucos passos</h1>
-          <p>
-            Informe seu Gmail para receber o link/token de recuperacao e redefina sua senha com seguranca.
+    <section className="w-full min-h-screen flex flex-col items-center justify-center p-8">
+      <div className="flex flex-col items-center justify-center gap-6 min-w-80 w-full max-w-80">
+
+        <h2 className='text-lg font-bold'>Recuperar senha</h2>
+
+        <form onSubmit={handleRequestReset} className="w-full flex flex-col gap-4">
+          <label className="text-sm font-bold text-zinc-100 w-full flex flex-col gap-3">
+            Seu e-mail
+            <input
+              type="email"
+              placeholder="seuemail@gmail.com"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              className="flex flex-1 w-full rounded-md bg-transparent border border-zinc-700 px-3 py-2 text-sm text-zinc-100 outlie-none disabled:cursor-not-allowed focus-within:outline-none focus-within:ring-2 focus-within:ring-zinc-800 focus-within:ring-offset-2 focus-within:ring-offset-zinc-950"
+              required
+            />
+          </label>
+          <button type="submit" className="w-full bg-[#79C6C0]/30 flex py-2 items-center justify-center gap-3 rounded-md text-sm font-bold cursor-pointer hover:bg-[#79C6C0]/20 transition-all">
+            Solicitar token de recuperação
+          </button>
+        </form>
+
+        {/* <form onSubmit={handleResetPassword} className="w-full flex flex-col gap-4 mt-4 border-t border-[rgba(255,255,255,0.08)] pt-6">
+          <label className="text-sm font-bold text-zinc-100 flex flex-col gap-2">
+            Token de recuperação
+            <input
+              type="text"
+              placeholder="Cole o token recebido"
+              value={tokenValue}
+              onChange={(e) => setToken(e.target.value)}
+              className="rounded-md bg-[rgba(11,17,30,0.82)] border border-[rgba(255,255,255,0.12)] px-3 py-2 text-sm text-zinc-100 focus-within:outline-none focus-within:ring-2 focus-within:ring-zinc-800"
+              required
+            />
+          </label>
+          <label className="text-sm font-bold text-zinc-100 flex flex-col gap-2">
+            Nova senha
+            <input
+              type="password"
+              placeholder="Mínimo 6 caracteres"
+              value={newPassword}
+              onChange={(e) => setNewPassword(e.target.value)}
+              className="rounded-md bg-[rgba(11,17,30,0.82)] border border-[rgba(255,255,255,0.12)] px-3 py-2 text-sm text-zinc-100 focus-within:outline-none focus-within:ring-2 focus-within:ring-zinc-800"
+              required
+              minLength={6}
+            />
+          </label>
+          <button type="submit" className="w-full bg-transparent border border-[#79C6C0]/50 py-2 rounded-md text-sm font-bold hover:bg-[#79C6C0]/10 transition-all">
+            Redefinir senha
+          </button>
+        </form> */}
+
+        {/* {feedback && (
+          <p className={`text-sm text-center ${feedbackError ? 'text-red-400' : 'text-green-400'}`}>
+            {feedback}
           </p>
+        )} */}
+
+        <div className="w-full flex justify-center">
+          <Link to='/login' className='text-[#9bc0ff] text-sm underline'>
+            Voltar para login
+          </Link>
         </div>
-      </section>
-
-      <section className="login-panel login-panel--form">
-        <div className="login-card">
-          <small>Recuperacao de Senha</small>
-          <h2>Esqueci minha senha</h2>
-
-          <form onSubmit={handleRequestReset} className="login-form">
-            <label>
-              Gmail para recuperacao
-              <input
-                type="email"
-                placeholder="seuemail@gmail.com"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                required
-              />
-            </label>
-            <button type="submit" className="button button--primary">Enviar no Gmail</button>
-          </form>
-
-          <form onSubmit={handleResetPassword} className="login-form" style={{ marginTop: 16 }}>
-            <label>
-              Token de recuperacao
-              <input
-                type="text"
-                placeholder="Cole o token recebido"
-                value={tokenValue}
-                onChange={(e) => setToken(e.target.value)}
-                required
-              />
-            </label>
-            <label>
-              Nova senha
-              <input
-                type="password"
-                placeholder="Minimo 6 caracteres"
-                value={newPassword}
-                onChange={(e) => setNewPassword(e.target.value)}
-                required
-              />
-            </label>
-            <button type="submit" className="button button--outline">Redefinir senha</button>
-          </form>
-
-          {feedback && (
-            <p className={feedbackError ? 'form-error' : ''} style={{ marginTop: 12 }}>
-              {feedback}
-            </p>
-          )}
-
-          <div className="login-actions login-actions--stacked">
-            <button type="button" className="button button--text login-back-button" onClick={onBackToLogin}>
-              Voltar para login
-            </button>
-          </div>
-        </div>
-      </section>
-    </main>
+      </div>
+    </section>
   );
 }

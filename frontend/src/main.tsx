@@ -1,19 +1,16 @@
 import React from 'react';
 import ReactDOM from 'react-dom/client';
 import { CssBaseline, ThemeProvider } from '@mui/material';
-import { Provider } from 'react-redux';
-import App from './App';
-import { store } from './store';
+// import App from './app/App';
+import { App } from './App'
 import theme from './theme';
 import './styles.css';
 
 ReactDOM.createRoot(document.getElementById('root') as HTMLElement).render(
   <React.StrictMode>
-    <Provider store={store}>
-      <ThemeProvider theme={theme}>
-        <CssBaseline />
-        <App />
-      </ThemeProvider>
-    </Provider>
+    {/* <CssBaseline /> */}
+    <App />
+    <ThemeProvider theme={theme}>
+    </ThemeProvider>
   </React.StrictMode>
 );

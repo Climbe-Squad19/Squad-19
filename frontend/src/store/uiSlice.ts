@@ -1,26 +1,11 @@
-import { createSlice, PayloadAction } from '@reduxjs/toolkit';
-
-export type ActiveMenuItem =
-  | 'Dashboard'
-  | 'Agenda'
-  | 'Propostas comerciais'
-  | 'Clientes / Empresas'
-  | 'Equipe'
-  | 'Configurações'
-  | 'Perfil';
-
-export type ExpandedSection = 'agenda' | 'contracts' | 'dueDates' | null;
+import { createSlice, type PayloadAction } from '@reduxjs/toolkit';
 
 interface UiState {
-  activeMenuItem: ActiveMenuItem;
-  expandedSection: ExpandedSection;
   showNotifications: boolean;
   notificationMessage: string;
 }
 
 const initialState: UiState = {
-  activeMenuItem: 'Dashboard',
-  expandedSection: null,
   showNotifications: false,
   notificationMessage: '',
 };
@@ -29,12 +14,6 @@ const uiSlice = createSlice({
   name: 'ui',
   initialState,
   reducers: {
-    setActiveMenuItem(state, action: PayloadAction<ActiveMenuItem>) {
-      state.activeMenuItem = action.payload;
-    },
-    toggleExpandedSection(state, action: PayloadAction<Exclude<ExpandedSection, null>>) {
-      state.expandedSection = state.expandedSection === action.payload ? null : action.payload;
-    },
     openNotifications(state, action: PayloadAction<string>) {
       state.showNotifications = true;
       state.notificationMessage = action.payload;
@@ -46,5 +25,5 @@ const uiSlice = createSlice({
   },
 });
 
-export const { setActiveMenuItem, toggleExpandedSection, openNotifications, closeNotifications } = uiSlice.actions;
+export const { openNotifications, closeNotifications } = uiSlice.actions;
 export default uiSlice.reducer;

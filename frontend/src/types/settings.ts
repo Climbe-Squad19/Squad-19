@@ -1,0 +1,1 @@
+export type SettingsSection = 'Meu Perfil' | 'Segurança' | 'Notificações' | 'Integrações';

@@ -1,0 +1,2 @@
+export const CALENDAR_WEEKDAY_LABELS = ['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb'] as const;
+export const GC_EVENT_COLORS = ['#4285F4', '#0B8043', '#D50000', '#F4511E', '#8E24AA', '#039BE5', '#7986CB'] as const;
