@@ -3438,10 +3438,10 @@ export default function Dashboard({ onLogout }: DashboardProps) {
               </div>
 
               {selectedProposalDetail.stage === 'Aguardando Aprovação' && (
-                <label className="field" style={{ marginTop: 12 }}>
+                <label className="proposal-rejection-field">
                   <span>Motivo da recusa (obrigatório para recusar)</span>
                   <textarea
-                    rows={3}
+                    rows={5}
                     placeholder="Descreva o motivo da recusa..."
                     value={proposalRejectionReasonInput}
                     onChange={(event) => setProposalRejectionReasonInput(event.target.value)}
