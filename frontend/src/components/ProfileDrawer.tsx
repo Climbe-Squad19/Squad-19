@@ -108,7 +108,7 @@ export default function ProfileDrawer({ open, onClose }: ProfileDrawerProps) {
     >
       <Box component="form" onSubmit={handleSubmit(onSubmit)} sx={{ p: 3, display: 'grid', gap: 3 }}>
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-          <Avatar sx={{ width: 56, height: 56, bgcolor: '#4cc9f0', color: '#04121f', fontWeight: 700 }}>{initials}</Avatar>
+          <Avatar sx={{ width: 56, height: 56, bgcolor: '#79C6C0', color: '#04121f', fontWeight: 700 }}>{initials}</Avatar>
           <Box>
             <Typography variant="h6">Meu perfil</Typography>
             <Typography variant="body2" sx={{ color: '#9ab0d6' }}>
@@ -232,7 +232,7 @@ export default function ProfileDrawer({ open, onClose }: ProfileDrawerProps) {
           <Button variant="outlined" onClick={onClose} sx={{ borderColor: 'rgba(125,253,212,0.28)', color: '#dbe7ff' }}>
             Fechar
           </Button>
-          <Button type="submit" variant="contained" disabled={isSubmitting} sx={{ background: 'linear-gradient(135deg, #66f7d9, #3fa9ff)', color: '#04121f' }}>
+          <Button type="submit" variant="contained" disabled={isSubmitting} sx={{ background: 'linear-gradient(135deg, #66f7d9, #79C6C0)', color: '#04121f' }}>
             Salvar perfil
           </Button>
         </Box>
