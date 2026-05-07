@@ -8,6 +8,9 @@ export type PropostaApiResponse = {
   valorMensal: number;
   status: string;
   dataCriacao: string;
+  motivoRecusa?: string | null;
+  motivoDaRecusa?: string | null;
+  justificativaRecusa?: string | null;
 };
 
 export type ContratoApiResponse = {

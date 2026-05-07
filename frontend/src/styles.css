@@ -1494,6 +1494,12 @@ a {
   display: grid;
   grid-template-columns: repeat(4, minmax(0, 1fr));
   gap: 16px;
+  align-items: start;
+}
+
+.proposal-column,
+.proposal-column-list {
+  align-content: start;
 }
 
 .company-metrics-grid {
@@ -2189,6 +2195,19 @@ a {
 
 .dialog-card--compact {
   width: min(420px, 100%);
+}
+
+
+.proposal-rejection-field {
+  display: grid;
+  gap: 8px;
+  margin-top: 12px;
+}
+
+.proposal-rejection-field textarea {
+  width: 100%;
+  min-height: 120px;
+  resize: vertical;
 }
 
 .dialog-actions {
