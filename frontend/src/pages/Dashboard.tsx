@@ -73,6 +73,7 @@ type ProposalCardItem = {
   tag: 'BPO' | 'Financeiro' | 'Valuation';
   amount: string;
   createdLabel: string;
+  rejectionReason?: string;
 };
 
 type ProposalColumn = {
@@ -424,6 +425,7 @@ export default function Dashboard({ onLogout }: DashboardProps) {
   const [companyDocumentsData, setCompanyDocumentsData] = useState<CompanyDocument[]>(companyDocuments);
   const [companyMeetingsData, setCompanyMeetingsData] = useState<CompanyMeeting[]>(companyMeetings);
   const [selectedProposalDetail, setSelectedProposalDetail] = useState<(ProposalCardItem & { stage: string }) | null>(null);
+  const [proposalRejectionReasonInput, setProposalRejectionReasonInput] = useState('');
   const [entityActionModal, setEntityActionModal] = useState<EntityActionModal | null>(null);
   const [settingsSection, setSettingsSection] = useState<SettingsSection>('Meu Perfil');
   const [settingsName, setSettingsName] = useState(profile.fullName);
@@ -619,6 +621,8 @@ export default function Dashboard({ onLogout }: DashboardProps) {
           createdLabel: proposta.dataCriacao
             ? `criada em ${new Date(proposta.dataCriacao).toLocaleDateString('pt-BR')}`
             : 'criada recentemente',
+          rejectionReason:
+            proposta.motivoRecusa || proposta.motivoDaRecusa || proposta.justificativaRecusa || undefined,
         })),
     }));
   };
@@ -1262,6 +1266,73 @@ export default function Dashboard({ onLogout }: DashboardProps) {
 
   function handleOpenProposalDetail(item: ProposalCardItem, stage: string) {
     setSelectedProposalDetail({ ...item, stage });
+    setProposalRejectionReasonInput('');
+  }
+  function updateProposalStage(item: ProposalCardItem & { stage: string }, targetStage: string, rejectionReason?: string) {
+    setProposalBoard((prev) => {
+      const next = prev.map((column) => ({ ...column, items: [...column.items] }));
+      const fromColumn = next.find((column) => column.title === item.stage);
+      if (!fromColumn) {
+        return prev;
+      }
+
+      const itemIndex = fromColumn.items.findIndex(
+        (candidate) =>
+          candidate.company === item.company &&
+          candidate.amount === item.amount &&
+          candidate.createdLabel === item.createdLabel &&
+          candidate.tag === item.tag
+      );
+
+      if (itemIndex < 0) {
+        return prev;
+      }
+
+      const [currentItem] = fromColumn.items.splice(itemIndex, 1);
+      const toColumn = next.find((column) => column.title === targetStage);
+      if (!toColumn) {
+        return prev;
+      }
+
+      toColumn.items.unshift({
+        ...currentItem,
+        rejectionReason: targetStage === 'Em Revisão (Recusados)' ? rejectionReason || currentItem.rejectionReason : undefined,
+      });
+
+      return next;
+    });
+  }
+
+  function handleApproveProposal() {
+    if (!selectedProposalDetail) {
+      return;
+    }
+
+    updateProposalStage(selectedProposalDetail, 'Aceitas (Contratos gerados)');
+    setSelectedProposalDetail((prev) =>
+      prev ? { ...prev, stage: 'Aceitas (Contratos gerados)', rejectionReason: undefined } : prev
+    );
+    setProposalRejectionReasonInput('');
+    dispatch(openNotifications('Proposta aprovada com sucesso.'));
+  }
+
+  function handleRejectProposal() {
+    if (!selectedProposalDetail) {
+      return;
+    }
+
+    const reason = proposalRejectionReasonInput.trim();
+    if (!reason) {
+      dispatch(openNotifications('Preencha o motivo da recusa para continuar.'));
+      return;
+    }
+
+    updateProposalStage(selectedProposalDetail, 'Em Revisão (Recusados)', reason);
+    setSelectedProposalDetail((prev) =>
+      prev ? { ...prev, stage: 'Em Revisão (Recusados)', rejectionReason: reason } : prev
+    );
+    setProposalRejectionReasonInput('');
+    dispatch(openNotifications('Proposta recusada e movida para revisão.'));
   }
 
   function openEntityActionPreview(modal: EntityActionModal) {
@@ -3357,11 +3428,35 @@ export default function Dashboard({ onLogout }: DashboardProps) {
                 <article className="team-member-meta-item team-member-meta-item--full">
                   <span>Histórico</span>
                   <strong>{selectedProposalDetail.createdLabel}</strong>
+                  {selectedProposalDetail.rejectionReason && (
+                    <>
+                      <span style={{ marginTop: 12 }}>Motivo da recusa</span>
+                      <strong>{selectedProposalDetail.rejectionReason}</strong>
+                    </>
+                  )}
                 </article>
               </div>
 
+              {selectedProposalDetail.stage === 'Aguardando Aprovação' && (
+                <label className="field" style={{ marginTop: 12 }}>
+                  <span>Motivo da recusa (obrigatório para recusar)</span>
+                  <textarea
+                    rows={3}
+                    placeholder="Descreva o motivo da recusa..."
+                    value={proposalRejectionReasonInput}
+                    onChange={(event) => setProposalRejectionReasonInput(event.target.value)}
+                  />
+                </label>
+              )}
+
               <div className="dialog-actions">
-                <button type="button" className="button button--outline" onClick={() => setSelectedProposalDetail(null)}>Fechar</button>
+                {selectedProposalDetail.stage === 'Aguardando Aprovação' && (
+                  <>
+                    <button type="button" className="button button--outline" onClick={handleRejectProposal}>Recusar</button>
+                    <button type="button" className="button button--primary" onClick={handleApproveProposal}>Aprovar</button>
+                  </>
+                )}
+                <button type="button" className="button button--outline" onClick={() => { setSelectedProposalDetail(null); setProposalRejectionReasonInput(''); }}>Fechar</button>
               </div>
             </section>
           </div>
