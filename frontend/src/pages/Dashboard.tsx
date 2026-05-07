@@ -637,6 +637,16 @@ export default function Dashboard({ onLogout }: DashboardProps) {
     window.localStorage.setItem(PROPOSAL_STATUS_OVERRIDES_KEY, JSON.stringify(current));
   };
 
+
+  const countPendingProposals = (propostas: PropostaApiResponse[]) => {
+    const overrides = getProposalStatusOverrides();
+    return propostas.filter((proposta) => {
+      const override = proposta.id ? overrides[proposta.id] : undefined;
+      const currentStatus = override?.status ?? proposta.status;
+      return statusToProposalStage(currentStatus) === 'Aguardando Aprovação';
+    }).length;
+  };
+
   const buildProposalColumns = (propostas: PropostaApiResponse[]): ProposalColumn[] => {
     const overrides = getProposalStatusOverrides();
     const stages = ['Rascunhos', 'Aguardando Aprovação', 'Em Revisão (Recusados)', 'Aceitas (Contratos gerados)'];
@@ -950,6 +960,14 @@ export default function Dashboard({ onLogout }: DashboardProps) {
         ]);
 
         setProposalBoard(buildProposalColumns(propostas));
+        const pendingCount = countPendingProposals(propostas);
+        setSummaryCards((prev) =>
+          prev.map((card) =>
+            card.title === 'Propostas Pendentes'
+              ? { ...card, value: `${pendingCount} proposta(s)`, subtitle: 'aguardando ação' }
+              : card
+          )
+        );
 
         if (selectedCompany?.id) {
           const companyId = selectedCompany.id;
