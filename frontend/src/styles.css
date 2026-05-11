@@ -848,12 +848,16 @@ a {
 .agenda-list,
 .table-list,
 .upcoming-list,
-.entity-grid,
+.entity-grid {
+  display: grid;
+  gap: 14px;
+  margin: 0 20px;
+}
+
 .proposal-column,
 .proposal-column-list {
   display: grid;
   gap: 14px;
-  margin: 0 20px;
 }
 
 .panel-header h3,
@@ -2192,6 +2196,8 @@ a {
   display: grid;
   gap: 16px;
   box-shadow: 0 24px 60px rgba(0, 0, 0, 0.32);
+  max-height: 90vh;
+  overflow-y: auto;
 }
 
 .dialog-card--compact {

@@ -3494,16 +3494,38 @@ export default function Dashboard({ onLogout }: DashboardProps) {
               </div>
 
               {selectedProposalDetail.stage === 'Aguardando Aprovação' && (
-                <label className="proposal-rejection-field">
-                  <span>Motivo da recusa (obrigatório para recusar)</span>
-                  <textarea
-                    rows={5}
-                    placeholder="Descreva o motivo da recusa..."
-                    value={proposalRejectionReasonInput}
-                    onChange={(event) => setProposalRejectionReasonInput(event.target.value)}
-                  />
-                </label>
-              )}
+  <label className="proposal-rejection-field">
+    <span>Motivo da recusa (obrigatório para recusar)</span>
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginTop: 6 }}>
+      {[
+        'Proposta fora do escopo dos serviços oferecidos pela Climbe.',
+        'Valores e condições comerciais não estão alinhados com o contrato.',
+        'Documentação da empresa contratante está incompleta ou irregular.',
+        'Proposta duplicada ou já existe contrato ativo para este serviço.',
+        'Empresa não atende aos critérios de elegibilidade da Climbe.',
+      ].map((motivo) => (
+        <button
+          key={motivo}
+          type="button"
+          onClick={() => setProposalRejectionReasonInput(motivo)}
+          style={{
+            textAlign: 'left',
+            padding: '10px 14px',
+            borderRadius: 8,
+            border: `1px solid ${proposalRejectionReasonInput === motivo ? '#79C6C0' : 'rgba(255,255,255,0.08)'}`,
+            background: proposalRejectionReasonInput === motivo ? 'rgba(121,198,192,0.12)' : 'rgba(255,255,255,0.03)',
+            color: proposalRejectionReasonInput === motivo ? '#79C6C0' : '#edf2f7',
+            fontSize: 13,
+            cursor: 'pointer',
+            transition: 'all 0.15s ease',
+          }}
+        >
+          {motivo}
+        </button>
+      ))}
+    </div>
+  </label>
+)}
 
               <div className="dialog-actions">
                 {selectedProposalDetail.stage === 'Aguardando Aprovação' && (
