@@ -12,8 +12,7 @@ import {
   fetchUsuariosPendentes,
   UsuarioApiResponse,
 } from '../services/usuarios';
-import { fetchContratos, fetchDocumentosByEmpresa, fetchPropostas, fetchReunioes, PropostaApiResponse } from '../services/business';
-import { fetchGoogleOAuthDisponivel } from '../services/auth';
+import { atualizarStatusProposta, fetchContratos, fetchDocumentosByEmpresa, fetchPropostas, fetchReunioes, PropostaApiResponse } from '../services/business';import { fetchGoogleOAuthDisponivel } from '../services/auth';
 import { fetchMinhasIntegracoes, getGoogleIntegrationAuthUrl, updateIntegracao } from '../services/integracoes';
 import { useAppDispatch, useAppSelector } from '../store/hooks';
 import { updateProfile } from '../store/profileSlice';
@@ -1357,11 +1356,13 @@ export default function Dashboard({ onLogout }: DashboardProps) {
     });
   }
 
-  function handleApproveProposal() {
-    if (!selectedProposalDetail) {
-      return;
-    }
+  async function handleApproveProposal() {
+  if (!selectedProposalDetail?.id) {
+    return;
+  }
 
+  try {
+    await atualizarStatusProposta(selectedProposalDetail.id, 'ACEITA');
     saveProposalStatusOverride(selectedProposalDetail.id, { status: 'ACEITA' });
     updateProposalStage(selectedProposalDetail, 'Aceitas (Contratos gerados)');
     setSelectedProposalDetail((prev) =>
@@ -1369,19 +1370,24 @@ export default function Dashboard({ onLogout }: DashboardProps) {
     );
     setProposalRejectionReasonInput('');
     dispatch(openNotifications('Proposta aprovada com sucesso.'));
+  } catch (err) {
+    dispatch(openNotifications(`Erro ao aprovar proposta: ${err instanceof Error ? err.message : 'Tente novamente.'}`));
+  }
+}
+
+async function handleRejectProposal() {
+  if (!selectedProposalDetail?.id) {
+    return;
   }
 
-  function handleRejectProposal() {
-    if (!selectedProposalDetail) {
-      return;
-    }
+  const reason = proposalRejectionReasonInput.trim();
+  if (!reason) {
+    dispatch(openNotifications('Selecione o motivo da recusa para continuar.'));
+    return;
+  }
 
-    const reason = proposalRejectionReasonInput.trim();
-    if (!reason) {
-      dispatch(openNotifications('Preencha o motivo da recusa para continuar.'));
-      return;
-    }
-
+  try {
+    await atualizarStatusProposta(selectedProposalDetail.id, 'RECUSADA', reason);
     saveProposalStatusOverride(selectedProposalDetail.id, { status: 'RECUSADA', rejectionReason: reason });
     updateProposalStage(selectedProposalDetail, 'Em Revisão (Recusados)', reason);
     setSelectedProposalDetail((prev) =>
@@ -1389,7 +1395,10 @@ export default function Dashboard({ onLogout }: DashboardProps) {
     );
     setProposalRejectionReasonInput('');
     dispatch(openNotifications('Proposta recusada e movida para revisão.'));
+  } catch (err) {
+    dispatch(openNotifications(`Erro ao recusar proposta: ${err instanceof Error ? err.message : 'Tente novamente.'}`));
   }
+}
 
   function openEntityActionPreview(modal: EntityActionModal) {
     setEntityActionModal(modal);
