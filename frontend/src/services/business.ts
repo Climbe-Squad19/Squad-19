@@ -63,23 +63,3 @@ export function fetchReunioes(): Promise<ReuniaoApiResponse[]> {
 export function fetchDocumentosByEmpresa(empresaId: number): Promise<DocumentoApiResponse[]> {
   return fetchJson(`${API_BASE_URL}/documentos/empresa/${empresaId}`);
 }
-
-export async function atualizarStatusProposta(
-  propostaId: number,
-  status: 'ACEITA' | 'RECUSADA',
-  motivoRecusa?: string
-): Promise<PropostaApiResponse> {
-  const params = new URLSearchParams({ status });
-  if (motivoRecusa) {
-    params.append('motivoRecusa', motivoRecusa);
-  }
-  const response = await fetch(
-    `${API_BASE_URL}/propostas/${propostaId}/status?${params.toString()}`,
-    { method: 'PUT', headers: buildAuthHeaders(false) }
-  );
-  if (!response.ok) {
-    const text = await response.text();
-    throw new Error(text || `Erro ao atualizar status da proposta`);
-  }
-  return response.json();
-}
