@@ -1419,7 +1419,7 @@ async function handleRejectProposal() {
     }
 
     if (entityActionModal.downloadUrl) {
-      const response = await fetch(entityActionModal.downloadUrl, { headers: buildAuthHeaders() });
+      const response = await fetch(entityActionModal.downloadUrl);
       if (!response.ok) {
         dispatch(openNotifications('Não foi possível baixar o documento agora.'));
         return;
