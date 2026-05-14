@@ -65,6 +65,7 @@ public class DashboardService {
         List<DashboardRecentContractResponse> ultimosContratos = contratoRepository.findTop5ByOrderByDataCriacaoDesc()
                 .stream()
                 .map(contrato -> new DashboardRecentContractResponse(
+                        contrato.getId(),
                         contrato.getEmpresa() != null ? contrato.getEmpresa().getRazaoSocial() : "Empresa",
                         contrato.getTipoServico(),
                         contrato.getDataCriacao()))
