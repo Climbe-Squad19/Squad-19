@@ -2294,8 +2294,8 @@ async function handleRejectProposal() {
                         openEntityActionPreview({
                           title: item.name,
                           subtitle: 'Documento da empresa',
-                          actionLabel: 'Baixar PDF',
-                          actionIcon: '⇩',
+                          actionLabel: 'Visualizar PDF',
+                          actionIcon: '⌕',
                           details: [
                             { label: 'Categoria', value: item.category },
                             { label: 'Status', value: item.status },
