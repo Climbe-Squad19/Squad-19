@@ -12,7 +12,9 @@ import {
   fetchUsuariosPendentes,
   UsuarioApiResponse,
 } from '../services/usuarios';
-import { atualizarStatusProposta, fetchContratos, fetchDocumentosByEmpresa, fetchPropostas, fetchReunioes, PropostaApiResponse } from '../services/business';import { fetchGoogleOAuthDisponivel } from '../services/auth';
+import { atualizarStatusProposta, fetchContratos, fetchDocumentosByEmpresa, fetchPropostas, fetchReunioes, PropostaApiResponse } from '../services/business';
+import { API_BASE_URL, buildAuthHeaders } from '../services/api';
+import { fetchGoogleOAuthDisponivel } from '../services/auth';
 import { fetchMinhasIntegracoes, getGoogleIntegrationAuthUrl, updateIntegracao } from '../services/integracoes';
 import { useAppDispatch, useAppSelector } from '../store/hooks';
 import { updateProfile } from '../store/profileSlice';
@@ -107,6 +109,7 @@ type CompanyContract = {
 };
 
 type CompanyDocument = {
+  id?: number;
   name: string;
   category: string;
   status: string;
@@ -140,6 +143,7 @@ type EntityActionModal = {
   details: Array<{ label: string; value: string }>;
   fileName?: string;
   fileContent?: string;
+  downloadUrl?: string;
 };
 
 type NotificationFeedItem = {
@@ -1020,6 +1024,7 @@ export default function Dashboard({ onLogout }: DashboardProps) {
         const docs = await fetchDocumentosByEmpresa(selectedCompany.id);
         setCompanyDocumentsData(
           docs.map((doc) => ({
+            id: doc.id,
             name: doc.nomeArquivo || `Documento ${doc.id}`,
             category: doc.tipo || 'Documento',
             status: doc.status || 'PENDENTE',
@@ -1408,12 +1413,25 @@ async function handleRejectProposal() {
     setEntityActionModal(null);
   }
 
-  function confirmEntityActionPreview() {
+  async function confirmEntityActionPreview() {
     if (!entityActionModal) {
       return;
     }
 
-    if (entityActionModal.variant === 'download') {
+    if (entityActionModal.downloadUrl) {
+      const response = await fetch(entityActionModal.downloadUrl, { headers: buildAuthHeaders() });
+      if (!response.ok) {
+        dispatch(openNotifications('Não foi possível baixar o documento agora.'));
+        return;
+      }
+      const blob = await response.blob();
+      const downloadUrl = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = downloadUrl;
+      link.download = entityActionModal.fileName ?? entityActionModal.title;
+      link.click();
+      URL.revokeObjectURL(downloadUrl);
+    } else if (entityActionModal.variant === 'download') {
       const blob = new Blob([entityActionModal.fileContent ?? entityActionModal.title], {
         type: 'text/plain;charset=utf-8',
       });
@@ -2287,13 +2305,15 @@ async function handleRejectProposal() {
                         openEntityActionPreview({
                           title: item.name,
                           subtitle: 'Documento da empresa',
-                          actionLabel: 'Fechar',
-                          actionIcon: '⌕',
+                          actionLabel: 'Baixar PDF',
+                          actionIcon: '⇩',
                           details: [
                             { label: 'Categoria', value: item.category },
                             { label: 'Status', value: item.status },
                             { label: 'Empresa', value: selectedCompany?.name ?? 'Empresa atual' },
                           ],
+                          downloadUrl: item.id ? `${API_BASE_URL}/documentos/${item.id}/download` : undefined,
+                          fileName: item.name,
                         })
                       }
                     >
