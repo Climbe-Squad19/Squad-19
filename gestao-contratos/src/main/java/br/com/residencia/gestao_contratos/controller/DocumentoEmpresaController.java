@@ -67,15 +67,28 @@ public class DocumentoEmpresaController {
     }
 
     @GetMapping("/{id}/download")
-    public ResponseEntity<byte[]> download(@PathVariable Long id) {
-        DocumentoEmpresa documento = documentoService.buscarParaDownload(id);
+public ResponseEntity<?> download(@PathVariable Long id) {
+    DocumentoEmpresa documento = documentoService.buscarParaDownload(id);
 
-        return ResponseEntity.ok()
-                .header(HttpHeaders.CONTENT_DISPOSITION,
-                        "attachment; filename=\"" + documento.getNomeArquivo() + "\"")
-                .contentType(MediaType.parseMediaType(documento.getTipoArquivo()))
-                .body(documento.getConteudo());
+    // Se tiver link do Google Drive, redireciona
+    if (documento.getGoogleDriveWebViewLink() != null) {
+        return ResponseEntity.status(HttpStatus.FOUND)
+                .header(HttpHeaders.LOCATION, documento.getGoogleDriveWebViewLink())
+                .build();
     }
+
+    // Fallback: retorna o conteúdo salvo no banco
+    if (documento.getConteudo() == null) {
+        return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                .body("Arquivo não encontrado.");
+    }
+
+    return ResponseEntity.ok()
+            .header(HttpHeaders.CONTENT_DISPOSITION,
+                    "attachment; filename=\"" + documento.getNomeArquivo() + "\"")
+            .contentType(MediaType.parseMediaType(documento.getTipoArquivo()))
+            .body(documento.getConteudo());
+}
 
     @GetMapping("/empresa/{empresaId}/completo")
     public ResponseEntity<Boolean> verificarCompleto(
