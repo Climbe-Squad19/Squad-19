@@ -1418,16 +1418,8 @@ async function handleRejectProposal() {
       return;
     }
 
-    if (entityActionModal.downloadUrl) {
+   if (entityActionModal.downloadUrl) {
       window.open(entityActionModal.downloadUrl, '_blank');
-      }
-      const blob = await response.blob();
-      const downloadUrl = URL.createObjectURL(blob);
-      const link = document.createElement('a');
-      link.href = downloadUrl;
-      link.download = entityActionModal.fileName ?? entityActionModal.title;
-      link.click();
-      URL.revokeObjectURL(downloadUrl);
     } else if (entityActionModal.variant === 'download') {
       const blob = new Blob([entityActionModal.fileContent ?? entityActionModal.title], {
         type: 'text/plain;charset=utf-8',
