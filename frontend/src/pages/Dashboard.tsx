@@ -1420,9 +1420,6 @@ async function handleRejectProposal() {
 
     if (entityActionModal.downloadUrl) {
       window.open(entityActionModal.downloadUrl, '_blank');
-      if (!response.ok) {
-        dispatch(openNotifications('Não foi possível baixar o documento agora.'));
-        return;
       }
       const blob = await response.blob();
       const downloadUrl = URL.createObjectURL(blob);
