@@ -3,7 +3,8 @@ import { useMemo, useState, type FormEvent } from 'react';
 import { useOutletContext } from 'react-router-dom';
 import { companyReports } from '../../mocks/business.mock';
 import { useCompanies } from '../../hooks/use-companies';
-import EntityActionModal from '../../components/modals/entity-action-modal';
+import { EntityActionModal } from '../../types';
+import EntityActionModalData from '../../components/modals/entity-action-modal';
 
 export default function CompaniesPage() {
   const { search } = useOutletContext<{ search: string }>();
@@ -27,7 +28,7 @@ export default function CompaniesPage() {
   const [companyFormStatus, setCompanyFormStatus] = useState<'Ativa' | 'Inativa'>('Ativa');
   const [companyFormSubmitting, setCompanyFormSubmitting] = useState(false);
   const [companyFormError, setCompanyFormError] = useState('');
-  const [entityActionModal, setEntityActionModal] = useState<EntityActionModalData | null>(null);
+  const [entityActionModal, setEntityActionModal] = useState<EntityActionModal | null>(null);
 
   const searchTerm = search.trim().toLowerCase();
   const filteredCompanies = useMemo(
@@ -362,7 +363,7 @@ export default function CompaniesPage() {
         </section>
       )}
 
-      <EntityActionModal modal={entityActionModal} onClose={() => setEntityActionModal(null)} onConfirm={confirmEntityActionPreview} />
+      <EntityActionModalData modal={entityActionModal} onClose={() => setEntityActionModal(null)} onConfirm={confirmEntityActionPreview} />
     </>
   );
 }

@@ -9,7 +9,7 @@ import SettingsPage from "./pages/app/settings"
 import TeamPage from "./pages/app/team"
 import CompaniesPage from "./pages/app/companies"
 import { ForgotPassword } from "./pages/auth/forgot-password"
-import { Login } from "./pages/auth/Login"
+import { Login } from "./pages/auth/login"
 
 export const router = createBrowserRouter([
   {
