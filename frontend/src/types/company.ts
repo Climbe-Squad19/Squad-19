@@ -33,6 +33,7 @@ export type CompanyDocument = {
   name: string;
   category: string;
   status: string;
+  downloadUrl?: string;
 };
 
 export type CompanyMeeting = {
