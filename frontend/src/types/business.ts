@@ -1,8 +1,11 @@
 export type ProposalCardItem = {
+  id?: number;
   company: string;
   tag: 'BPO' | 'Financeiro' | 'Valuation';
   amount: string;
   createdLabel: string;
+  rejectionReason?: string;
+  linkGoogleDrive?: string;
 };
 
 export type ProposalColumn = {
