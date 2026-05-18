@@ -7,7 +7,7 @@ import { useProposals } from '../../hooks/use-proposals';
 
 export default function ProposalsPage() {
   const { search } = useOutletContext<{ search: string }>();
-  const { proposalBoard } = useProposals();
+  const { proposalBoard, aprovarProposta, recusarProposta } = useProposals();
   const [selectedProposalDetail, setSelectedProposalDetail] = useState<(ProposalCardItem & { stage: string }) | null>(null);
 
   const searchTerm = search.trim().toLowerCase();
@@ -51,7 +51,11 @@ export default function ProposalsPage() {
                       <small>{item.createdLabel}</small>
                     </div>
                     <Tooltip title="Ver detalhes" arrow>
-                      <button type="button" className="icon-button detail-icon-button" onClick={() => setSelectedProposalDetail({ ...item, stage: column.title })}>
+                      <button
+                        type="button"
+                        className="icon-button detail-icon-button"
+                        onClick={() => setSelectedProposalDetail({ ...item, stage: column.title })}
+                      >
                         ⌕
                       </button>
                     </Tooltip>
@@ -63,7 +67,12 @@ export default function ProposalsPage() {
         </div>
       </section>
 
-      <ProposalDetailModal detail={selectedProposalDetail} onClose={() => setSelectedProposalDetail(null)} />
+      <ProposalDetailModal
+        detail={selectedProposalDetail}
+        onClose={() => setSelectedProposalDetail(null)}
+        onApprove={aprovarProposta}
+        onReject={recusarProposta}
+      />
     </>
   );
 }
