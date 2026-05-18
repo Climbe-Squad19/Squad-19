@@ -11,6 +11,7 @@ export type PropostaApiResponse = {
   motivoRecusa?: string | null;
   motivoDaRecusa?: string | null;
   justificativaRecusa?: string | null;
+  linkGoogleDrive?: string | null;
 };
 
 export type ContratoApiResponse = {
