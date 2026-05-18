@@ -209,6 +209,17 @@ export default function CompaniesPage() {
                     <small>{item.category}</small>
                   </div>
                   <span className="detail-table-status">{item.status}</span>
+                  {item.downloadUrl && (
+                    <Tooltip title="Visualizar documento" arrow>
+                      <button
+                        type="button"
+                        className="icon-button detail-icon-button"
+                        onClick={() => window.open(item.downloadUrl, '_blank')}
+                      >
+                        ⌕
+                      </button>
+                    </Tooltip>
+                  )}
                 </article>
               ))}
             </div>
