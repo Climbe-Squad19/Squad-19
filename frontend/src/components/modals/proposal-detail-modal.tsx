@@ -96,7 +96,7 @@ export default function ProposalDetailModal({ detail, onClose, onApprove, onReje
             style={{ marginTop: 12, width: '100%' }}
             onClick={() => window.open(detail.linkGoogleDrive!, '_blank')}
           >
-            📄 Ver proposta no Drive
+            Analisar proposta 
           </button>
         )}
 
