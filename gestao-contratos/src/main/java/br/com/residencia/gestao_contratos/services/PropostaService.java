@@ -35,6 +35,9 @@ public class PropostaService {
     @Autowired
     private ContratoService contratoService;
 
+    @Autowired
+    private EmailService emailService;
+
     private static final List<Cargo> CARGOS_AUTORIZADOS = List.of(
         Cargo.CMO,
         Cargo.CSO,
@@ -71,7 +74,7 @@ public class PropostaService {
 
         Proposta proposta = new Proposta();
         proposta.setEmpresa(empresa);
-        proposta.setCriadoPor(usuarioLogado);   // ← agora vem do JWT
+        proposta.setCriadoPor(usuarioLogado);
         proposta.setServicoContratado(request.getServicoContratado());
         proposta.setValorMensal(request.getValorMensal());
         proposta.setValorSetup(request.getValorSetup());
@@ -81,6 +84,19 @@ public class PropostaService {
         proposta.setDataCriacao(LocalDateTime.now());
 
         Proposta salva = propostaRepository.save(proposta);
+
+        try {
+            List<Cargo> cargosLideranca = List.of(Cargo.CEO, Cargo.CFO, Cargo.CMO, Cargo.CSO);
+            List<Usuario> lideres = usuarioRepository.findByCargoIn(cargosLideranca);
+            emailService.notificarNovaProposta(
+                    salva.getServicoContratado(),
+                    salva.getEmpresa().getRazaoSocial(),
+                    salva.getCriadoPor().getNomeCompleto(),
+                    lideres);
+        } catch (Exception ignored) {
+            // Email não deve interromper a criação da proposta.
+        }
+
         return converterParaResponse(salva);
     }
 

@@ -3,6 +3,7 @@ import { createSlice, PayloadAction } from '@reduxjs/toolkit';
 export type DocumentType = 'CPF' | 'CNPJ';
 
 export interface ProfileState {
+  id?: number;
   fullName: string;
   email: string;
   role: string;
