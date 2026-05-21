@@ -1802,12 +1802,26 @@ async function handleRejectProposal() {
                 {visibleContracts.length > 0 ? (
                   visibleContracts.map((contract) => (
                     <div key={contract.company} className="table-row">
-                      <div>
-                        <strong>{contract.company}</strong>
-                        <small>{contract.service}</small>
-                      </div>
-                      <span>{contract.start}</span>
-                    </div>
+  <div>
+    <strong>{contract.company}</strong>
+    <small>{contract.service}</small>
+  </div>
+  <span>{contract.start}</span>
+  <label style={{ cursor: 'pointer', fontSize: '12px', color: '#6366f1' }}>
+    📎 Upload PDF
+    <input
+      type="file"
+      accept="application/pdf"
+      style={{ display: 'none' }}
+      onChange={(e) => {
+        const file = e.target.files?.[0];
+        if (file) {
+          alert(`Arquivo "${file.name}" selecionado para ${contract.company}`);
+        }
+      }}
+    />
+  </label>
+</div>
                   ))
                 ) : (
                   <p className="panel-empty">Nenhum contrato encontrado para o filtro atual.</p>
