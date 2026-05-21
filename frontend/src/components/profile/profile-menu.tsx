@@ -48,7 +48,7 @@ export default function ProfileMenu({
       <Divider sx={{ borderColor: 'rgba(255,255,255,0.08)' }} />
       <MuiMenuItem onClick={onOpenProfile}>
         <ListItemIcon>
-          <Avatar sx={{ width: 24, height: 24, bgcolor: '#4cc9f0', color: '#04121f', fontSize: 12 }}>{userInitials}</Avatar>
+          <Avatar sx={{ width: 24, height: 24, bgcolor: '#79C6C0', color: '#04121f', fontSize: 12 }}>{userInitials}</Avatar>
         </ListItemIcon>
         Perfil
       </MuiMenuItem>

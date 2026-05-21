@@ -99,21 +99,46 @@ export default function SettingsPage() {
       ) : null}
 
       {settingsSection === 'Notificações' ? (
-        <div className="settings-grid">
-          <label className="settings-item" style={{ cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-            <span>Notificações no sistema</span>
-            <input type="checkbox" checked={notificationsSystem} onChange={() => setNotificationsSystem((current) => !current)} />
-          </label>
-          <label className="settings-item" style={{ cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-            <span>Notificações no e-mail</span>
-            <input type="checkbox" checked={notificationsEmail} onChange={() => setNotificationsEmail((current) => !current)} />
-          </label>
-          <label className="settings-item" style={{ cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-            <span>Alertas de prazo</span>
-            <input type="checkbox" checked={notificationsAlerts} onChange={() => setNotificationsAlerts((current) => !current)} />
-          </label>
-        </div>
-      ) : null}
+  <div className="settings-grid">
+    {([
+      { label: 'Notificações no sistema', state: notificationsSystem, setter: setNotificationsSystem },
+      { label: 'Notificações no e-mail', state: notificationsEmail, setter: setNotificationsEmail },
+      { label: 'Alertas de prazo',        state: notificationsAlerts, setter: setNotificationsAlerts },
+    ]).map(({ label, state, setter }) => (
+      <label
+        key={label}
+        style={{ cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}
+        className="settings-item"
+      >
+        <span>{label}</span>
+        <span
+          onClick={() => setter((c) => !c)}
+          style={{
+            display: 'inline-flex',
+            width: 44,
+            height: 24,
+            borderRadius: 999,
+            background: state ? '#79C6C0' : 'rgba(255,255,255,0.1)',
+            transition: 'background 0.2s',
+            padding: 3,
+            flexShrink: 0,
+            cursor: 'pointer',
+          }}
+        >
+          <span style={{
+            width: 18,
+            height: 18,
+            borderRadius: '50%',
+            background: state ? '#04121f' : '#9ab0d6',
+            transform: state ? 'translateX(20px)' : 'translateX(0)',
+            transition: 'transform 0.2s, background 0.2s',
+            display: 'block',
+          }} />
+        </span>
+      </label>
+    ))}
+  </div>
+) : null}
 
       {settingsSection === 'Integrações' ? (
         <div className="settings-grid">
