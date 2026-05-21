@@ -3,9 +3,6 @@ import { Avatar, Divider, ListItemIcon, Menu, MenuItem as MuiMenuItem } from '@m
 type ProfileMenuProps = {
   anchorEl: HTMLElement | null;
   onClose: () => void;
-  onOpenProfile: () => void;
-  onSettings: () => void;
-  onLogout: () => void;
   fullName: string;
   email: string;
   userInitials: string;
@@ -14,9 +11,6 @@ type ProfileMenuProps = {
 export default function ProfileMenu({
   anchorEl,
   onClose,
-  onOpenProfile,
-  onSettings,
-  onLogout,
   fullName,
   email,
   userInitials,
@@ -46,24 +40,6 @@ export default function ProfileMenu({
         </div>
       </MuiMenuItem>
       <Divider sx={{ borderColor: 'rgba(255,255,255,0.08)' }} />
-      <MuiMenuItem onClick={onOpenProfile}>
-        <ListItemIcon>
-          <Avatar sx={{ width: 24, height: 24, bgcolor: '#4cc9f0', color: '#04121f', fontSize: 12 }}>{userInitials}</Avatar>
-        </ListItemIcon>
-        Perfil
-      </MuiMenuItem>
-      <MuiMenuItem onClick={onSettings}>
-        <ListItemIcon>
-          <span className="profile-menu-icon">⚙️</span>
-        </ListItemIcon>
-        Configurações
-      </MuiMenuItem>
-      <MuiMenuItem onClick={onLogout}>
-        <ListItemIcon>
-          <span className="profile-menu-icon">↪</span>
-        </ListItemIcon>
-        Sair
-      </MuiMenuItem>
     </Menu>
   );
 }
