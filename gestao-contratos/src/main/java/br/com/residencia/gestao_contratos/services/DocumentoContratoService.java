@@ -66,7 +66,7 @@ public class DocumentoContratoService {
                     conteudo,
                     arquivo.getOriginalFilename(),
                     arquivo.getContentType(),
-                    "documentos/contrato-" + contratoId);
+                    contratoId,
             documento.setS3Key(storedObject.key());
             documento.setS3Url(storedObject.url());
             documento.setConteudo(null);
