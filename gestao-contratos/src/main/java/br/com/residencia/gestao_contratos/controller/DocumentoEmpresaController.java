@@ -1,9 +1,5 @@
 package br.com.residencia.gestao_contratos.controller;
 
-<<<<<<< HEAD
-import java.io.InputStream;
-=======
->>>>>>> main
 import java.util.List;
 
 import org.springframework.http.HttpHeaders;
@@ -32,46 +28,12 @@ public class DocumentoEmpresaController {
         this.documentoService = documentoService;
     }
 
-<<<<<<< HEAD
-    // ✅ Valida se o arquivo é realmente um PDF pelos bytes internos
-    private void validarArquivoPDF(MultipartFile arquivo) throws Exception {
-        if (arquivo == null || arquivo.isEmpty()) {
-            throw new RuntimeException("Arquivo não pode ser vazio");
-        }
-
-        try (InputStream is = arquivo.getInputStream()) {
-            byte[] header = new byte[4];
-            int bytesLidos = is.read(header);
-
-            if (bytesLidos < 4 ||
-                header[0] != 0x25 || // %
-                header[1] != 0x50 || // P
-                header[2] != 0x44 || // D
-                header[3] != 0x46) { // F
-                throw new RuntimeException("Arquivo inválido: apenas PDFs são aceitos");
-            }
-        }
-
-        long maxSize = 10 * 1024 * 1024; // 10MB
-        if (arquivo.getSize() > maxSize) {
-            throw new RuntimeException("Arquivo muito grande. Máximo permitido: 10MB");
-        }
-    }
-=======
->>>>>>> main
-
     @PostMapping("/upload")
     public ResponseEntity<DocumentoEmpresaResponse> upload(
             @RequestParam Long empresaId,
             @RequestParam String tipo,
             @RequestParam MultipartFile arquivo) throws Exception {
 
-<<<<<<< HEAD
-        // ✅ Valida o arquivo antes de qualquer coisa
-        validarArquivoPDF(arquivo);
-
-=======
->>>>>>> main
         DocumentoEmpresa.TipoDocumento tipoDocumento;
         try {
             tipoDocumento = DocumentoEmpresa.TipoDocumento.valueOf(tipo.toUpperCase());
@@ -86,10 +48,6 @@ public class DocumentoEmpresaController {
                 HttpStatus.CREATED);
     }
 
-<<<<<<< HEAD
-=======
-
->>>>>>> main
     @PostMapping("/{id}/validar")
     public ResponseEntity<DocumentoEmpresaResponse> validar(
             @PathVariable Long id,
@@ -107,28 +65,26 @@ public class DocumentoEmpresaController {
     }
 
     @GetMapping("/{id}/download")
-public ResponseEntity<?> download(@PathVariable Long id) {
-    DocumentoEmpresa documento = documentoService.buscarParaDownload(id);
+    public ResponseEntity<?> download(@PathVariable Long id) {
+        DocumentoEmpresa documento = documentoService.buscarParaDownload(id);
 
-    // Se tiver link do Google Drive, redireciona
-    if (documento.getGoogleDriveWebViewLink() != null) {
-        return ResponseEntity.status(HttpStatus.FOUND)
-                .header(HttpHeaders.LOCATION, documento.getGoogleDriveWebViewLink())
-                .build();
+        if (documento.getGoogleDriveWebViewLink() != null) {
+            return ResponseEntity.status(HttpStatus.FOUND)
+                    .header(HttpHeaders.LOCATION, documento.getGoogleDriveWebViewLink())
+                    .build();
+        }
+
+        if (documento.getConteudo() == null) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                    .body("Arquivo não encontrado.");
+        }
+
+        return ResponseEntity.ok()
+                .header(HttpHeaders.CONTENT_DISPOSITION,
+                        "attachment; filename=\"" + documento.getNomeArquivo() + "\"")
+                .contentType(MediaType.parseMediaType(documento.getTipoArquivo()))
+                .body(documento.getConteudo());
     }
-
-    // Fallback: retorna o conteúdo salvo no banco
-    if (documento.getConteudo() == null) {
-        return ResponseEntity.status(HttpStatus.NOT_FOUND)
-                .body("Arquivo não encontrado.");
-    }
-
-    return ResponseEntity.ok()
-            .header(HttpHeaders.CONTENT_DISPOSITION,
-                    "attachment; filename=\"" + documento.getNomeArquivo() + "\"")
-            .contentType(MediaType.parseMediaType(documento.getTipoArquivo()))
-            .body(documento.getConteudo());
-}
 
     @GetMapping("/empresa/{empresaId}/completo")
     public ResponseEntity<Boolean> verificarCompleto(
