@@ -106,7 +106,22 @@ export default function ProfileDrawer({ open, onClose }: ProfileDrawerProps) {
         },
       }}
     >
-      <Box component="form" onSubmit={handleSubmit(onSubmit)} sx={{ p: 3, display: 'grid', gap: 3 }}>
+<Box
+  component="form"
+  onSubmit={handleSubmit(onSubmit)}
+  sx={{
+    p: 3,
+    display: 'grid',
+    gap: 3,
+    '& .MuiInputBase-input': { color: '#edf2f7' },
+    '& .MuiInputLabel-root': { color: '#9ab0d6' },
+    '& .MuiInputLabel-root.Mui-focused': { color: '#79C6C0' },
+    '& .MuiOutlinedInput-notchedOutline': { borderColor: 'rgba(255,255,255,0.15)' },
+    '& .MuiOutlinedInput-root:hover .MuiOutlinedInput-notchedOutline': { borderColor: '#79C6C0' },
+    '& .MuiFormHelperText-root': { color: '#9ab0d6' },
+    '& .MuiSelect-icon': { color: '#9ab0d6' },
+  }}
+>
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
           <Avatar sx={{ width: 56, height: 56, bgcolor: '#79C6C0', color: '#04121f', fontWeight: 700 }}>{initials}</Avatar>
           <Box>

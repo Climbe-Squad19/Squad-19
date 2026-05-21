@@ -848,12 +848,16 @@ a {
 .agenda-list,
 .table-list,
 .upcoming-list,
-.entity-grid,
+.entity-grid {
+  display: grid;
+  gap: 14px;
+  margin: 0 20px;
+}
+
 .proposal-column,
 .proposal-column-list {
   display: grid;
   gap: 14px;
-  margin: 0 20px;
 }
 
 .panel-header h3,
@@ -981,21 +985,20 @@ a {
   height: 28px;
   padding: 0 6px;
   border-radius: 999px;
-  background: #1a73e8;
+  background: #79C6C0;
   color: #fff;
   font-weight: 700;
 }
 
 .gc-calendar-day--selected {
-  background: rgba(26, 115, 232, 0.14);
-  border-color: rgba(26, 115, 232, 0.45);
+  background: rgba(121, 198, 192, 0.14);
+  border-color: rgba(121, 198, 192, 0.45);
 }
 
 .gc-calendar-day--selected.gc-calendar-day--today .gc-calendar-day__num {
-  background: #1a73e8;
-  box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.2);
+  background: #79C6C0;
+  box-shadow: 0 0 0 2px rgba(121, 198, 192, 0.3);
 }
-
 .gc-calendar-day__num-row {
   display: flex;
   justify-content: flex-end;
@@ -1886,6 +1889,9 @@ a {
   display: grid;
   gap: 10px;
   padding: 14px 16px;
+  max-height: 60vh;
+  overflow-y: auto;
+  overscroll-behavior: contain;
 }
 
 .notification-menu-item {
