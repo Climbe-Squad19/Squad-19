@@ -114,6 +114,7 @@ export type AuthMeResponse = {
 export function profileFromAuthMe(data: AuthMeResponse): ProfileState {
   const u = data.usuario;
   return {
+    id: u.id,
     fullName: u.nomeCompleto,
     email: u.email,
     role: formatCargoDisplay(normalizeCargoFromApi(u.cargo)),

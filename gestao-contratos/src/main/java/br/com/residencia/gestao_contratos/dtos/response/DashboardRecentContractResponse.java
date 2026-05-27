@@ -10,6 +10,7 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 @AllArgsConstructor
 public class DashboardRecentContractResponse {
+    private Long id;
     private String empresa;
     private String servico;
     private LocalDateTime dataCriacao;
