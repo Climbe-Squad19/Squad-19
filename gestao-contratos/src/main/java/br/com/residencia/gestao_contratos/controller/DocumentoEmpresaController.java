@@ -28,7 +28,6 @@ public class DocumentoEmpresaController {
         this.documentoService = documentoService;
     }
 
-
     @PostMapping("/upload")
     public ResponseEntity<DocumentoEmpresaResponse> upload(
             @RequestParam Long empresaId,
@@ -49,7 +48,6 @@ public class DocumentoEmpresaController {
                 HttpStatus.CREATED);
     }
 
-
     @PostMapping("/{id}/validar")
     public ResponseEntity<DocumentoEmpresaResponse> validar(
             @PathVariable Long id,
@@ -67,28 +65,26 @@ public class DocumentoEmpresaController {
     }
 
     @GetMapping("/{id}/download")
-public ResponseEntity<?> download(@PathVariable Long id) {
-    DocumentoEmpresa documento = documentoService.buscarParaDownload(id);
+    public ResponseEntity<?> download(@PathVariable Long id) {
+        DocumentoEmpresa documento = documentoService.buscarParaDownload(id);
 
-    // Se tiver link do Google Drive, redireciona
-    if (documento.getGoogleDriveWebViewLink() != null) {
-        return ResponseEntity.status(HttpStatus.FOUND)
-                .header(HttpHeaders.LOCATION, documento.getGoogleDriveWebViewLink())
-                .build();
+        if (documento.getGoogleDriveWebViewLink() != null) {
+            return ResponseEntity.status(HttpStatus.FOUND)
+                    .header(HttpHeaders.LOCATION, documento.getGoogleDriveWebViewLink())
+                    .build();
+        }
+
+        if (documento.getConteudo() == null) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                    .body("Arquivo não encontrado.");
+        }
+
+        return ResponseEntity.ok()
+                .header(HttpHeaders.CONTENT_DISPOSITION,
+                        "attachment; filename=\"" + documento.getNomeArquivo() + "\"")
+                .contentType(MediaType.parseMediaType(documento.getTipoArquivo()))
+                .body(documento.getConteudo());
     }
-
-    // Fallback: retorna o conteúdo salvo no banco
-    if (documento.getConteudo() == null) {
-        return ResponseEntity.status(HttpStatus.NOT_FOUND)
-                .body("Arquivo não encontrado.");
-    }
-
-    return ResponseEntity.ok()
-            .header(HttpHeaders.CONTENT_DISPOSITION,
-                    "attachment; filename=\"" + documento.getNomeArquivo() + "\"")
-            .contentType(MediaType.parseMediaType(documento.getTipoArquivo()))
-            .body(documento.getConteudo());
-}
 
     @GetMapping("/empresa/{empresaId}/completo")
     public ResponseEntity<Boolean> verificarCompleto(

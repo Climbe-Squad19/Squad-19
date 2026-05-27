@@ -1,110 +1,81 @@
-import { NavLink } from 'react-router-dom';
 import logo from '../../assets/climbe_logo.svg'
-
-type SidebarProps = {
-  search: string;
-  onSearch: (value: string) => void;
-  cadastrosPendentesCount: number;
-  podeGerenciarCadastros: boolean;
-  onLogout: () => void;
-  mobileOpen?: boolean;
-  onCloseMobile?: () => void;
-};
+import { Bell, Bolt, Building, CalendarCheck, FileInput, LayoutDashboard, LogOut, UsersRound } from 'lucide-react'
+import { NavLink } from '../nav-link';
+import { useState } from 'react';
+import LogoutConfirmModal from '../modals/logout-confirm-modal';
+import { useNavigate } from 'react-router-dom';
+import { ACCESS_TOKEN_KEY } from '../../services/api';
 
 const primaryItems = [
-  { label: 'Dashboard', to: '/dashboard' },
-  { label: 'Agenda', to: '/agenda' },
-  { label: 'Propostas comerciais', to: '/propostas' },
-  { label: 'Clientes / Empresas', to: '/empresas' },
+  { label: 'Dashboard', to: '/dashboard', icon: LayoutDashboard },
+  { label: 'Agenda', to: '/agenda', icon: CalendarCheck },
+  { label: 'Propostas comerciais', to: '/propostas', icon: FileInput },
+  { label: 'Clientes / Empresas', to: '/empresas', icon: Building },
 ];
 
-const secondaryItems = [{ label: 'Equipe', to: '/equipe' }];
+export default function Sidebar() {
+  const navigate = useNavigate()
 
-export default function Sidebar({
-  search,
-  onSearch,
-  cadastrosPendentesCount,
-  podeGerenciarCadastros,
-  onLogout,
-  mobileOpen = false,
-  onCloseMobile,
-}: SidebarProps) {
+  const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
+
+  function handleConfirmLogout() {
+      setShowLogoutConfirm(false);
+      localStorage.removeItem(ACCESS_TOKEN_KEY);
+      navigate('/login');
+    }
+    
   return (
-    <aside className={`sidebar ${mobileOpen ? 'sidebar--open' : ''}`}>
-      <div className="sidebar-brand">
+    <aside className='h-screen max-h-screen top-0 flex flex-col py-6 border-r border-zinc-700 w-full'>
+      <div className="flex items-center justify-between px-3 border-b border-zinc-700 pb-3">
         <img src={logo} alt="Climbe Investimentos" className="w-26 h-10" />
+        <button className='cursor-pointer'>
+          <Bell className='stroke-1 text-zinc-50' />
+        </button>
       </div>
 
-      <div className="sidebar-search">
-        <input type="search" placeholder="Pesquisar..." value={search} onChange={(event) => onSearch(event.target.value)} />
-      </div>
+      <div className="flex flex-col px-3 border-b border-zinc-700 py-3 space-y-3">
+        <h3 className="text-sm font-medium text-zinc-400 uppercase">Menu Principal</h3>
 
-      <div className="sidebar-section">
-        <div className="sidebar-section-title">Menu Principal</div>
-        <nav className="sidebar-nav">
+        <div className="space-y-3">
           {primaryItems.map((item) => (
             <NavLink
               key={item.label}
               to={item.to}
-              className={({ isActive }) => `sidebar-link ${isActive ? 'active' : ''}`}
-              onClick={onCloseMobile}
             >
-              <span className="sidebar-link-indicator" />
+              <item.icon className="size-4 stroke-1 text-zinc-50" />
               {item.label}
             </NavLink>
           ))}
-        </nav>
+        </div>
       </div>
 
-      <div className="sidebar-section">
-        <div className="sidebar-section-title">Gestão</div>
-        <nav className="sidebar-nav">
-          {secondaryItems.map((item) => (
-            <NavLink
-              key={item.label}
-              to={item.to}
-              className={({ isActive }) => `sidebar-link ${isActive ? 'active' : ''}`}
-              onClick={onCloseMobile}
-            >
-              <span className="sidebar-link-indicator" />
-              <span style={{ display: 'inline-flex', alignItems: 'center', gap: 8 }}>
-                {item.label}
-                {item.label === 'Equipe' && podeGerenciarCadastros && cadastrosPendentesCount > 0 ? (
-                  <span
-                    style={{
-                      minWidth: 22,
-                      height: 22,
-                      padding: '0 6px',
-                      borderRadius: 999,
-                      fontSize: 12,
-                      fontWeight: 700,
-                      lineHeight: '22px',
-                      textAlign: 'center',
-                      background: '#42bee8',
-                      color: '#04121f',
-                    }}
-                  >
-                    {cadastrosPendentesCount}
-                  </span>
-                ) : null}
-              </span>
-            </NavLink>
-          ))}
-        </nav>
+      <div className="flex flex-col px-3 border-b border-zinc-700 py-3 space-y-3">
+        <h3 className="text-sm font-medium text-zinc-400 uppercase">Gestão</h3>
+        <div className="space-y-3">
+          <NavLink
+            to={'/equipe'}
+          >
+            <UsersRound className='size-4 stroke-1 text-zinc-50' />
+            Equipe
+          </NavLink>
+        </div>
       </div>
 
-      <div className="sidebar-footer">
-        <div className="sidebar-section-title">Conta</div>
-        <nav className="sidebar-nav">
-          <NavLink to="/configuracoes" className={({ isActive }) => `sidebar-link ${isActive ? 'active' : ''}`} onClick={onCloseMobile}>
-            <span className="sidebar-link-indicator" />
+      <div className="h-full flex flex-col justify-end px-3 py-3 space-y-3">
+        <h3 className="text-sm text-zinc-400">Conta</h3>
+        <div className="space-y-3">
+          <NavLink to="/configuracoes">
+            <Bolt className='size-4 stroke-1 text-zinc-50' />
             Configurações
           </NavLink>
-          <button type="button" className="sidebar-link sidebar-link--secondary" onClick={onLogout}>
-            <span className="sidebar-link-indicator" />
+
+          <button onClick={() => setShowLogoutConfirm(true)} className='flex items-center gap-3 px-3 py-1.5 text-sm font-medium text-zinc-50 transition-all cursor-pointer'>
+            <LogOut className="size-4 stroke-1 text-zinc-50" />
             Sair
           </button>
-        </nav>
+
+          <LogoutConfirmModal open={showLogoutConfirm} onConfirm={handleConfirmLogout} onCancel={() => setShowLogoutConfirm(false)} />
+        </div>
       </div>
     </aside>
   );

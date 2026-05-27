@@ -70,7 +70,6 @@ public class EmailService {
             // fallback para SMTP
         }
 
-        // "gmail.com" e "gmail" usam SMTP (app password), sem dependência da Gmail API.
         enviarViaSmtp(para, assunto, conteudo);
     }
 
@@ -153,6 +152,24 @@ public class EmailService {
                 "Olá " + nome + ",\n\n"
                         + "Seu cadastro foi concluído no sistema Climbe. Utilize seu e-mail e a senha definida pelo administrador para acessar.\n\n"
                         + "Equipe Climbe\n");
+    }
+
+    /** Notifica líderes (CEO, CFO, CMO, CSO) sobre nova proposta criada. */
+    public void notificarNovaProposta(String servicoContratado, String nomeEmpresa,
+            String criadoPorNome, List<Usuario> lideres) {
+        if (lideres == null || lideres.isEmpty()) {
+            return;
+        }
+        String corpo = "Uma nova proposta foi criada no sistema Climbe:\n\n"
+                + "Empresa: " + nomeEmpresa + "\n"
+                + "Serviço: " + servicoContratado + "\n"
+                + "Criado por: " + criadoPorNome + "\n\n"
+                + "Acesse o sistema para visualizar os detalhes.\n";
+        for (Usuario lider : lideres) {
+            if (lider.getEmail() != null && !lider.getEmail().isBlank()) {
+                enviarEmail(lider.getEmail(), "[Climbe] Nova proposta criada", corpo);
+            }
+        }
     }
 
     /** RF 2.d — avisar administradores sobre novo cadastro Google pendente. */

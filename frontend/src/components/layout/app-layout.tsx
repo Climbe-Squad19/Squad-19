@@ -67,7 +67,7 @@ export default function AppLayout() {
   const currentTitle = routeTitleMap[location.pathname] ?? 'Dashboard';
 
   const token = localStorage.getItem(ACCESS_TOKEN_KEY)
-  
+
   if (!token) {
     return <Navigate to="/login" replace />
   }
@@ -81,15 +81,7 @@ export default function AppLayout() {
         onClick={() => setIsMobileSidebarOpen(false)}
       />
 
-      <Sidebar
-        search={search}
-        onSearch={setSearch}
-        cadastrosPendentesCount={0}
-        podeGerenciarCadastros={profile.podeGerenciarCadastros}
-        onLogout={() => setShowLogoutConfirm(true)}
-        mobileOpen={isMobileSidebarOpen}
-        onCloseMobile={() => setIsMobileSidebarOpen(false)}
-      />
+      <Sidebar />
 
       <section className="dashboard-content">
         <Toolbar
@@ -136,18 +128,6 @@ export default function AppLayout() {
       <ProfileMenu
         anchorEl={profileMenuAnchor}
         onClose={() => setProfileMenuAnchor(null)}
-        onOpenProfile={() => {
-          setProfileMenuAnchor(null);
-          setProfileDrawerOpen(true);
-        }}
-        onSettings={() => {
-          setProfileMenuAnchor(null);
-          navigate('/configuracoes');
-        }}
-        onLogout={() => {
-          setProfileMenuAnchor(null);
-          setShowLogoutConfirm(true);
-        }}
         fullName={profile.fullName}
         email={profile.email}
         userInitials={userInitials}

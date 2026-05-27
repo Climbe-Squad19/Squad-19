@@ -5,9 +5,12 @@ import { companyReports } from '../../mocks/business.mock';
 import { useCompanies } from '../../hooks/use-companies';
 import { EntityActionModal } from '../../types';
 import EntityActionModalData from '../../components/modals/entity-action-modal';
+import { useAppSelector } from '../../store/hooks';
+import { uploadDocumentoContrato } from '../../services/contratos-documentos';
 
 export default function CompaniesPage() {
   const { search } = useOutletContext<{ search: string }>();
+  const profile = useAppSelector((state) => state.profile);
   const {
     companies,
     setCompanies,
@@ -29,6 +32,8 @@ export default function CompaniesPage() {
   const [companyFormSubmitting, setCompanyFormSubmitting] = useState(false);
   const [companyFormError, setCompanyFormError] = useState('');
   const [entityActionModal, setEntityActionModal] = useState<EntityActionModal | null>(null);
+  const [uploadingContratoId, setUploadingContratoId] = useState<number | null>(null);
+  const [uploadFeedback, setUploadFeedback] = useState<{ contratoId: number; message: string; ok: boolean } | null>(null);
 
   const searchTerm = search.trim().toLowerCase();
   const filteredCompanies = useMemo(
@@ -38,6 +43,23 @@ export default function CompaniesPage() {
       ),
     [companies, searchTerm]
   );
+
+  async function handleUploadPDF(contratoCode: string, file: File) {
+    const contratoId = Number(contratoCode.replace('CTR-', ''));
+    if (!contratoId) return;
+    setUploadingContratoId(contratoId);
+    setUploadFeedback(null);
+    try {
+      const response = await uploadDocumentoContrato(contratoId, profile.id ?? 1, file);
+      if (!response.ok) throw new Error(`Erro ${response.status}: ${response.statusText}`);
+      setUploadFeedback({ contratoId, message: `"${file.name}" enviado com sucesso.`, ok: true });
+    } catch (error) {
+      const msg = error instanceof Error ? error.message : 'Não foi possível enviar o arquivo.';
+      setUploadFeedback({ contratoId, message: msg, ok: false });
+    } finally {
+      setUploadingContratoId(null);
+    }
+  }
 
   function resetForm() {
     setCompanyFormName('');
@@ -51,6 +73,7 @@ export default function CompaniesPage() {
     setSelectedCompany(company);
     setCompanyDetailTab('Visão geral');
     setShowCompanyCreatePanel(false);
+    setUploadFeedback(null);
   }
 
   function confirmEntityActionPreview() {
@@ -187,16 +210,41 @@ export default function CompaniesPage() {
 
           {companyDetailTab === 'Contratos' ? (
             <div className="detail-table-list">
-              {companyContractsData.map((item) => (
-                <article key={item.code} className="detail-table-row">
-                  <div>
-                    <strong>{item.code}</strong>
-                    <small>{item.service}</small>
-                  </div>
-                  <span>{item.startDate}</span>
-                  <span className="detail-table-status">{item.status}</span>
-                </article>
-              ))}
+              {companyContractsData.map((item) => {
+                const contratoId = Number(item.code.replace('CTR-', ''));
+                const isUploading = uploadingContratoId === contratoId;
+                const feedback = uploadFeedback?.contratoId === contratoId ? uploadFeedback : null;
+                return (
+                  <article key={item.code} className="detail-table-row">
+                    <div>
+                      <strong>{item.code}</strong>
+                      <small>{item.service}</small>
+                    </div>
+                    <span>{item.startDate}</span>
+                    <span className="detail-table-status">{item.status}</span>
+                    <Tooltip title="Anexar PDF ao contrato" arrow>
+                      <label style={{ cursor: isUploading ? 'not-allowed' : 'pointer', fontSize: '12px', color: '#6366f1', opacity: isUploading ? 0.6 : 1, whiteSpace: 'nowrap' }}>
+                        {isUploading ? '⏳ Enviando...' : '📎 Upload PDF'}
+                        <input
+                          type="file"
+                          accept="application/pdf"
+                          style={{ display: 'none' }}
+                          disabled={uploadingContratoId !== null}
+                          onChange={(e) => {
+                            const file = e.target.files?.[0];
+                            if (file) void handleUploadPDF(item.code, file);
+                          }}
+                        />
+                      </label>
+                    </Tooltip>
+                    {feedback ? (
+                      <small style={{ color: feedback.ok ? '#16a34a' : '#dc2626', fontSize: '11px' }}>
+                        {feedback.message}
+                      </small>
+                    ) : null}
+                  </article>
+                );
+              })}
             </div>
           ) : null}
 
@@ -209,17 +257,6 @@ export default function CompaniesPage() {
                     <small>{item.category}</small>
                   </div>
                   <span className="detail-table-status">{item.status}</span>
-                  {item.downloadUrl && (
-                    <Tooltip title="Visualizar documento" arrow>
-                      <button
-                        type="button"
-                        className="icon-button detail-icon-button"
-                        onClick={() => window.open(item.downloadUrl, '_blank')}
-                      >
-                        ⌕
-                      </button>
-                    </Tooltip>
-                  )}
                 </article>
               ))}
             </div>
