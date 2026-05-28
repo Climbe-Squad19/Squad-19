@@ -31,6 +31,10 @@ const titleMap: Record<string, string> = {
 };
 
 export default function Toolbar({
+  isLightSurfaceMode,
+  onToggleSurfaceMode,
+  onToggleSidebar,
+  mobileSidebarOpen,
 }: ToolbarProps) {
   const navigate = useNavigate();
   const location = useLocation();
@@ -68,11 +72,22 @@ export default function Toolbar({
         </div>
       </div>
 
-      <button onClick={handleOpenProfileMenu} className='bg-zinc-800 border border-zinc-600 rounded-md size-8 flex items-center justify-center'>
-        <span className='text-sm font-semibold text-zinc100'>
-          {getInitials(profile.fullName)}
-        </span>
-      </button>
+      <div className="flex items-center gap-3">
+  <button
+    onClick={onToggleSurfaceMode}
+    className={`theme-toggle-button button ${isLightSurfaceMode ? 'theme-toggle-button--light' : 'theme-toggle-button--dark'}`}
+    title="Alternar tema"
+    aria-label="Alternar entre tema claro e escuro"
+  >
+    {isLightSurfaceMode ? 'Claro' : 'Escuro'}
+  </button>
+
+  <button onClick={handleOpenProfileMenu} className='bg-zinc-800 border border-zinc-600 rounded-md size-8 flex items-center justify-center'>
+    <span className='text-sm font-semibold text-zinc100'>
+      {getInitials(profile.fullName)}
+    </span>
+  </button>
+</div>
 
 
       <ProfileMenu
