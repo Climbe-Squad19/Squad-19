@@ -2,24 +2,25 @@ import { Menu } from '@mui/material';
 import type { NotificationFeedItem } from '../../types';
 
 type NotificationMenuProps = {
-  anchorEl: HTMLElement | null;
+  open: boolean;
+  anchorEl: null | HTMLElement;
   items: NotificationFeedItem[];
   onClose: () => void;
   onAdjust: () => void;
 };
 
-export default function NotificationMenu({ anchorEl, items, onClose, onAdjust }: NotificationMenuProps) {
+export default function NotificationMenu({ open, anchorEl, items, onClose, onAdjust }: NotificationMenuProps) {
   return (
     <Menu
       anchorEl={anchorEl}
-      open={Boolean(anchorEl)}
+      open={open}
       onClose={onClose}
       anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
-      transformOrigin={{ vertical: 'top', horizontal: 'right' }}
+      transformOrigin={{ vertical: 'top', horizontal: 'left' }}
       slotProps={{
         paper: {
           sx: {
-            mt: 1.25,
+            ml: 1.0,
             width: 360,
             maxWidth: 'calc(100vw - 24px)',
             background: '#1c1c1f',
@@ -44,6 +45,7 @@ export default function NotificationMenu({ anchorEl, items, onClose, onAdjust }:
           Fechar
         </button>
       </div>
+
       <div className="notification-menu-list">
         {items.map((item) => (
           <article key={`${item.title}-${item.description}`} className={`notification-menu-item notification-menu-item--${item.tone}`}>
@@ -61,6 +63,7 @@ export default function NotificationMenu({ anchorEl, items, onClose, onAdjust }:
           </article>
         ))}
       </div>
+
       <div className="notification-menu-footer">
         <button type="button" className="button button--outline" onClick={onAdjust}>
           Ajustar notificações
