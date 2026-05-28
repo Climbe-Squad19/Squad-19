@@ -63,13 +63,6 @@ export default function ProfileMenu({
         </ListItemIcon>
         Configurações
       </MuiMenuItem>
-      
-      <MuiMenuItem onClick={onLogout}>
-        <ListItemIcon>
-          <span className="profile-menu-icon">↪</span>
-        </ListItemIcon>
-        Sair
-      </MuiMenuItem>
     </Menu>
   );
 }
