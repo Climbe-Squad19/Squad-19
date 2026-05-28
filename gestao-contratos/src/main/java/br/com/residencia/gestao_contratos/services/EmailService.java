@@ -8,7 +8,6 @@ import java.util.Optional;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
-import org.springframework.mail.SimpleMailMessage;
 import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -26,6 +25,7 @@ public class EmailService {
     private final String fromAddress;
     private final String provider;
     private final String gmailAccessToken;
+    private final String resendApiKey;
     private final GoogleOAuthTokenService googleOAuthTokenService;
 
     public EmailService(JavaMailSender mailSender,
@@ -34,16 +34,17 @@ public class EmailService {
             @Value("${spring.mail.username:}") String smtpUsername,
             @Value("${app.mail.provider:smtp}") String provider,
             @Value("${app.gmail.api.access-token:}") String gmailAccessToken,
+            @Value("${app.resend.api-key:}") String resendApiKey,
             GoogleOAuthTokenService googleOAuthTokenService) {
         this.mailSender = mailSender;
         this.webClient = webClientBuilder.baseUrl("https://gmail.googleapis.com").build();
         this.fromAddress = fromAddress == null || fromAddress.isBlank() ? smtpUsername : fromAddress;
         this.provider = provider == null ? "smtp" : provider.trim().toLowerCase();
         this.gmailAccessToken = gmailAccessToken;
+        this.resendApiKey = resendApiKey;
         this.googleOAuthTokenService = googleOAuthTokenService;
     }
 
-    /** Endereço usado como remetente (MAIL_FROM ou spring.mail.username). */
     public String getRemetentePadrao() {
         return fromAddress;
     }
@@ -58,7 +59,6 @@ public class EmailService {
                 enviarViaGmailApi(para, assunto, conteudo);
                 return;
             } catch (Exception ignored) {
-                // fallback para SMTP caso a Gmail API não esteja disponível.
             }
         }
 
@@ -67,19 +67,25 @@ public class EmailService {
                 return;
             }
         } catch (Exception ignored) {
-            // fallback para SMTP
         }
 
         enviarViaSmtp(para, assunto, conteudo);
     }
 
     private void enviarViaSmtp(String para, String assunto, String conteudo) {
-        SimpleMailMessage message = new SimpleMailMessage();
-        message.setFrom(fromAddress);
-        message.setTo(para);
-        message.setSubject(assunto);
-        message.setText(conteudo);
-        mailSender.send(message);
+        WebClient resendClient = WebClient.builder().baseUrl("https://api.resend.com").build();
+        resendClient.post()
+                .uri("/emails")
+                .header(HttpHeaders.AUTHORIZATION, "Bearer " + resendApiKey)
+                .contentType(MediaType.APPLICATION_JSON)
+                .bodyValue(Map.of(
+                        "from", fromAddress,
+                        "to", List.of(para),
+                        "subject", assunto,
+                        "text", conteudo))
+                .retrieve()
+                .toBodilessEntity()
+                .block();
     }
 
     private void enviarViaGmailApi(String para, String assunto, String conteudo) {
@@ -141,7 +147,6 @@ public class EmailService {
         return true;
     }
 
-    /** RF 10.d — boas-vindas após cadastro pelo administrador. */
     public void enviarBoasVindasNovoColaborador(String emailDestino, String nome) {
         if (emailDestino == null || emailDestino.isBlank()) {
             return;
@@ -154,7 +159,6 @@ public class EmailService {
                         + "Equipe Climbe\n");
     }
 
-    /** Notifica líderes (CEO, CFO, CMO, CSO) sobre nova proposta criada. */
     public void notificarNovaProposta(String servicoContratado, String nomeEmpresa,
             String criadoPorNome, List<Usuario> lideres) {
         if (lideres == null || lideres.isEmpty()) {
@@ -172,7 +176,6 @@ public class EmailService {
         }
     }
 
-    /** RF 2.d — avisar administradores sobre novo cadastro Google pendente. */
     public void notificarAdministradoresNovoCadastroGoogle(String nomeNovo, String emailNovo,
             List<Usuario> administradores) {
         if (administradores == null || administradores.isEmpty()) {
