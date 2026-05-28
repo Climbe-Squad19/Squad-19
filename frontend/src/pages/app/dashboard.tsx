@@ -42,7 +42,7 @@ export default function DashboardPage() {
         {summaryCards.map((card) => (
           <div
             key={card.title}
-            className="w-full bg-zinc-950 flex flex-col p-2 gap-2.5 rounded-md border border-zinc-500"
+            className="w-full bg-zinc-950 dark:bg-zinc-950 light:bg-white flex flex-col p-2 gap-2.5 rounded-md border border-zinc-500"
           >
             <div className="flex items-center gap-2">
               <CircleAlert className="size-4 stroke-1 text-zinc-100" />
