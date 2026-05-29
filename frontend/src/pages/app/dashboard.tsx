@@ -1,22 +1,45 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useOutletContext } from 'react-router-dom';
 import { Tooltip } from '@mui/material';
-import CalendarGrid from '../../components/calendar/calendar-grid';
-import { formatMonthLabel, getTodayIso } from '../../utils/date';
-import { useCalendar } from '../../hooks/use-calendar';
+import { getTodayIso } from '../../utils/date';
 import { useDashboardOverview } from '../../hooks/use-dashboard-overview';
-import { ArrowRight, CircleAlert, Eye, Link, ReceiptText, TriangleAlert } from 'lucide-react';
+import { CircleAlert, Eye, Link, Phone, ReceiptText, TriangleAlert } from 'lucide-react';
+import { AgendaApiItem, fetchAgenda } from '../../services/dashboard';
+import dayjs from 'dayjs';
 
 type ExpandedSection = 'contracts' | 'dueDates' | null;
 
 export default function DashboardPage() {
   const { search } = useOutletContext<{ search: string }>();
   const { summaryCards, recentContracts, upcomingItems } = useDashboardOverview();
-  const { selectedDate, setSelectedDate, selectedMonth, calendarDays, loadingCalendar, calendarLoadError, changeMonth } = useCalendar();
+  const [selectedDate, setSelectedDate] = useState(getTodayIso());
   const [expandedSection, setExpandedSection] = useState<ExpandedSection>(null);
 
+  const [schedule, setSchedule] = useState<AgendaApiItem[]>([]);
+  const [loadingAgenda, setLoadingAgenda] = useState(false);
+
   const searchTerm = search.trim().toLowerCase();
-  
+
+  useEffect(() => {
+    let cancelled = false;
+    setLoadingAgenda(true);
+
+    fetchAgenda(selectedDate)
+      .then(events => {
+        ({ iso: selectedDate, events })
+        if (cancelled) return;
+        const schedule: AgendaApiItem[] = [];
+        events.forEach(result => {
+          schedule.push(result);
+        });
+        setSchedule(schedule);
+      })
+      .catch(() => {
+        ({ iso: selectedDate, events: [] })
+        if (!cancelled) setLoadingAgenda(false);
+      })
+  }, [selectedDate]);
+
   const filteredContracts = useMemo(
     () =>
       recentContracts.filter((contract) =>
@@ -24,7 +47,7 @@ export default function DashboardPage() {
       ),
     [recentContracts, searchTerm]
   );
-  
+
   const filteredUpcomingItems = useMemo(
     () =>
       upcomingItems.filter((item) =>
@@ -57,37 +80,8 @@ export default function DashboardPage() {
         ))}
       </div>
 
-      <div className="dashboard-grid dashboard-main-grid">
-        <section className="panel calendar-panel gc-calendar-panel">
-          <div className="panel-header calendar-header">
-            <div>
-              <h3>Calendário</h3>
-              <span>{formatMonthLabel(selectedMonth)}</span>
-            </div>
-            <div className="calendar-nav">
-              <button type="button" className="button button--text gc-calendar-today-btn" onClick={() => setSelectedDate(getTodayIso())}>
-                Hoje
-              </button>
-              <button type="button" className="icon-button" aria-label="Mês anterior" onClick={() => changeMonth('prev')}>
-                ◀
-              </button>
-              <button type="button" className="icon-button" aria-label="Próximo mês" onClick={() => changeMonth('next')}>
-                ▶
-              </button>
-            </div>
-          </div>
-          <CalendarGrid
-            placement="overview"
-            calendarDays={calendarDays}
-            selectedDate={selectedDate}
-            selectedMonth={selectedMonth}
-            loadingCalendar={loadingCalendar}
-            calendarLoadError={calendarLoadError}
-            onSelectDate={setSelectedDate}
-          />
-        </section>
-
-        <div className="right-side-grid">
+      <div className="grid grid-cols-[1fr_295px] gap-3 px-4">
+        <div className="w-full space-y-2">
           <div className="w-full bg-[#121214] border border-zinc-800/60 rounded-xl flex flex-col overflow-hidden">
             <div className="flex items-center justify-between px-6 py-5 border-b border-zinc-800/60">
               <div className="flex gap-3 text-base font-semibold text-zinc-100 items-center">
@@ -109,8 +103,8 @@ export default function DashboardPage() {
                 <tbody>
                   {visibleContracts.length > 0 ? (
                     visibleContracts.map((contract) => (
-                      <tr 
-                        key={`${contract.company}-${contract.start}`} 
+                      <tr
+                        key={`${contract.company}-${contract.start}`}
                         className="border-b border-zinc-800/60 last:border-0 transition-colors"
                       >
                         <td className="px-6 py-4 text-sm text-zinc-200 font-medium">{contract.company}</td>
@@ -118,7 +112,7 @@ export default function DashboardPage() {
                         <td className="px-6 py-4 text-sm text-zinc-300">{contract.start}</td>
                         <td className="px-6 py-4 text-right">
                           <Tooltip title="Abrir contrato" arrow placement="top">
-                            <button 
+                            <button
                               type="button"
                               className="p-2 rounded-lg border border-zinc-700 bg-transparent text-zinc-400 hover:text-white hover:bg-zinc-800 hover:border-zinc-600 transition-all focus:outline-none focus:ring-2 focus:ring-[#79C6C0]/50"
                             >
@@ -207,6 +201,27 @@ export default function DashboardPage() {
             </div>
           </div>
 
+        </div>
+
+        <div className='w-full bg-zinc-900 flex flex-col px-3 py-2 rounded-md border border-zinc-800'>
+          <h3 className='text-base font-semibold flex pb-2'>Agenda do dia</h3>
+
+          <div className='space-y-2 max-h-80'>
+            {schedule.map(item => {
+              const formattedDate = dayjs(item.dateTime).format('HH:mm')
+              return (
+                <div key={item.id} className='flex gap-2 items-center pt-2 border-t border-zinc-800/60'>
+                  <div className='bg-zinc-800 rounded-full size-7 flex items-center justify-center'>
+                    <Phone className='size-4' />
+                  </div>
+                  <div>
+                    <span className='text-sm font-semibold'>{item.title}</span>
+                    <p className='text-xs font-medium text-zinc-500'>{formattedDate}h - {item.presencial ? 'Presencial' : 'Online'}</p>
+                  </div>
+                </div>
+              )
+            })}
+          </div>
         </div>
       </div>
     </>
