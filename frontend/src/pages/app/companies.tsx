@@ -44,22 +44,27 @@ export default function CompaniesPage() {
     [companies, searchTerm]
   );
 
-  async function handleUploadPDF(contratoCode: string, file: File) {
-    const contratoId = Number(contratoCode.replace('CTR-', ''));
-    if (!contratoId) return;
-    setUploadingContratoId(contratoId);
-    setUploadFeedback(null);
-    try {
-      const response = await uploadDocumentoContrato(contratoId, profile.id ?? 1, file);
-      if (!response.ok) throw new Error(`Erro ${response.status}: ${response.statusText}`);
-      setUploadFeedback({ contratoId, message: `"${file.name}" enviado com sucesso.`, ok: true });
-    } catch (error) {
-      const msg = error instanceof Error ? error.message : 'Não foi possível enviar o arquivo.';
-      setUploadFeedback({ contratoId, message: msg, ok: false });
-    } finally {
-      setUploadingContratoId(null);
-    }
+async function handleUploadPDF(contratoCode: string, files: FileList) {
+  const contratoId = Number(contratoCode.replace('CTR-', ''));
+  if (!contratoId || files.length === 0) return;
+  setUploadingContratoId(contratoId);
+  setUploadFeedback(null);
+  try {
+    const uploads = Array.from(files).map((file) =>
+      uploadDocumentoContrato(contratoId, profile.id ?? 1, file).then((res) => {
+        if (!res.ok) throw new Error(`Erro ao enviar "${file.name}"`);
+      })
+    );
+    await Promise.all(uploads);
+    const count = files.length;
+    setUploadFeedback({ contratoId, message: `${count} arquivo${count > 1 ? 's' : ''} enviado${count > 1 ? 's' : ''} com sucesso.`, ok: true });
+  } catch (error) {
+    const msg = error instanceof Error ? error.message : 'Não foi possível enviar os arquivos.';
+    setUploadFeedback({ contratoId, message: msg, ok: false });
+  } finally {
+    setUploadingContratoId(null);
   }
+}
 
   function resetForm() {
     setCompanyFormName('');
@@ -228,11 +233,13 @@ export default function CompaniesPage() {
                         <input
                           type="file"
                           accept="application/pdf"
+                          multiple
                           style={{ display: 'none' }}
                           disabled={uploadingContratoId !== null}
                           onChange={(e) => {
-                            const file = e.target.files?.[0];
-                            if (file) void handleUploadPDF(item.code, file);
+                            if (e.target.files && e.target.files.length > 0) {
+                              void handleUploadPDF(item.code, e.target.files);
+                            }
                           }}
                         />
                       </label>
