@@ -2799,3 +2799,65 @@ a {
   background: rgba(121, 198, 192, 0.1) !important;
   border-color: #79C6C0 !important;
 }
+
+.dashboard-screen--light .MuiMenu-paper,
+.dashboard-screen--light .MuiPopover-paper {
+  background: #ffffff !important;
+  color: #0f172a !important;
+  border-color: rgba(15, 23, 42, 0.1) !important;
+}
+
+.dashboard-screen--light .notification-menu-header,
+.dashboard-screen--light .notification-menu-item,
+.dashboard-screen--light .notification-menu-footer {
+  background: #ffffff !important;
+  color: #0f172a !important;
+}
+
+.dashboard-screen--light .notification-menu-item strong,
+.dashboard-screen--light .notification-menu-item small {
+  color: #0f172a !important;
+}
+
+.dashboard-screen--light .notification-menu-header strong {
+  color: #0f172a !important;
+  font-weight: 700 !important;
+}
+
+.dashboard-screen--light .notification-menu-header small {
+  color: #475569 !important;
+}
+
+.dashboard-screen--light .notification-menu-item strong {
+  color: #0f172a !important;
+  font-weight: 600 !important;
+}
+
+.dashboard-screen--light .notification-menu-item small,
+.dashboard-screen--light .notification-menu-copy small {
+  color: #475569 !important;
+}
+
+.dashboard-screen--light .notification-menu-item {
+  background: #f1f5f9 !important;
+  border-color: rgba(15, 23, 42, 0.08) !important;
+}
+
+.dashboard-screen--light .notification-channel {
+  background: #0f172a !important;
+  color: #ffffff !important;
+}
+
+.dashboard-screen--light .notification-menu-footer .button--outline {
+  border-color: #0f172a !important;
+  color: #0f172a !important;
+}
+
+.dashboard-screen--light .notification-menu-close {
+  color: #0f172a !important;
+  font-weight: 600 !important;
+}
+
+.dashboard-screen--light .notification-menu-pulse {
+  background: #79C6C0 !important;
+}

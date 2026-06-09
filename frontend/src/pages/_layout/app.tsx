@@ -49,7 +49,7 @@ export function AppLayout() {
         onClick={() => setIsMobileSidebarOpen(false)}
       />
 
-      <Sidebar />
+      <Sidebar isLightMode={isLightSurfaceMode} />
 
       <section className="dashboard-content">
         <Toolbar

@@ -18,7 +18,7 @@ const primaryItems = [
   { label: 'Clientes / Empresas', to: '/empresas', icon: Building },
 ];
 
-export default function Sidebar() {
+export default function Sidebar({ isLightMode = false }: { isLightMode?: boolean }) {
   const navigate = useNavigate();
   const dispatch = useAppDispatch();
 
@@ -102,18 +102,19 @@ export default function Sidebar() {
       </div>
 
       <NotificationMenu
-        anchorEl={anchorEl}
-        open={notificationsOpen}
-        items={notificationItems}
-        onClose={() => {
-          setAnchorEl(null);
-          dispatch(closeNotifications());
-        }}
-        onAdjust={() => {
-          setAnchorEl(null);
-          navigate('/configuracoes');
-        }}
-      />
+  anchorEl={anchorEl}
+  open={notificationsOpen}
+  items={notificationItems}
+  isLightMode={isLightMode}
+  onClose={() => {
+    setAnchorEl(null);
+    dispatch(closeNotifications());
+  }}
+  onAdjust={() => {
+    setAnchorEl(null);
+    navigate('/configuracoes');
+  }}
+/>
     </aside>
   );
 }

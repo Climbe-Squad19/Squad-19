@@ -44,22 +44,27 @@ export default function CompaniesPage() {
     [companies, searchTerm]
   );
 
-  async function handleUploadPDF(contratoCode: string, file: File) {
-    const contratoId = Number(contratoCode.replace('CTR-', ''));
-    if (!contratoId) return;
-    setUploadingContratoId(contratoId);
-    setUploadFeedback(null);
-    try {
-      const response = await uploadDocumentoContrato(contratoId, profile.id ?? 1, file);
-      if (!response.ok) throw new Error(`Erro ${response.status}: ${response.statusText}`);
-      setUploadFeedback({ contratoId, message: `"${file.name}" enviado com sucesso.`, ok: true });
-    } catch (error) {
-      const msg = error instanceof Error ? error.message : 'Não foi possível enviar o arquivo.';
-      setUploadFeedback({ contratoId, message: msg, ok: false });
-    } finally {
-      setUploadingContratoId(null);
-    }
+  async function handleUploadPDF(contratoCode: string, files: FileList) {
+  const contratoId = Number(contratoCode.replace('CTR-', ''));
+  if (!contratoId || files.length === 0) return;
+  setUploadingContratoId(contratoId);
+  setUploadFeedback(null);
+  try {
+    const uploads = Array.from(files).map((file) =>
+      uploadDocumentoContrato(contratoId, profile.id ?? 1, file).then((res) => {
+        if (!res.ok) throw new Error(`Erro ao enviar "${file.name}"`);
+      })
+    );
+    await Promise.all(uploads);
+    const count = files.length;
+    setUploadFeedback({ contratoId, message: `${count} arquivo${count > 1 ? 's' : ''} enviado${count > 1 ? 's' : ''} com sucesso.`, ok: true });
+  } catch (error) {
+    const msg = error instanceof Error ? error.message : 'Não foi possível enviar os arquivos.';
+    setUploadFeedback({ contratoId, message: msg, ok: false });
+  } finally {
+    setUploadingContratoId(null);
   }
+}  
 
   function resetForm() {
     setCompanyFormName('');
@@ -182,9 +187,9 @@ export default function CompaniesPage() {
             <div className="detail-table-list">
               {companyProposalsData.map((item) => (
                 <article key={item.title} className="detail-table-row">
-                  <div>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
                     <strong>{item.title}</strong>
-                    <small>{item.service}</small>
+                    <small style={{ color: '#9ab0d6' }}>{item.service}</small>
                   </div>
                   <span>{item.amount}</span>
                   <span className="detail-table-status">{item.status}</span>
@@ -216,27 +221,37 @@ export default function CompaniesPage() {
                 const feedback = uploadFeedback?.contratoId === contratoId ? uploadFeedback : null;
                 return (
                   <article key={item.code} className="detail-table-row">
-                    <div>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
                       <strong>{item.code}</strong>
-                      <small>{item.service}</small>
+                      <small style={{ color: '#9ab0d6' }}>{item.service}</small>
                     </div>
                     <span>{item.startDate}</span>
                     <span className="detail-table-status">{item.status}</span>
                     <Tooltip title="Anexar PDF ao contrato" arrow>
-                      <label style={{ cursor: isUploading ? 'not-allowed' : 'pointer', fontSize: '12px', color: '#6366f1', opacity: isUploading ? 0.6 : 1, whiteSpace: 'nowrap' }}>
-                        {isUploading ? '⏳ Enviando...' : '📎 Upload PDF'}
-                        <input
-                          type="file"
-                          accept="application/pdf"
-                          style={{ display: 'none' }}
-                          disabled={uploadingContratoId !== null}
-                          onChange={(e) => {
-                            const file = e.target.files?.[0];
-                            if (file) void handleUploadPDF(item.code, file);
-                          }}
-                        />
-                      </label>
-                    </Tooltip>
+  <label>
+    <button
+      type="button"
+      className="icon-button detail-icon-button"
+      style={{ opacity: isUploading ? 0.6 : 1, cursor: isUploading ? 'not-allowed' : 'pointer' }}
+      onClick={() => (document.querySelector(`#upload-${contratoId}`) as HTMLInputElement)?.click()}
+    >
+      {isUploading ? '⏳' : '⌕'}
+    </button>
+   <input
+  type="file"
+  accept="application/pdf"
+  multiple
+  style={{ display: 'none' }}
+  disabled={uploadingContratoId !== null}
+  onChange={(e) => {
+    if (e.target.files && e.target.files.length > 0) {
+      void handleUploadPDF(item.code, e.target.files);
+    }
+    e.target.value = '';
+  }}
+/>
+  </label>
+</Tooltip>
                     {feedback ? (
                       <small style={{ color: feedback.ok ? '#16a34a' : '#dc2626', fontSize: '11px' }}>
                         {feedback.message}
@@ -252,10 +267,10 @@ export default function CompaniesPage() {
             <div className="detail-table-list">
               {companyDocumentsData.map((item) => (
                 <article key={item.name} className="detail-table-row">
-                  <div>
-                    <strong>{item.name}</strong>
-                    <small>{item.category}</small>
-                  </div>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+                      <strong>{item.name}</strong>
+                      <small style={{ color: '#9ab0d6' }}>{item.category}</small>
+                    </div>
                   <span className="detail-table-status">{item.status}</span>
                 </article>
               ))}
@@ -266,9 +281,9 @@ export default function CompaniesPage() {
             <div className="detail-table-list">
               {companyMeetingsData.map((item) => (
                 <article key={`${item.topic}-${item.date}`} className="detail-table-row">
-                  <div>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
                     <strong>{item.topic}</strong>
-                    <small>{item.channel}</small>
+                    <small style={{ color: '#9ab0d6' }}>{item.channel}</small>
                   </div>
                   <span>{item.date}</span>
                 </article>
@@ -280,9 +295,9 @@ export default function CompaniesPage() {
             <div className="detail-table-list">
               {companyReports.map((item) => (
                 <article key={item.title} className="detail-table-row">
-                  <div>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
                     <strong>{item.title}</strong>
-                    <small>{item.period}</small>
+                    <small style={{ color: '#9ab0d6' }}>{item.period}</small>
                   </div>
                   <span className="detail-table-status">{item.status}</span>
                   <Tooltip title="Baixar relatório" arrow>
@@ -315,11 +330,7 @@ export default function CompaniesPage() {
               <h3>Empresas</h3>
               <span>{filteredCompanies.length} empresa(s) listada(s)</span>
             </div>
-            <div className="section-actions">
-              <button type="button" className="button button--primary section-create-button" onClick={() => setShowCompanyCreatePanel(true)}>
-                + Nova empresa
-              </button>
-            </div>
+            <div className="section-actions"></div>
           </div>
 
           {showCompanyCreatePanel ? (
