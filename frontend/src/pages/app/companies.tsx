@@ -237,20 +237,19 @@ export default function CompaniesPage() {
     >
       {isUploading ? '⏳' : '⌕'}
     </button>
-    <input
-      type="file"
-      accept="application/pdf"
-      multiple
-      style={{ display: 'none' }}
-      disabled={uploadingContratoId !== null}
-      onChange={(e) => {
-        const file = e.target.files?.[0];
-        if (file) void handleUploadPDF(item.code, file);
-        if (e.target.files && e.target.files.length > 0) {
-          void handleUploadPDF(item.code, e.target.files);
-        }  
-      }}
-    />
+   <input
+  type="file"
+  accept="application/pdf"
+  multiple
+  style={{ display: 'none' }}
+  disabled={uploadingContratoId !== null}
+  onChange={(e) => {
+    if (e.target.files && e.target.files.length > 0) {
+      void handleUploadPDF(item.code, e.target.files);
+    }
+    e.target.value = '';
+  }}
+/>
   </label>
 </Tooltip>
                     {feedback ? (
