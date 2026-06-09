@@ -7,9 +7,10 @@ type NotificationMenuProps = {
   items: NotificationFeedItem[];
   onClose: () => void;
   onAdjust: () => void;
+  isLightMode?: boolean;
 };
 
-export default function NotificationMenu({ open, anchorEl, items, onClose, onAdjust }: NotificationMenuProps) {
+export default function NotificationMenu({ open, anchorEl, items, onClose, onAdjust, isLightMode }: NotificationMenuProps) {
   return (
     <Menu
       anchorEl={anchorEl}
@@ -23,12 +24,12 @@ export default function NotificationMenu({ open, anchorEl, items, onClose, onAdj
             ml: 1.0,
             width: 360,
             maxWidth: 'calc(100vw - 24px)',
-            background: '#1c1c1f',
-            color: '#edf2f7',
-            maxHeight: 'calc(100vh - 80px)', 
-            display: 'flex',                 
-            flexDirection: 'column',         
-            border: '1px solid rgba(255,255,255,0.08)',
+            background: isLightMode ? '#ffffff' : '#1c1c1f',
+            color: isLightMode ? '#0f172a' : '#edf2f7',
+            maxHeight: 'calc(100vh - 80px)',
+            display: 'flex',
+            flexDirection: 'column',
+            border: isLightMode ? '1px solid rgba(15,23,42,0.1)' : '1px solid rgba(255,255,255,0.08)',
             borderRadius: 1,
             overflow: 'hidden',
             boxShadow: '0 24px 60px rgba(0,0,0,0.34)',
@@ -36,11 +37,11 @@ export default function NotificationMenu({ open, anchorEl, items, onClose, onAdj
         },
       }}
     >
-      <div className="notification-menu-header">
-        <div>
-          <strong>Notificações</strong>
-          <small>Painel rápido da operação</small>
-        </div>
+      <div className="notification-menu-header" style={{ color: isLightMode ? '#0f172a' : '#edf2f7' }}>
+  <div>
+    <strong style={{ color: isLightMode ? '#0f172a' : '#edf2f7' }}>Notificações</strong>
+    <small style={{ color: isLightMode ? '#475569' : '#9ab0d6' }}>Painel rápido da operação</small>
+  </div>
         <button type="button" className="button button--text notification-menu-close" onClick={onClose}>
           Fechar
         </button>
@@ -52,23 +53,37 @@ export default function NotificationMenu({ open, anchorEl, items, onClose, onAdj
             <span className="notification-menu-pulse" />
             <div className="notification-menu-copy">
               <div className="notification-menu-meta">
-                <span className={`notification-channel notification-channel--${item.channel}`}>
-                  {item.channel === 'site' ? 'Site' : item.channel === 'email' ? 'E-mail' : 'Agenda'}
-                </span>
-                <small>{item.timeLabel}</small>
+                <span
+  className={`notification-channel notification-channel--${item.channel}`}
+  style={{
+    background: isLightMode ? '#0f172a' : undefined,
+    color: isLightMode ? '#ffffff' : undefined,
+  }}
+>
+  {item.channel === 'site' ? 'Site' : item.channel === 'email' ? 'E-mail' : 'Agenda'}
+</span>
+                <small style={{ color: isLightMode ? '#475569' : '#9ab0d6' }}>{item.timeLabel}</small>
               </div>
-              <strong>{item.title}</strong>
-              <small>{item.description}</small>
+              <strong style={{ color: isLightMode ? '#0f172a' : '#edf2f7' }}>{item.title}</strong>
+              <small style={{ color: isLightMode ? '#475569' : '#9ab0d6' }}>{item.description}</small>
             </div>
           </article>
         ))}
       </div>
 
       <div className="notification-menu-footer">
-        <button type="button" className="button button--outline" onClick={onAdjust}>
-          Ajustar notificações
-        </button>
-      </div>
+  <button
+    type="button"
+    className="button button--outline"
+    onClick={onAdjust}
+    style={{
+      color: isLightMode ? '#0f172a' : '#edf2f7',
+      borderColor: isLightMode ? '#0f172a' : 'rgba(255,255,255,0.2)',
+    }}
+  >
+    Ajustar notificações
+  </button>
+</div>
     </Menu>
   );
 }
