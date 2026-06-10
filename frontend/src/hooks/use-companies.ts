@@ -74,15 +74,16 @@ export function useCompanies() {
           );
 
           setCompanyContractsData(
-            contratos
-              .filter((item) => item.empresaId === companyId)
-              .map((item) => ({
-                code: `CTR-${item.id}`,
-                service: item.tipoServico || 'Serviço',
-                startDate: item.dataInicio ? new Date(item.dataInicio).toLocaleDateString('pt-BR') : '-',
-                status: item.status,
-              }))
-          );
+  contratos
+    .filter((item) => item.empresaId === companyId)
+    .map((item) => ({
+      id: item.id,
+      code: `CTR-${item.id}`,
+      service: item.tipoServico || 'Serviço',
+      startDate: item.dataInicio ? new Date(item.dataInicio).toLocaleDateString('pt-BR') : '-',
+      status: item.status,
+    }))
+);
 
           setCompanyMeetingsData(
             reunioes

@@ -7,6 +7,7 @@ import { EntityActionModal } from '../../types';
 import EntityActionModalData from '../../components/modals/entity-action-modal';
 import { useAppSelector } from '../../store/hooks';
 import { uploadDocumentoContrato } from '../../services/contratos-documentos';
+import { listarDocumentosContrato, downloadDocumentoContrato } from '../../services/contratos-documentos';
 
 export default function CompaniesPage() {
   const { search } = useOutletContext<{ search: string }>();
@@ -55,9 +56,9 @@ export default function CompaniesPage() {
         if (!res.ok) throw new Error(`Erro ao enviar "${file.name}"`);
       })
     );
-    await Promise.all(uploads);
     const count = files.length;
-    setUploadFeedback({ contratoId, message: `${count} arquivo${count > 1 ? 's' : ''} enviado${count > 1 ? 's' : ''} com sucesso.`, ok: true });
+    await Promise.all(uploads);
+    setUploadFeedback({ contratoId, message: `${count} arquivo${count > 1 ? 's' : ''} anexado${count > 1 ? 's' : ''} com sucesso!`, ok: true });
   } catch (error) {
     const msg = error instanceof Error ? error.message : 'Não foi possível enviar os arquivos.';
     setUploadFeedback({ contratoId, message: msg, ok: false });
@@ -216,7 +217,7 @@ export default function CompaniesPage() {
           {companyDetailTab === 'Contratos' ? (
             <div className="detail-table-list">
               {companyContractsData.map((item) => {
-                const contratoId = Number(item.code.replace('CTR-', ''));
+                const contratoId = (item as { id?: number; code: string }).id ?? Number(item.code.replace('CTR-', ''));
                 const isUploading = uploadingContratoId === contratoId;
                 const feedback = uploadFeedback?.contratoId === contratoId ? uploadFeedback : null;
                 return (
@@ -227,31 +228,57 @@ export default function CompaniesPage() {
                     </div>
                     <span>{item.startDate}</span>
                     <span className="detail-table-status">{item.status}</span>
-                    <Tooltip title="Anexar PDF ao contrato" arrow>
-  <label>
+                    <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+  <Tooltip title="Anexar PDF ao contrato" arrow>
+    <label style={{ display: 'flex' }}>
+      <button
+        type="button"
+        className="icon-button detail-icon-button"
+        style={{ opacity: isUploading ? 0.6 : 1, cursor: isUploading ? 'not-allowed' : 'pointer' }}
+        onClick={() => (document.getElementById(`upload-${contratoId}`) as HTMLInputElement)?.click()}
+        disabled={uploadingContratoId !== null}
+      >
+        {isUploading ? '⏳' : '↑'}
+      </button>
+      <input
+        id={`upload-${contratoId}`}
+        type="file"
+        accept="application/pdf"
+        multiple
+        style={{ display: 'none' }}
+        disabled={uploadingContratoId !== null}
+        onChange={(e) => {
+          if (e.target.files && e.target.files.length > 0) {
+            void handleUploadPDF(item.code, e.target.files);
+          }
+          e.target.value = '';
+        }}
+      />
+    </label>
+  </Tooltip>
+
+  <Tooltip title="Visualizar documento" arrow>
     <button
       type="button"
       className="icon-button detail-icon-button"
-      style={{ opacity: isUploading ? 0.6 : 1, cursor: isUploading ? 'not-allowed' : 'pointer' }}
-      onClick={() => (document.querySelector(`#upload-${contratoId}`) as HTMLInputElement)?.click()}
+      onClick={async () => {
+  const res = await listarDocumentosContrato(contratoId);
+  const docs = await res.json();
+  if (docs && docs.length > 0) {
+    const ultimo = docs[docs.length - 1];
+    const dlRes = await downloadDocumentoContrato(contratoId, ultimo.id);
+    const blob = await dlRes.blob();
+    const url = URL.createObjectURL(blob);
+    window.open(url, '_blank');
+  } else {
+    alert('Nenhum documento encontrado para este contrato.');
+  }
+}}
     >
-      {isUploading ? '⏳' : '⌕'}
+      ⌕
     </button>
-   <input
-  type="file"
-  accept="application/pdf"
-  multiple
-  style={{ display: 'none' }}
-  disabled={uploadingContratoId !== null}
-  onChange={(e) => {
-    if (e.target.files && e.target.files.length > 0) {
-      void handleUploadPDF(item.code, e.target.files);
-    }
-    e.target.value = '';
-  }}
-/>
-  </label>
-</Tooltip>
+  </Tooltip>
+</div>
                     {feedback ? (
                       <small style={{ color: feedback.ok ? '#16a34a' : '#dc2626', fontSize: '11px' }}>
                         {feedback.message}
