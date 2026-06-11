@@ -62,5 +62,5 @@ export function useProposals() {
     reloadProposals();
   }, []);
 
-  return { proposalBoard, setProposalBoard, aprovarProposta, recusarProposta };
+  return { proposalBoard, setProposalBoard, aprovarProposta, recusarProposta, reloadProposals };
 }

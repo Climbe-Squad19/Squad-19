@@ -1,18 +1,18 @@
 import { useMemo, useState } from 'react';
 import { useOutletContext } from 'react-router-dom';
 import { Tooltip } from '@mui/material';
-import CalendarGrid from '../../components/calendar/calendar-grid';
-import { formatMonthLabel, getTodayIso } from '../../utils/date';
 import { useCalendar } from '../../hooks/use-calendar';
 import { useDashboardOverview } from '../../hooks/use-dashboard-overview';
-import { ArrowRight, CircleAlert, Eye, Link, ReceiptText, TriangleAlert } from 'lucide-react';
+import { ArrowRight, CircleAlert, Eye, Link, Phone, ReceiptText, TriangleAlert } from 'lucide-react';
 
 type ExpandedSection = 'contracts' | 'dueDates' | null;
 
 export default function DashboardPage() {
   const { search } = useOutletContext<{ search: string }>();
   const { summaryCards, recentContracts, upcomingItems } = useDashboardOverview();
-  const { selectedDate, setSelectedDate, selectedMonth, calendarDays, loadingCalendar, calendarLoadError, changeMonth } = useCalendar();
+  
+  // Mantemos a sua lógica original, mas não renderizamos mais a grade do calendário
+  const { selectedDate, calendarDays, loadingCalendar } = useCalendar();
   const [expandedSection, setExpandedSection] = useState<ExpandedSection>(null);
 
   const searchTerm = search.trim().toLowerCase();
@@ -36,6 +36,13 @@ export default function DashboardPage() {
   const visibleContracts = expandedSection === 'contracts' ? filteredContracts : filteredContracts.slice(0, 3);
   const visibleDueDates = expandedSection === 'dueDates' ? filteredUpcomingItems : filteredUpcomingItems.slice(0, 3);
 
+  // Derivando os eventos do dia atual a partir da lógica existente do useCalendar
+  const currentDayEvents = useMemo(() => {
+    const selectedDayNumber = Number(selectedDate.split('-')[2]);
+    const dayData = calendarDays.find(d => d.day === selectedDayNumber);
+    return dayData?.events || [];
+  }, [calendarDays, selectedDate]);
+
   return (
     <>
       <div className="cards-grid">
@@ -57,43 +64,26 @@ export default function DashboardPage() {
         ))}
       </div>
 
-      <div className="dashboard-grid dashboard-main-grid">
-        <section className="panel calendar-panel gc-calendar-panel">
-          <div className="panel-header calendar-header">
-            <div>
-              <h3>Calendário</h3>
-              <span>{formatMonthLabel(selectedMonth)}</span>
-            </div>
-            <div className="calendar-nav">
-              <button type="button" className="button button--text gc-calendar-today-btn" onClick={() => setSelectedDate(getTodayIso())}>
-                Hoje
-              </button>
-              <button type="button" className="icon-button" aria-label="Mês anterior" onClick={() => changeMonth('prev')}>
-                ◀
-              </button>
-              <button type="button" className="icon-button" aria-label="Próximo mês" onClick={() => changeMonth('next')}>
-                ▶
-              </button>
-            </div>
-          </div>
-          <CalendarGrid
-            placement="overview"
-            calendarDays={calendarDays}
-            selectedDate={selectedDate}
-            selectedMonth={selectedMonth}
-            loadingCalendar={loadingCalendar}
-            calendarLoadError={calendarLoadError}
-            onSelectDate={setSelectedDate}
-          />
-        </section>
-
-        <div className="right-side-grid">
+      <div className="grid grid-cols-[1fr_295px] gap-3 px-4">
+        
+        {/* LADO ESQUERDO: Tabelas (1fr) */}
+        <div className="w-full space-y-2">
+          
+          {/* Tabela de Contratos */}
           <div className="w-full bg-[#121214] border border-zinc-800/60 rounded-xl flex flex-col overflow-hidden">
             <div className="flex items-center justify-between px-6 py-5 border-b border-zinc-800/60">
               <div className="flex gap-3 text-base font-semibold text-zinc-100 items-center">
                 <ReceiptText className="size-5" />
                 Últimos contratos gerados
               </div>
+              <button 
+                type="button"
+                onClick={() => setExpandedSection((current) => current === 'contracts' ? null : 'contracts')}
+                className="flex items-center gap-1.5 text-sm font-medium text-zinc-300 hover:text-white transition-colors"
+              >
+                {expandedSection === 'contracts' ? 'Recolher' : 'Ver todos'}
+                <ArrowRight className="size-4" />
+              </button>
             </div>
 
             <div className="w-full overflow-x-auto">
@@ -111,7 +101,7 @@ export default function DashboardPage() {
                     visibleContracts.map((contract) => (
                       <tr 
                         key={`${contract.company}-${contract.start}`} 
-                        className="border-b border-zinc-800/60 last:border-0 transition-colors"
+                        className="border-b border-zinc-800/60 last:border-0 hover:bg-white/[0.02] transition-colors"
                       >
                         <td className="px-6 py-4 text-sm text-zinc-200 font-medium">{contract.company}</td>
                         <td className="px-6 py-4 text-sm text-zinc-300">{contract.service}</td>
@@ -140,12 +130,21 @@ export default function DashboardPage() {
             </div>
           </div>
 
+          {/* Tabela de Vencimentos */}
           <div className="w-full bg-[#121214] border border-zinc-800/60 rounded-xl flex flex-col overflow-hidden">
             <div className="flex items-center justify-between px-6 py-5 border-b border-zinc-800/60">
               <div className="flex gap-3 text-base font-semibold text-zinc-100 items-center">
                 <TriangleAlert className="size-5" />
                 Próximos vencimentos
               </div>
+              <button 
+                type="button"
+                onClick={() => setExpandedSection((current) => current === 'dueDates' ? null : 'dueDates')}
+                className="flex items-center gap-1.5 text-sm font-medium text-zinc-300 hover:text-white transition-colors"
+              >
+                {expandedSection === 'dueDates' ? 'Recolher' : 'Ver todos'}
+                <ArrowRight className="size-4" />
+              </button>
             </div>
 
             <div className="w-full overflow-x-auto">
@@ -171,7 +170,7 @@ export default function DashboardPage() {
                       return (
                         <tr
                           key={`${item.client}-${item.reference}`}
-                          className="border-b border-zinc-800/60 last:border-0 transition-colors"
+                          className="border-b border-zinc-800/60 last:border-0 hover:bg-white/[0.02] transition-colors"
                         >
                           <td className="px-6 py-4 text-sm text-zinc-200 font-medium">{item.client}</td>
                           <td className="px-6 py-4 text-sm text-zinc-300">{item.reference}</td>
@@ -206,8 +205,44 @@ export default function DashboardPage() {
               </table>
             </div>
           </div>
-
         </div>
+
+        {/* LADO DIREITO: Agenda do Dia (295px) */}
+        <div className="w-full bg-[#121214] flex flex-col px-4 py-4 rounded-xl border border-zinc-800/60 h-fit max-h-[820px] overflow-y-auto">
+          <div className="flex items-center justify-between pb-3 border-b border-zinc-800/60">
+            <h3 className="text-base font-semibold text-zinc-100">Agenda do dia</h3>
+            <span className="text-xs font-medium text-zinc-400 bg-zinc-800/50 px-2.5 py-1 rounded-md">
+              {new Date(selectedDate).toLocaleDateString('pt-BR', { day: '2-digit', month: 'short' })}
+            </span>
+          </div>
+
+          <div className="space-y-1 mt-3">
+            {loadingCalendar ? (
+              <p className="text-sm text-zinc-500 text-center py-6">Carregando agenda...</p>
+            ) : currentDayEvents.length > 0 ? (
+              currentDayEvents.map((item) => (
+                <div key={item.id} className="flex gap-3 items-center py-3 border-b border-zinc-800/60 last:border-0 hover:bg-white/[0.01] px-1 rounded-lg transition-colors">
+                  <div className="bg-zinc-800/80 border border-zinc-700 rounded-full size-8 flex items-center justify-center shrink-0">
+                    <Phone className="size-4 text-zinc-300" />
+                  </div>
+                  <div className="min-w-0 flex-1 flex flex-col gap-0.5">
+                    <span className="text-sm font-semibold text-zinc-200 truncate block" title={item.title}>
+                      {item.title}
+                    </span>
+                    <p className="text-xs font-medium text-zinc-500 truncate">
+                      {item.time}h
+                    </p>
+                  </div>
+                </div>
+              ))
+            ) : (
+              <p className="text-sm text-zinc-500 text-center py-8 px-2">
+                Nenhum compromisso para hoje.
+              </p>
+            )}
+          </div>
+        </div>
+
       </div>
     </>
   );
