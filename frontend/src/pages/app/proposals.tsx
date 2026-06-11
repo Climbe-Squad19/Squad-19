@@ -17,7 +17,7 @@ const SERVICOS = [
 
 export default function ProposalsPage() {
   const { search } = useOutletContext<{ search: string }>();
-  const { proposalBoard, aprovarProposta, recusarProposta, reloadProposals } = useProposals();
+  const { proposalBoard, aprovarProposta, recusarProposta, reloadProposals, enviarParaAprovacao } = useProposals();
   const [selectedProposalDetail, setSelectedProposalDetail] = useState<(ProposalCardItem & { stage: string }) | null>(null);
 
   // Nova proposta
