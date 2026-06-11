@@ -58,9 +58,14 @@ export function useProposals() {
     reloadProposals();
   };
 
+  const enviarParaAprovacao = async (proposalId: number) => {
+    await atualizarStatusProposta(proposalId, 'ENVIADA' as 'ACEITA' | 'RECUSADA');
+    reloadProposals();
+  };
+
   useEffect(() => {
     reloadProposals();
   }, []);
 
-  return { proposalBoard, setProposalBoard, aprovarProposta, recusarProposta, reloadProposals };
+  return { proposalBoard, setProposalBoard, aprovarProposta, recusarProposta, reloadProposals, enviarParaAprovacao };
 }
