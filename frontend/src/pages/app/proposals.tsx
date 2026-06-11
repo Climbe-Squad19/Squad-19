@@ -228,6 +228,7 @@ export default function ProposalsPage() {
         onClose={() => setSelectedProposalDetail(null)}
         onApprove={aprovarProposta}
         onReject={recusarProposta}
+        onEnviar={enviarParaAprovacao}
       />
     </>
   );
