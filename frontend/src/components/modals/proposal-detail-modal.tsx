@@ -20,7 +20,16 @@ type ProposalDetailModalProps = {
 export default function ProposalDetailModal({ detail, onClose, onApprove, onReject, onEnviar }: ProposalDetailModalProps) {
   const [selectedMotivo, setSelectedMotivo] = useState('');
   const [loading, setLoading] = useState(false);
-  const [feedback, setFeedback] = useState('');
+
+  const getStageFeedback = () => {
+    if (!detail) return '';
+    if (detail.stage === 'Aguardando Aprovação') return 'Esta proposta está aguardando uma resposta.';
+    if (detail.stage === 'Aceitas (Contratos gerados)') return 'Esta proposta foi aceita.';
+    if (detail.stage === 'Em Revisão (Recusados)') return 'Esta proposta foi recusada.';
+    return '';
+  };
+
+  const [feedback, setFeedback] = useState(getStageFeedback);
 
   if (!detail) return null;
 
