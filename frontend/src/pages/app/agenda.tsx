@@ -1,4 +1,4 @@
-import { useState, type FormEvent } from 'react';
+import { useState, useEffect, type FormEvent } from 'react';
 import { useOutletContext } from 'react-router-dom';
 import CalendarGrid from '../../components/calendar/calendar-grid';
 import { CALENDAR_WEEKDAY_LABELS } from '../../constants/calendar';
@@ -6,6 +6,7 @@ import { formatMonthLabel, formatSelectedDayLong, getTodayIso } from '../../util
 import { useAgenda } from '../../hooks/use-agenda';
 import { useCalendar } from '../../hooks/use-calendar';
 import { createMeeting } from '../../services/dashboard';
+import { fetchEmpresas, type EmpresaApiResponse } from '../../services/empresas';
 
 export default function AgendaPage() {
   const { search } = useOutletContext<{ search: string }>();
@@ -21,10 +22,20 @@ export default function AgendaPage() {
   const [formPresencial, setFormPresencial] = useState(true);
   const [formLocation, setFormLocation] = useState('Sala 2');
   const [formLinkOnline, setFormLinkOnline] = useState('https://meet.google.com/abc-defg-hij');
+  const [formEmpresaId, setFormEmpresaId] = useState('');
+  const [empresas, setEmpresas] = useState<EmpresaApiResponse[]>([]);
   const [formSubmitting, setFormSubmitting] = useState(false);
   const [formError, setFormError] = useState('');
 
   const filteredAgendaItems = filterAgendaList(agendaItems);
+
+  useEffect(() => {
+    if (showAgendaCreatePanel && empresas.length === 0) {
+      fetchEmpresas()
+        .then(setEmpresas)
+        .catch(() => setFormError('Não foi possível carregar empresas.'));
+    }
+  }, [showAgendaCreatePanel]);
 
   async function handleCreateMeeting(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -33,7 +44,7 @@ export default function AgendaPage() {
     try {
       await createMeeting({
         pauta: formTitle,
-        empresaId: 1,
+        empresaId: formEmpresaId ? Number(formEmpresaId) : 1,
         contratoId: 1,
         dataHora: `${selectedDate}T${formTime}:00`,
         presencial: formPresencial,
@@ -158,6 +169,19 @@ export default function AgendaPage() {
               <label>
                 Nome do Evento
                 <input type="text" value={formTitle} onChange={(event) => setFormTitle(event.target.value)} required />
+              </label>
+              <label>
+                Empresa
+                <select
+                  value={formEmpresaId}
+                  onChange={(e) => setFormEmpresaId(e.target.value)}
+                  style={{ padding: '8px', borderRadius: '6px', border: '1px solid var(--color-border, #334155)', background: 'var(--color-bg, #0f172a)', color: 'inherit', fontSize: '13px', width: '100%' }}
+                >
+                  <option value="">Selecione...</option>
+                  {empresas.map((e) => (
+                    <option key={e.id} value={e.id}>{e.razaoSocial}</option>
+                  ))}
+                </select>
               </label>
               <label>
                 Categoria
