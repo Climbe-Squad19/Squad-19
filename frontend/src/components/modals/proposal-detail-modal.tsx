@@ -14,15 +14,17 @@ type ProposalDetailModalProps = {
   onClose: () => void;
   onApprove?: (id: number) => Promise<void>;
   onReject?: (id: number, motivo: string) => Promise<void>;
+  onEnviar?: (id: number) => Promise<void>;
 };
 
-export default function ProposalDetailModal({ detail, onClose, onApprove, onReject }: ProposalDetailModalProps) {
+export default function ProposalDetailModal({ detail, onClose, onApprove, onReject, onEnviar }: ProposalDetailModalProps) {
   const [selectedMotivo, setSelectedMotivo] = useState('');
   const [loading, setLoading] = useState(false);
   const [feedback, setFeedback] = useState('');
 
   if (!detail) return null;
 
+  const isRascunho = detail.stage === 'Rascunhos';
   const isAguardando = detail.stage === 'Aguardando Aprovação';
 
   const handleApprove = async () => {
@@ -52,6 +54,20 @@ export default function ProposalDetailModal({ detail, onClose, onApprove, onReje
       setTimeout(onClose, 1200);
     } catch {
       setFeedback('Erro ao recusar. Tente novamente.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleEnviar = async () => {
+    if (!detail.id || !onEnviar) return;
+    setLoading(true);
+    try {
+      await onEnviar(detail.id);
+      setFeedback('Proposta enviada para aprovação!');
+      setTimeout(onClose, 1200);
+    } catch {
+      setFeedback('Erro ao enviar. Tente novamente.');
     } finally {
       setLoading(false);
     }
@@ -96,7 +112,7 @@ export default function ProposalDetailModal({ detail, onClose, onApprove, onReje
             style={{ marginTop: 12, width: '100%' }}
             onClick={() => window.open(detail.linkGoogleDrive!, '_blank')}
           >
-            Analisar proposta 
+            Analisar proposta
           </button>
         )}
 
@@ -133,6 +149,11 @@ export default function ProposalDetailModal({ detail, onClose, onApprove, onReje
         )}
 
         <div className="dialog-actions" style={{ marginTop: 16 }}>
+          {isRascunho && (
+            <button type="button" className="button button--outline" onClick={handleEnviar} disabled={loading}>
+              Enviar para aprovação
+            </button>
+          )}
           {isAguardando && (
             <>
               <button type="button" className="button button--outline" onClick={handleReject} disabled={loading}>

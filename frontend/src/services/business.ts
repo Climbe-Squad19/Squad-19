@@ -89,7 +89,7 @@ export async function criarProposta(payload: PropostaCriacaoPayload): Promise<Pr
 
 export async function atualizarStatusProposta(
   propostaId: number,
-  status: 'ACEITA' | 'RECUSADA',
+  status: 'ACEITA' | 'RECUSADA'| 'ENVIADA',
   motivoRecusa?: string
 ): Promise<PropostaApiResponse> {
   const params = new URLSearchParams({ status });
