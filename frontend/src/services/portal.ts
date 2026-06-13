@@ -110,8 +110,13 @@ export function getPortalEmpresaId(): number | undefined {
   }
 
   const maybe = empresa as Record<string, unknown>;
+  const nestedEmpresa = maybe.empresa;
+  const nestedEmpresaId =
+    nestedEmpresa && typeof nestedEmpresa === 'object'
+      ? (nestedEmpresa as Record<string, unknown>).id
+      : undefined;
 
-  const fromRootId = maybe.empresaId ?? maybe.id ?? maybe.empresa?.id;
+  const fromRootId = maybe.empresaId ?? maybe.id ?? nestedEmpresaId;
   if (typeof fromRootId === 'number') {
     return fromRootId;
   }
