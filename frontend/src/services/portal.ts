@@ -18,7 +18,7 @@ export type PortalLoginResponse = {
 };
 
 export async function portalLogin(request: PortalLoginRequest): Promise<PortalLoginResponse> {
-  const response = await fetch(`${API_BASE_URL}/auth/login`, {
+  const response = await fetch(`${API_BASE_URL}/auth/portal-login`, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
