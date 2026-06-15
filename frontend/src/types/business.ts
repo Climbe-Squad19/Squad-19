@@ -14,12 +14,14 @@ export type ProposalColumn = {
 };
 
 export type ContractItem = {
+  contractId?: number;
   company: string;
   service: string;
   start: string;
 };
 
 export type UpcomingItem = {
+  contractId?: number;
   client: string;
   reference: string;
   due: string;
