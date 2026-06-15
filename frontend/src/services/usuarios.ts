@@ -8,6 +8,7 @@ export type UsuarioApiResponse = {
   nomeCompleto: string;
   cargo: string;
   email: string;
+  empresaId?: number;
   cpf: string;
   telefone: string;
   ativo: boolean;

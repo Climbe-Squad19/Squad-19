@@ -1,14 +1,21 @@
-import { useState } from "react";
-import { Navigate, Outlet, useSearchParams } from "react-router-dom";
-import { useAppSelector } from "../../store/hooks"; // Importante: conectando o Redux
+import { useEffect, useState } from "react";
+import { Navigate, Outlet, useSearchParams, useNavigate } from "react-router-dom";
+import { useAppDispatch, useAppSelector } from "../../store/hooks"; // Importante: conectando o Redux
 import Toolbar from "../../components/layout/toolbar";
 import Sidebar from "../../components/layout/sidebar";
 import { ACCESS_TOKEN_KEY } from "../../services/api";
+import { fetchAuthMe, profileFromAuthMe } from "../../services/auth";
+import { updateProfile } from "../../store/profileSlice";
 
 export function AppLayout() {
   // 1. Busca e URL
   const [searchParams, setSearchParams] = useSearchParams();
   const search = searchParams.get('q') ?? '';
+
+  const dispatch = useAppDispatch();
+  const navigate = useNavigate();
+  const token = localStorage.getItem(ACCESS_TOKEN_KEY);
+  const [isAuthChecked, setIsAuthChecked] = useState(!!token);
 
   const handleSearch = (value: string) => {
     if (value) {
@@ -17,6 +24,36 @@ export function AppLayout() {
       setSearchParams({});
     }
   };
+
+  useEffect(() => {
+    if (!token) {
+      setIsAuthChecked(true);
+      return;
+    }
+
+    let isMounted = true;
+    const loadProfile = async () => {
+      try {
+        const authMe = await fetchAuthMe();
+        if (!isMounted) return;
+        dispatch(updateProfile(profileFromAuthMe(authMe)));
+      } catch (error) {
+        localStorage.removeItem(ACCESS_TOKEN_KEY);
+        if (isMounted) {
+          navigate('/login', { replace: true });
+        }
+      } finally {
+        if (isMounted) {
+          setIsAuthChecked(true);
+        }
+      }
+    };
+
+    loadProfile();
+    return () => {
+      isMounted = false;
+    };
+  }, [dispatch, navigate, token]);
 
   // 2. Resgatando os dados do Redux (que estavam no monolito antigo)
   const profile = useAppSelector((state) => state.profile);
@@ -33,10 +70,12 @@ export function AppLayout() {
     ?.map((part) => part[0]?.toUpperCase() ?? '')
     ?.join('') || 'U';
 
-  const token = localStorage.getItem(ACCESS_TOKEN_KEY)
-
   if (!token) {
     return <Navigate to="/login" replace />
+  }
+
+  if (!isAuthChecked) {
+    return null;
   }
 
   return (

@@ -108,6 +108,7 @@ export async function resetPassword(token: string, novaSenha: string): Promise<s
 export type AuthMeResponse = {
   usuario: UsuarioApiResponse;
   podeGerenciarCadastros: boolean;
+  empresaId?: number;
 };
 
 /** Monta o estado do Redux a partir do GET /auth/me (cargo e permissão de aprovação reais). */
