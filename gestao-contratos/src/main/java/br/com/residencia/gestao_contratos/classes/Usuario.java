@@ -39,6 +39,9 @@ public class Usuario {
     @Column(unique = true, nullable = false)
     private String email;
 
+    @Column(name = "empresa_id")
+    private Long empresaId;
+
     @Column(length = 50)
     private String telefone;
 
