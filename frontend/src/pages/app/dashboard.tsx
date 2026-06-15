@@ -3,6 +3,7 @@ import { useOutletContext } from 'react-router-dom';
 import { Tooltip } from '@mui/material';
 import { useCalendar } from '../../hooks/use-calendar';
 import { useDashboardOverview } from '../../hooks/use-dashboard-overview';
+import { downloadDocumentoContrato, listarDocumentosContrato } from '../../services/contratos-documentos';
 import { ArrowRight, CircleAlert, Eye, Link, Phone, ReceiptText, TriangleAlert } from 'lucide-react';
 
 type ExpandedSection = 'contracts' | 'dueDates' | null;
@@ -11,7 +12,6 @@ export default function DashboardPage() {
   const { search } = useOutletContext<{ search: string }>();
   const { summaryCards, recentContracts, upcomingItems } = useDashboardOverview();
   
-  // Mantemos a sua lógica original, mas não renderizamos mais a grade do calendário
   const { selectedDate, calendarDays, loadingCalendar } = useCalendar();
   const [expandedSection, setExpandedSection] = useState<ExpandedSection>(null);
 
@@ -36,12 +36,45 @@ export default function DashboardPage() {
   const visibleContracts = expandedSection === 'contracts' ? filteredContracts : filteredContracts.slice(0, 3);
   const visibleDueDates = expandedSection === 'dueDates' ? filteredUpcomingItems : filteredUpcomingItems.slice(0, 3);
 
-  // Derivando os eventos do dia atual a partir da lógica existente do useCalendar
   const currentDayEvents = useMemo(() => {
     const selectedDayNumber = Number(selectedDate.split('-')[2]);
     const dayData = calendarDays.find(d => d.day === selectedDayNumber);
     return dayData?.events || [];
   }, [calendarDays, selectedDate]);
+
+  async function openContractDocument(contractId?: number) {
+    if (!contractId) {
+      alert('Documento indisponível para este contrato.');
+      return;
+    }
+
+    try {
+      const documentsResponse = await listarDocumentosContrato(contractId);
+      if (!documentsResponse.ok) {
+        throw new Error('Erro ao listar documentos do contrato.');
+      }
+
+      const documents: Array<{ id: number }> = await documentsResponse.json();
+      if (documents.length === 0) {
+        alert('Nenhum documento encontrado para este contrato.');
+        return;
+      }
+
+      const latestDocument = documents[documents.length - 1];
+      const downloadResponse = await downloadDocumentoContrato(contractId, latestDocument.id);
+      if (!downloadResponse.ok) {
+        throw new Error('Erro ao baixar documento do contrato.');
+      }
+
+      const blob = await downloadResponse.blob();
+      const url = URL.createObjectURL(blob);
+      window.open(url, '_blank', 'noopener,noreferrer');
+      setTimeout(() => URL.revokeObjectURL(url), 60_000);
+    } catch (error) {
+      console.error('Erro ao abrir documento do contrato', error);
+      alert('Não foi possível abrir o documento deste contrato.');
+    }
+  }
 
   return (
     <>
@@ -49,7 +82,7 @@ export default function DashboardPage() {
         {summaryCards.map((card) => (
           <div
             key={card.title}
-            className="w-full bg-zinc-950 dark:bg-zinc-950 light:bg-white flex flex-col p-2 gap-2.5 rounded-md border border-zinc-500"
+            className="w-full bg-zinc-950 dark:bg-zinc-950 light:bg-white flex flex-col p-2 gap-2.5 rounded-md border border-zinc-800/60"
           >
             <div className="flex items-center gap-2">
               <CircleAlert className="size-4 stroke-1 text-zinc-100" />
@@ -66,10 +99,8 @@ export default function DashboardPage() {
 
       <div className="grid grid-cols-[1fr_295px] gap-3 px-4">
         
-        {/* LADO ESQUERDO: Tabelas (1fr) */}
         <div className="w-full space-y-2">
           
-          {/* Tabela de Contratos */}
           <div className="w-full bg-[#121214] border border-zinc-800/60 rounded-xl flex flex-col overflow-hidden">
             <div className="flex items-center justify-between px-6 py-5 border-b border-zinc-800/60">
               <div className="flex gap-3 text-base font-semibold text-zinc-100 items-center">
@@ -110,7 +141,8 @@ export default function DashboardPage() {
                           <Tooltip title="Abrir contrato" arrow placement="top">
                             <button 
                               type="button"
-                              className="p-2 rounded-lg border border-zinc-700 bg-transparent text-zinc-400 hover:text-white hover:bg-zinc-800 hover:border-zinc-600 transition-all focus:outline-none focus:ring-2 focus:ring-[#79C6C0]/50"
+                              onClick={() => void openContractDocument(contract.contractId)}
+                              className="p-2 rounded-lg border border-zinc-700 bg-transparent text-zinc-400 hover:text-white hover:bg-zinc-800 hover:border-zinc-600 transition-all focus:outline-none focus:ring-2 focus:ring-[#79C6C0]/50 cursor-pointer"
                             >
                               <Link className="size-4" />
                             </button>
@@ -130,7 +162,6 @@ export default function DashboardPage() {
             </div>
           </div>
 
-          {/* Tabela de Vencimentos */}
           <div className="w-full bg-[#121214] border border-zinc-800/60 rounded-xl flex flex-col overflow-hidden">
             <div className="flex items-center justify-between px-6 py-5 border-b border-zinc-800/60">
               <div className="flex gap-3 text-base font-semibold text-zinc-100 items-center">
@@ -184,8 +215,8 @@ export default function DashboardPage() {
                             <Tooltip title="Ver detalhes" arrow placement="top">
                               <button
                                 type="button"
-                                disabled
-                                className="p-2 rounded-lg border border-zinc-700 bg-transparent text-zinc-400 hover:text-white hover:bg-zinc-800 hover:border-zinc-600 transition-all focus:outline-none focus:ring-2 focus:ring-[#79C6C0]/50 disabled:opacity-50 disabled:cursor-not-allowed"
+                                onClick={() => void openContractDocument(item.contractId)}
+                                className="p-2 rounded-lg border border-zinc-700 bg-transparent text-zinc-400 hover:text-white hover:bg-zinc-800 hover:border-zinc-600 transition-all focus:outline-none focus:ring-2 focus:ring-[#79C6C0]/50 cursor-pointer"
                               >
                                 <Eye className="size-4" />
                               </button>
@@ -207,7 +238,6 @@ export default function DashboardPage() {
           </div>
         </div>
 
-        {/* LADO DIREITO: Agenda do Dia (295px) */}
         <div className="w-full bg-[#121214] flex flex-col px-4 py-4 rounded-xl border border-zinc-800/60 h-fit max-h-[820px] overflow-y-auto">
           <div className="flex items-center justify-between pb-3 border-b border-zinc-800/60">
             <h3 className="text-base font-semibold text-zinc-100">Agenda do dia</h3>

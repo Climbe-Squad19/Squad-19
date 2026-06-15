@@ -120,7 +120,6 @@ export default function TeamPage() {
                     <small>{member.role}</small>
                   </div>
                 </div>
-                <span className={`entity-chip entity-chip--${member.status.toLowerCase().replace(/\s+/g, '-')}`}>{member.status}</span>
               </div>
               <div className="team-member-meta">
                 <div className="team-member-meta-item">
