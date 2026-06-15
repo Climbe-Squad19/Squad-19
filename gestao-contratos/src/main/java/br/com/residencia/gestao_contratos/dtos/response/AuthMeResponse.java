@@ -11,4 +11,5 @@ public class AuthMeResponse {
     private UsuarioResponse usuario;
     /** CEO, Compliance ou Membro do Conselho (mesma regra de /usuarios/pendentes). */
     private boolean podeGerenciarCadastros;
+    private Long empresaId;
 }

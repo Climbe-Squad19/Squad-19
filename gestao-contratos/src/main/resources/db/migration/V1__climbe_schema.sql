@@ -32,6 +32,7 @@ CREATE TABLE usuarios (
     cargo VARCHAR(255) COMMENT 'Enum Cargo em string',
     cpf VARCHAR(14) NOT NULL COMMENT 'Documento; unicidade no app',
     email VARCHAR(255) NOT NULL COMMENT 'Login; normalizar lowercase na aplicação',
+    empresa_id BIGINT,
     telefone VARCHAR(50),
     ativo TINYINT(1) NOT NULL,
     senha VARCHAR(255) NULL COMMENT 'Hash bcrypt (~60 chars); nunca texto puro',

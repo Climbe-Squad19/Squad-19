@@ -17,14 +17,14 @@ export interface ProfileState {
 }
 
 const initialState: ProfileState = {
-  fullName: 'Marcos Paulo',
-  email: 'marcos.paulo@climb.com.br',
-  role: 'Administrador',
-  phone: '(79) 99999-1234',
+  fullName: 'Usuário',
+  email: '',
+  role: '',
+  phone: '',
   documentType: 'CPF',
-  documentNumber: '123.456.789-00',
-  company: 'Climb Consultoria',
-  status: 'Online',
+  documentNumber: '',
+  company: '',
+  status: 'Offline',
   podeGerenciarCadastros: false,
 };
 
