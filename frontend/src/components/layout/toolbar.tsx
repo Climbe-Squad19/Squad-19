@@ -90,14 +90,15 @@ export default function Toolbar({
       </div>
 
       <ProfileMenu
-        anchorEl={profileMenuAnchor}
-        onClose={() => setProfileMenuAnchor(null)}
-        fullName={profile.fullName}
-        email={profile.email}
-        userInitials={getInitials(profile.fullName)}
-        onSettings={() => navigate('/configuracoes')}
-        onOpenProfile={() => navigate('/configuracoes')}
-      />
+  anchorEl={profileMenuAnchor}
+  onClose={() => setProfileMenuAnchor(null)}
+  fullName={profile.fullName}
+  email={profile.email}
+  userInitials={getInitials(profile.fullName)}
+  onSettings={() => navigate('/configuracoes')}
+  onOpenProfile={() => navigate('/configuracoes')}
+  isLightMode={isLightSurfaceMode}
+/>
     </div>
   );
 }

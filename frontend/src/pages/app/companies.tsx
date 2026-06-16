@@ -35,6 +35,7 @@ export default function CompaniesPage() {
   const [entityActionModal, setEntityActionModal] = useState<EntityActionModal | null>(null);
   const [uploadingContratoId, setUploadingContratoId] = useState<number | null>(null);
   const [uploadFeedback, setUploadFeedback] = useState<{ contratoId: number; message: string; ok: boolean } | null>(null);
+  const [docsModal, setDocsModal] = useState<{ contratoId: number; docs: { id: number; nomeArquivo: string }[] } | null>(null);
 
   const searchTerm = search.trim().toLowerCase();
   const filteredCompanies = useMemo(
@@ -193,13 +194,15 @@ export default function CompaniesPage() {
                     <small style={{ color: '#9ab0d6' }}>{item.service}</small>
                   </div>
                   <span>{item.amount}</span>
-                  <span className="detail-table-status">{item.status}</span>
+                  <span className="detail-table-status" data-status={item.status}>
+  {item.status}
+</span>
                   <Tooltip title="Ver detalhes" arrow>
                     <button type="button" className="icon-button detail-icon-button" onClick={() => setEntityActionModal({
                       title: item.title,
                       subtitle: 'Detalhes da proposta comercial',
                       actionLabel: 'Fechar',
-                      actionIcon: '⌕',
+                      actionIcon: '',
                       details: [
                         { label: 'Serviço', value: item.service },
                         { label: 'Valor', value: item.amount },
@@ -227,7 +230,9 @@ export default function CompaniesPage() {
                       <small style={{ color: '#9ab0d6' }}>{item.service}</small>
                     </div>
                     <span>{item.startDate}</span>
-                    <span className="detail-table-status">{item.status}</span>
+                    <span className="detail-table-status" data-status={item.status}>
+  {item.status}
+</span>
                     <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
   <Tooltip title="Anexar PDF ao contrato" arrow>
     <label style={{ display: 'flex' }}>
@@ -257,27 +262,23 @@ export default function CompaniesPage() {
     </label>
   </Tooltip>
 
-  <Tooltip title="Visualizar documento" arrow>
-    <button
-      type="button"
-      className="icon-button detail-icon-button"
-      onClick={async () => {
-  const res = await listarDocumentosContrato(contratoId);
-  const docs = await res.json();
-  if (docs && docs.length > 0) {
-    const ultimo = docs[docs.length - 1];
-    const dlRes = await downloadDocumentoContrato(contratoId, ultimo.id);
-    const blob = await dlRes.blob();
-    const url = URL.createObjectURL(blob);
-    window.open(url, '_blank');
-  } else {
-    alert('Nenhum documento encontrado para este contrato.');
-  }
-}}
-    >
-      ⌕
-    </button>
-  </Tooltip>
+  <Tooltip title="Visualizar documentos" arrow>
+  <button
+    type="button"
+    className="icon-button detail-icon-button"
+    onClick={async () => {
+      const res = await listarDocumentosContrato(contratoId);
+      const docs = await res.json();
+      if (docs && docs.length > 0) {
+        setDocsModal({ contratoId, docs });
+      } else {
+        alert('Nenhum documento encontrado para este contrato.');
+      }
+    }}
+  >
+    ⌕
+  </button>
+</Tooltip>
 </div>
                     {feedback ? (
                       <small style={{ color: feedback.ok ? '#16a34a' : '#dc2626', fontSize: '11px' }}>
@@ -298,7 +299,9 @@ export default function CompaniesPage() {
                       <strong>{item.name}</strong>
                       <small style={{ color: '#9ab0d6' }}>{item.category}</small>
                     </div>
-                  <span className="detail-table-status">{item.status}</span>
+                  <span className="detail-table-status" data-status={item.status}>
+  {item.status}
+</span>
                 </article>
               ))}
             </div>
@@ -326,13 +329,15 @@ export default function CompaniesPage() {
                     <strong>{item.title}</strong>
                     <small style={{ color: '#9ab0d6' }}>{item.period}</small>
                   </div>
-                  <span className="detail-table-status">{item.status}</span>
+                  <span className="detail-table-status" data-status={item.status}>
+  {item.status}
+</span>
                   <Tooltip title="Baixar relatório" arrow>
                     <button type="button" className="icon-button detail-icon-button" onClick={() => setEntityActionModal({
                       title: item.title,
                       subtitle: 'Relatório pronto para download',
                       actionLabel: 'Baixar agora',
-                      actionIcon: '↓',
+                      actionIcon: '',
                       variant: 'download',
                       fileName: `${item.title.toLowerCase().replace(/\s+/g, '-')}.txt`,
                       fileContent: [`Relatório: ${item.title}`, `Período: ${item.period}`, `Status: ${item.status}`].join('\n'),
@@ -448,7 +453,37 @@ export default function CompaniesPage() {
           )}
         </section>
       )}
-
+{docsModal && (
+  <div className="dialog-backdrop" onClick={() => setDocsModal(null)}>
+    <section className="dialog-card" onClick={(e) => e.stopPropagation()}>
+      <div className="panel-header">
+        <div>
+          <h3>Documentos do contrato</h3>
+          <span>{docsModal.docs.length} documento(s) encontrado(s)</span>
+        </div>
+        <button type="button" className="icon-button" onClick={() => setDocsModal(null)}>✕</button>
+      </div>
+      <div className="detail-table-list">
+        {docsModal.docs.map((doc) => (
+          <article key={doc.id} className="detail-table-row" style={{ cursor: 'pointer', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}
+            onClick={async () => {
+              const dlRes = await downloadDocumentoContrato(docsModal.contratoId, doc.id);
+              const blob = await dlRes.blob();
+              const url = URL.createObjectURL(blob);
+              window.open(url, '_blank');
+            }}
+          >
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+              <strong>{doc.nomeArquivo || `Documento ${doc.id}`}</strong>
+              <small style={{ color: '#9ab0d6' }}>Clique para visualizar</small>
+            </div>
+            <span className="icon-button detail-icon-button" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}>⌕</span>
+          </article>
+        ))}
+      </div>
+    </section>
+  </div>
+)}
       <EntityActionModalData modal={entityActionModal} onClose={() => setEntityActionModal(null)} onConfirm={confirmEntityActionPreview} />
     </>
   );
