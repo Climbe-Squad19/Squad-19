@@ -4,7 +4,9 @@ import java.io.IOException;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.core.userdetails.User;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.web.authentication.WebAuthenticationDetailsSource;
 import org.springframework.stereotype.Component;
@@ -14,6 +16,7 @@ import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
+import java.util.List;
 
 @Component
 public class JwtAuthFilter extends OncePerRequestFilter {
@@ -39,6 +42,7 @@ public class JwtAuthFilter extends OncePerRequestFilter {
 
         final String token = authHeader.substring(7);
         final String email = jwtService.extrairEmail(token);
+        final String cargo = jwtService.extrairCargo(token);
 
         /*
          * Não exigir getAuthentication() == null: filtros anteriores podem já ter colocado
@@ -46,7 +50,27 @@ public class JwtAuthFilter extends OncePerRequestFilter {
          * falhavam de forma inconsistente (ex.: GET ok, POST 403).
          * Com Bearer válido, sempre substituímos o contexto pelo usuário do token.
          */
-        if (email != null) {
+        if ("EMPRESA".equals(cargo) && jwtService.tokenValido(token, email)) {
+            UserDetails empresaDetails = User.builder()
+                    .username(email)
+                    .password("")
+                    .authorities(List.of(new SimpleGrantedAuthority("ROLE_EMPRESA")))
+                    .build();
+
+            UsernamePasswordAuthenticationToken authToken =
+                    new UsernamePasswordAuthenticationToken(
+                            empresaDetails,
+                            null,
+                            empresaDetails.getAuthorities()
+                    );
+
+            authToken.setDetails(
+                    new WebAuthenticationDetailsSource()
+                            .buildDetails(request)
+            );
+
+            SecurityContextHolder.getContext().setAuthentication(authToken);
+        } else if (email != null) {
             UserDetails userDetails = userDetailsService.loadUserByUsername(email);
 
             if (jwtService.tokenValido(token, userDetails.getUsername())) {
