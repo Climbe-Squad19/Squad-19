@@ -6,7 +6,7 @@ export const PORTAL_EMPRESA_KEY = 'climbe_portal_empresa';
 
 export type PortalLoginRequest = {
   email: string;
-  senha: string;
+  cnpj: string;
 };
 
 export type PortalLoginResponse = {
@@ -16,6 +16,15 @@ export type PortalLoginResponse = {
   expiresIn?: number;
   [key: string]: unknown;
 };
+
+function decodeJwtPayload(token: string): Record<string, unknown> | null {
+  try {
+    const base64 = token.split('.')[1].replace(/-/g, '+').replace(/_/g, '/');
+    return JSON.parse(atob(base64)) as Record<string, unknown>;
+  } catch {
+    return null;
+  }
+}
 
 export async function portalLogin(request: PortalLoginRequest): Promise<PortalLoginResponse> {
   const response = await fetch(`${API_BASE_URL}/auth/portal-login`, {
@@ -32,21 +41,6 @@ export async function portalLogin(request: PortalLoginRequest): Promise<PortalLo
   }
 
   return response.json() as Promise<PortalLoginResponse>;
-}
-
-export async function fetchPortalMe(token: string): Promise<Record<string, unknown>> {
-  const response = await fetch(`${API_BASE_URL}/auth/me`, {
-    headers: {
-      Authorization: `Bearer ${token}`,
-    },
-  });
-
-  if (!response.ok) {
-    const text = await response.text();
-    throw new Error(text || 'Falha ao carregar dados do usuário');
-  }
-
-  return response.json() as Promise<Record<string, unknown>>;
 }
 
 function buildPortalAuthHeaders(includeJsonContentType = true): HeadersInit {
@@ -104,24 +98,15 @@ export function clearPortalSession() {
 }
 
 export function getPortalEmpresaId(): number | undefined {
-  const empresa = getPortalEmpresa();
-  if (!empresa || typeof empresa !== 'object') {
-    return undefined;
-  }
-
-  const maybe = empresa as Record<string, unknown>;
-  const nestedEmpresa = maybe.empresa;
-  const nestedEmpresaId =
-    nestedEmpresa && typeof nestedEmpresa === 'object'
-      ? (nestedEmpresa as Record<string, unknown>).id
-      : undefined;
-
-  const fromRootId = maybe.empresaId ?? maybe.id ?? nestedEmpresaId;
-  if (typeof fromRootId === 'number') {
-    return fromRootId;
-  }
-  if (typeof fromRootId === 'string' && fromRootId.trim()) {
-    const parsed = Number(fromRootId);
+  // Extrai empresaId direto do JWT (campo "id" nas claims)
+  const token = getPortalToken();
+  if (!token) return undefined;
+  const payload = decodeJwtPayload(token);
+  if (!payload) return undefined;
+  const id = payload['id'];
+  if (typeof id === 'number') return id;
+  if (typeof id === 'string') {
+    const parsed = Number(id);
     return Number.isNaN(parsed) ? undefined : parsed;
   }
   return undefined;
@@ -135,7 +120,8 @@ export function updatePortalPropostaStatus(
   propostaId: number,
   status: 'ACEITA' | 'RECUSADA'
 ): Promise<PropostaApiResponse> {
-  return fetch(`${API_BASE_URL}/propostas/${propostaId}/status?status=${encodeURIComponent(status)}`, {
+  const motivoParam = status === 'RECUSADA' ? '&motivoRecusa=Recusado pelo contratante' : '';
+  return fetch(`${API_BASE_URL}/propostas/${propostaId}/status?status=${encodeURIComponent(status)}${motivoParam}`, {
     method: 'PUT',
     headers: buildPortalAuthHeaders(false),
   }).then(async (response) => {

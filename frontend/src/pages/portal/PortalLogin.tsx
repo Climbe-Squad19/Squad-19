@@ -3,9 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
 import {
   portalLogin,
-  fetchPortalMe,
   savePortalToken,
-  savePortalEmpresa,
   getPortalToken,
   PORTAL_TOKEN_KEY,
   PORTAL_EMPRESA_KEY,
@@ -32,7 +30,7 @@ export function PortalLogin() {
     try {
       const response = await portalLogin({
         email: email.trim(),
-        senha: password.replace(/\D/g, ''),
+        cnpj: password.replace(/\D/g, ''),
       });
 
       const token = response.accessToken ?? response.token;
@@ -41,8 +39,6 @@ export function PortalLogin() {
       }
 
       savePortalToken(token);
-      const me = await fetchPortalMe(token);
-      savePortalEmpresa(me);
       navigate('/portal/propostas');
     } catch (error) {
       toast.error(error instanceof Error ? error.message : 'Erro ao fazer login. Verifique suas credenciais.');
@@ -69,7 +65,7 @@ export function PortalLogin() {
           </label>
 
           <label className="text-sm font-bold text-zinc-100 w-full flex flex-col gap-3">
-            Senha (CNPJ sem formatação)
+            CNPJ (sem formatação)
             <input
               type="password"
               placeholder="00000000000000"
