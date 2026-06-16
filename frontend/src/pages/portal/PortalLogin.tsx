@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
 import {
   portalLogin,
@@ -75,6 +75,12 @@ export function PortalLogin() {
               required
             />
           </label>
+
+          <div className="w-full flex justify-start">
+            <Link to="/login" className="underline text-xs font-medium">
+              Entrar como funcionario Climbe
+            </Link>
+          </div>
 
           <div className="flex flex-col w-full items-center">
             <button

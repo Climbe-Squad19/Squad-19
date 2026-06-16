@@ -123,7 +123,9 @@ public class AuthController {
         }
 
         // Buscar empresa pelo CNPJ (já armazenado sem formatação no banco)
-        Empresa empresa = empresaRepository.findByCnpj(request.getCnpj())
+        String cnpjNormalizado = request.getCnpj().replaceAll("\\D", "");
+
+        Empresa empresa = empresaRepository.findByCnpjNormalizado(cnpjNormalizado)
                 .orElse(null);
 
         if (empresa == null) {
