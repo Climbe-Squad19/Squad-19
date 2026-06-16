@@ -59,6 +59,10 @@ export const router = createBrowserRouter([
         path: '/forgot-password',
         element: <ForgotPassword />
       },
+      {
+        path: '/portal/login',
+        element: <PortalLogin />
+      },
     ]
   },
   {
@@ -78,9 +82,5 @@ export const router = createBrowserRouter([
         element: <PortalDocumentosPage />
       },
     ]
-  },
-  {
-    path: '/portal/login',
-    element: <PortalLogin />
   },
 ])
