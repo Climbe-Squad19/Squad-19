@@ -7,6 +7,7 @@ import { EntityActionModal } from '../../types';
 import EntityActionModalData from '../../components/modals/entity-action-modal';
 import { useAppSelector } from '../../store/hooks';
 import { uploadDocumentoContrato } from '../../services/contratos-documentos';
+import { listarDocumentosContrato, downloadDocumentoContrato } from '../../services/contratos-documentos';
 
 export default function CompaniesPage() {
   const { search } = useOutletContext<{ search: string }>();
@@ -34,6 +35,7 @@ export default function CompaniesPage() {
   const [entityActionModal, setEntityActionModal] = useState<EntityActionModal | null>(null);
   const [uploadingContratoId, setUploadingContratoId] = useState<number | null>(null);
   const [uploadFeedback, setUploadFeedback] = useState<{ contratoId: number; message: string; ok: boolean } | null>(null);
+  const [docsModal, setDocsModal] = useState<{ contratoId: number; docs: { id: number; nomeArquivo: string }[] } | null>(null);
 
   const searchTerm = search.trim().toLowerCase();
   const filteredCompanies = useMemo(
@@ -44,22 +46,27 @@ export default function CompaniesPage() {
     [companies, searchTerm]
   );
 
-  async function handleUploadPDF(contratoCode: string, file: File) {
-    const contratoId = Number(contratoCode.replace('CTR-', ''));
-    if (!contratoId) return;
-    setUploadingContratoId(contratoId);
-    setUploadFeedback(null);
-    try {
-      const response = await uploadDocumentoContrato(contratoId, profile.id ?? 1, file);
-      if (!response.ok) throw new Error(`Erro ${response.status}: ${response.statusText}`);
-      setUploadFeedback({ contratoId, message: `"${file.name}" enviado com sucesso.`, ok: true });
-    } catch (error) {
-      const msg = error instanceof Error ? error.message : 'Não foi possível enviar o arquivo.';
-      setUploadFeedback({ contratoId, message: msg, ok: false });
-    } finally {
-      setUploadingContratoId(null);
-    }
+  async function handleUploadPDF(contratoCode: string, files: FileList) {
+  const contratoId = Number(contratoCode.replace('CTR-', ''));
+  if (!contratoId || files.length === 0) return;
+  setUploadingContratoId(contratoId);
+  setUploadFeedback(null);
+  try {
+    const uploads = Array.from(files).map((file) =>
+      uploadDocumentoContrato(contratoId, profile.id ?? 1, file).then((res) => {
+        if (!res.ok) throw new Error(`Erro ao enviar "${file.name}"`);
+      })
+    );
+    const count = files.length;
+    await Promise.all(uploads);
+    setUploadFeedback({ contratoId, message: `${count} arquivo${count > 1 ? 's' : ''} anexado${count > 1 ? 's' : ''} com sucesso!`, ok: true });
+  } catch (error) {
+    const msg = error instanceof Error ? error.message : 'Não foi possível enviar os arquivos.';
+    setUploadFeedback({ contratoId, message: msg, ok: false });
+  } finally {
+    setUploadingContratoId(null);
   }
+}  
 
   function resetForm() {
     setCompanyFormName('');
@@ -187,13 +194,15 @@ export default function CompaniesPage() {
                     <small style={{ color: '#9ab0d6' }}>{item.service}</small>
                   </div>
                   <span>{item.amount}</span>
-                  <span className="detail-table-status">{item.status}</span>
+                  <span className="detail-table-status" data-status={item.status}>
+  {item.status}
+</span>
                   <Tooltip title="Ver detalhes" arrow>
                     <button type="button" className="icon-button detail-icon-button" onClick={() => setEntityActionModal({
                       title: item.title,
                       subtitle: 'Detalhes da proposta comercial',
                       actionLabel: 'Fechar',
-                      actionIcon: '⌕',
+                      actionIcon: '',
                       details: [
                         { label: 'Serviço', value: item.service },
                         { label: 'Valor', value: item.amount },
@@ -211,7 +220,7 @@ export default function CompaniesPage() {
           {companyDetailTab === 'Contratos' ? (
             <div className="detail-table-list">
               {companyContractsData.map((item) => {
-                const contratoId = Number(item.code.replace('CTR-', ''));
+                const contratoId = (item as { id?: number; code: string }).id ?? Number(item.code.replace('CTR-', ''));
                 const isUploading = uploadingContratoId === contratoId;
                 const feedback = uploadFeedback?.contratoId === contratoId ? uploadFeedback : null;
                 return (
@@ -221,30 +230,56 @@ export default function CompaniesPage() {
                       <small style={{ color: '#9ab0d6' }}>{item.service}</small>
                     </div>
                     <span>{item.startDate}</span>
-                    <span className="detail-table-status">{item.status}</span>
-                    <Tooltip title="Anexar PDF ao contrato" arrow>
-  <label>
-    <button
-      type="button"
-      className="icon-button detail-icon-button"
-      style={{ opacity: isUploading ? 0.6 : 1, cursor: isUploading ? 'not-allowed' : 'pointer' }}
-      onClick={() => (document.querySelector(`#upload-${contratoId}`) as HTMLInputElement)?.click()}
-    >
-      {isUploading ? '⏳' : '⌕'}
-    </button>
-    <input
-      id={`upload-${contratoId}`}
-      type="file"
-      accept="application/pdf"
-      style={{ display: 'none' }}
-      disabled={uploadingContratoId !== null}
-      onChange={(e) => {
-        const file = e.target.files?.[0];
-        if (file) void handleUploadPDF(item.code, file);
-      }}
-    />
-  </label>
+                    <span className="detail-table-status" data-status={item.status}>
+  {item.status}
+</span>
+                    <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+  <Tooltip title="Anexar PDF ao contrato" arrow>
+    <label style={{ display: 'flex' }}>
+      <button
+        type="button"
+        className="icon-button detail-icon-button"
+        style={{ opacity: isUploading ? 0.6 : 1, cursor: isUploading ? 'not-allowed' : 'pointer' }}
+        onClick={() => (document.getElementById(`upload-${contratoId}`) as HTMLInputElement)?.click()}
+        disabled={uploadingContratoId !== null}
+      >
+        {isUploading ? '⏳' : '↑'}
+      </button>
+      <input
+        id={`upload-${contratoId}`}
+        type="file"
+        accept="application/pdf"
+        multiple
+        style={{ display: 'none' }}
+        disabled={uploadingContratoId !== null}
+        onChange={(e) => {
+          if (e.target.files && e.target.files.length > 0) {
+            void handleUploadPDF(item.code, e.target.files);
+          }
+          e.target.value = '';
+        }}
+      />
+    </label>
+  </Tooltip>
+
+  <Tooltip title="Visualizar documentos" arrow>
+  <button
+    type="button"
+    className="icon-button detail-icon-button"
+    onClick={async () => {
+      const res = await listarDocumentosContrato(contratoId);
+      const docs = await res.json();
+      if (docs && docs.length > 0) {
+        setDocsModal({ contratoId, docs });
+      } else {
+        alert('Nenhum documento encontrado para este contrato.');
+      }
+    }}
+  >
+    ⌕
+  </button>
 </Tooltip>
+</div>
                     {feedback ? (
                       <small style={{ color: feedback.ok ? '#16a34a' : '#dc2626', fontSize: '11px' }}>
                         {feedback.message}
@@ -264,7 +299,9 @@ export default function CompaniesPage() {
                       <strong>{item.name}</strong>
                       <small style={{ color: '#9ab0d6' }}>{item.category}</small>
                     </div>
-                  <span className="detail-table-status">{item.status}</span>
+                  <span className="detail-table-status" data-status={item.status}>
+  {item.status}
+</span>
                 </article>
               ))}
             </div>
@@ -292,13 +329,15 @@ export default function CompaniesPage() {
                     <strong>{item.title}</strong>
                     <small style={{ color: '#9ab0d6' }}>{item.period}</small>
                   </div>
-                  <span className="detail-table-status">{item.status}</span>
+                  <span className="detail-table-status" data-status={item.status}>
+  {item.status}
+</span>
                   <Tooltip title="Baixar relatório" arrow>
                     <button type="button" className="icon-button detail-icon-button" onClick={() => setEntityActionModal({
                       title: item.title,
                       subtitle: 'Relatório pronto para download',
                       actionLabel: 'Baixar agora',
-                      actionIcon: '↓',
+                      actionIcon: '',
                       variant: 'download',
                       fileName: `${item.title.toLowerCase().replace(/\s+/g, '-')}.txt`,
                       fileContent: [`Relatório: ${item.title}`, `Período: ${item.period}`, `Status: ${item.status}`].join('\n'),
@@ -414,7 +453,37 @@ export default function CompaniesPage() {
           )}
         </section>
       )}
-
+{docsModal && (
+  <div className="dialog-backdrop" onClick={() => setDocsModal(null)}>
+    <section className="dialog-card" onClick={(e) => e.stopPropagation()}>
+      <div className="panel-header">
+        <div>
+          <h3>Documentos do contrato</h3>
+          <span>{docsModal.docs.length} documento(s) encontrado(s)</span>
+        </div>
+        <button type="button" className="icon-button" onClick={() => setDocsModal(null)}>✕</button>
+      </div>
+      <div className="detail-table-list">
+        {docsModal.docs.map((doc) => (
+          <article key={doc.id} className="detail-table-row" style={{ cursor: 'pointer', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}
+            onClick={async () => {
+              const dlRes = await downloadDocumentoContrato(docsModal.contratoId, doc.id);
+              const blob = await dlRes.blob();
+              const url = URL.createObjectURL(blob);
+              window.open(url, '_blank');
+            }}
+          >
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+              <strong>{doc.nomeArquivo || `Documento ${doc.id}`}</strong>
+              <small style={{ color: '#9ab0d6' }}>Clique para visualizar</small>
+            </div>
+            <span className="icon-button detail-icon-button" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}>⌕</span>
+          </article>
+        ))}
+      </div>
+    </section>
+  </div>
+)}
       <EntityActionModalData modal={entityActionModal} onClose={() => setEntityActionModal(null)} onConfirm={confirmEntityActionPreview} />
     </>
   );

@@ -87,7 +87,7 @@ export default function ProposalsPage() {
           onClick={() => setShowForm(false)}
         >
           <div
-            style={{ background: 'var(--color-surface, #1e1e2e)', borderRadius: '12px', padding: '28px', minWidth: '420px', maxWidth: '520px', width: '100%', boxShadow: '0 8px 32px rgba(0,0,0,0.4)' }}
+            style={{ background: '#1c1c1f', borderRadius: '12px', padding: '28px', minWidth: '420px', maxWidth: '520px', width: '100%', boxShadow: '0 8px 32px rgba(0,0,0,0.4)', color: '#edf2f7' }}
             onClick={(e) => e.stopPropagation()}
           >
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
@@ -101,7 +101,7 @@ export default function ProposalsPage() {
                 <select
                   value={formEmpresaId}
                   onChange={(e) => setFormEmpresaId(e.target.value)}
-                  style={{ padding: '8px', borderRadius: '6px', border: '1px solid var(--color-border, #334155)', background: 'var(--color-bg, #0f172a)', color: 'inherit', fontSize: '13px' }}
+                  style={{ padding: '8px', borderRadius: '6px', border: '1px solid var(--color-border, #334155)', background: '#0f172a', color: 'inherit', fontSize: '13px' }}
                 >
                   <option value="">Selecione...</option>
                   {empresas.map((e) => (
@@ -115,7 +115,7 @@ export default function ProposalsPage() {
                 <select
                   value={formServico}
                   onChange={(e) => setFormServico(e.target.value)}
-                  style={{ padding: '8px', borderRadius: '6px', border: '1px solid var(--color-border, #334155)', background: 'var(--color-bg, #0f172a)', color: 'inherit', fontSize: '13px' }}
+                  style={{ padding: '8px', borderRadius: '6px', border: '1px solid var(--color-border, #334155)', background: '#0f172a', color: 'inherit', fontSize: '13px' }}
                 >
                   {SERVICOS.map((s) => <option key={s} value={s}>{s}</option>)}
                 </select>
@@ -129,7 +129,7 @@ export default function ProposalsPage() {
                   value={formValorMensal}
                   onChange={(e) => setFormValorMensal(e.target.value)}
                   placeholder="Ex: 5000"
-                  style={{ padding: '8px', borderRadius: '6px', border: '1px solid var(--color-border, #334155)', background: 'var(--color-bg, #0f172a)', color: 'inherit', fontSize: '13px' }}
+                  style={{ padding: '8px', borderRadius: '6px', border: '1px solid var(--color-border, #334155)', background: '#0f172a', color: 'inherit', fontSize: '13px' }}
                 />
               </label>
 
@@ -141,7 +141,7 @@ export default function ProposalsPage() {
                   value={formValorSetup}
                   onChange={(e) => setFormValorSetup(e.target.value)}
                   placeholder="Opcional"
-                  style={{ padding: '8px', borderRadius: '6px', border: '1px solid var(--color-border, #334155)', background: 'var(--color-bg, #0f172a)', color: 'inherit', fontSize: '13px' }}
+                  style={{ padding: '8px', borderRadius: '6px', border: '1px solid var(--color-border, #334155)', background: '#0f172a', color: 'inherit', fontSize: '13px' }}
                 />
               </label>
 
@@ -152,7 +152,7 @@ export default function ProposalsPage() {
                   value={formLink}
                   onChange={(e) => setFormLink(e.target.value)}
                   placeholder="Opcional"
-                  style={{ padding: '8px', borderRadius: '6px', border: '1px solid var(--color-border, #334155)', background: 'var(--color-bg, #0f172a)', color: 'inherit', fontSize: '13px' }}
+                  style={{ padding: '8px', borderRadius: '6px', border: '1px solid var(--color-border, #334155)', background: '#0f172a', color: 'inherit', fontSize: '13px' }}
                 />
               </label>
 
@@ -162,7 +162,7 @@ export default function ProposalsPage() {
                 type="button"
                 disabled={formSubmitting}
                 onClick={() => void handleCriarProposta()}
-                style={{ padding: '10px', borderRadius: '8px', border: 'none', background: '#6366f1', color: '#fff', cursor: formSubmitting ? 'not-allowed' : 'pointer', fontSize: '14px', opacity: formSubmitting ? 0.7 : 1 }}
+                style={{ padding: '10px', borderRadius: '8px', border: 'none', background: '#79C6C0', color: '#0f172a', cursor: formSubmitting ? 'not-allowed' : 'pointer', fontSize: '14px', opacity: formSubmitting ? 0.7 : 1, fontWeight: 600 }}
               >
                 {formSubmitting ? 'Salvando...' : 'Criar proposta'}
               </button>

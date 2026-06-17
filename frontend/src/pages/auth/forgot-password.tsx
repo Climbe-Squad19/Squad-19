@@ -65,7 +65,13 @@ export function ForgotPassword() {
           </button>
         </form>
 
-        {/* <form onSubmit={handleResetPassword} className="w-full flex flex-col gap-4 mt-4 border-t border-[rgba(255,255,255,0.08)] pt-6">
+        {feedback && (
+          <p className={`text-sm text-center ${feedbackError ? 'text-red-400' : 'text-green-400'}`}>
+            {feedback}
+          </p>
+        )}
+
+        <form onSubmit={handleResetPassword} className="w-full flex flex-col gap-4 mt-4 border-t border-[rgba(255,255,255,0.08)] pt-6">
           <label className="text-sm font-bold text-zinc-100 flex flex-col gap-2">
             Token de recuperação
             <input
@@ -92,13 +98,7 @@ export function ForgotPassword() {
           <button type="submit" className="w-full bg-transparent border border-[#79C6C0]/50 py-2 rounded-md text-sm font-bold hover:bg-[#79C6C0]/10 transition-all">
             Redefinir senha
           </button>
-        </form> */}
-
-        {/* {feedback && (
-          <p className={`text-sm text-center ${feedbackError ? 'text-red-400' : 'text-green-400'}`}>
-            {feedback}
-          </p>
-        )} */}
+        </form>
 
         <div className="w-full flex justify-center">
           <Link to='/login' className='text-[#9bc0ff] text-sm underline'>

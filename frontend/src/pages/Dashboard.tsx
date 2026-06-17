@@ -100,6 +100,7 @@ type CompanyProposal = {
 };
 
 type CompanyContract = {
+  id?: number;
   code: string;
   service: string;
   startDate: string;
