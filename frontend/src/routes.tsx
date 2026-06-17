@@ -1,7 +1,6 @@
-import { createBrowserRouter, Navigate, useNavigate } from "react-router-dom"
+import { createBrowserRouter, Navigate } from "react-router-dom"
 
 import { AuthLayout } from "./pages/_layout/auth"
-import AppLayout from "./components/layout/app-layout"
 import AgendaPage from "./pages/app/agenda"
 import DashboardPage from "./pages/app/dashboard"
 import ProposalsPage from "./pages/app/proposals"
@@ -10,12 +9,22 @@ import TeamPage from "./pages/app/team"
 import CompaniesPage from "./pages/app/companies"
 import { ForgotPassword } from "./pages/auth/forgot-password"
 import { Login } from "./pages/auth/login"
+import { AppLayout } from "./pages/_layout/app"
+import { PortalLayout } from "./pages/portal/PortalLayout"
+import { PortalLogin } from "./pages/portal/PortalLogin"
+import PortalPropostasPage from "./pages/portal/PortalPropostas"
+import PortalReunioesPage from "./pages/portal/PortalReunioes"
+import PortalDocumentosPage from "./pages/portal/PortalDocumentos"
 
 export const router = createBrowserRouter([
   {
     path: '/',
     element: <AppLayout />,
     children: [
+      {
+        index: true,
+        element: <Navigate to="/dashboard" replace />
+      },
       {
         path: '/dashboard',
         element: <DashboardPage />
@@ -53,6 +62,28 @@ export const router = createBrowserRouter([
       {
         path: '/forgot-password',
         element: <ForgotPassword />
+      },
+      {
+        path: '/portal/login',
+        element: <PortalLogin />
+      },
+    ]
+  },
+  {
+    path: '/portal',
+    element: <PortalLayout />,
+    children: [
+      {
+        path: 'propostas',
+        element: <PortalPropostasPage />
+      },
+      {
+        path: 'reunioes',
+        element: <PortalReunioesPage />
+      },
+      {
+        path: 'documentos',
+        element: <PortalDocumentosPage />
       },
     ]
   },
