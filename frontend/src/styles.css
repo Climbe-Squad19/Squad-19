@@ -458,9 +458,33 @@ a {
 
 .dashboard-screen--light .segmented-control-button,
 .dashboard-screen--light .detail-tab-button {
-  background: #ffffff;
-  color: #475569;
+  background: #f1f5f9;
+  color: #0f172a;
+  border-color: rgba(15, 23, 42, 0.12);
+}
+
+.dashboard-screen--light .company-metric-value {
+  color: #0f172a !important;
+}
+
+.dashboard-screen--light .detail-table-row strong {
+  color: #0f172a !important;
+}
+
+.dashboard-screen--light .detail-table-row span {
+  color: #334155 !important;
+}
+
+.dashboard-screen--light .panel,
+.dashboard-screen--light .stacked-panel {
+  background: #f8fafc;
   border-color: rgba(15, 23, 42, 0.08);
+}
+
+.dashboard-screen--light .section-topbar h3,
+.dashboard-screen--light .section-topbar span,
+.dashboard-screen--light .company-detail-copy strong {
+  color: #0f172a !important;
 }
 
 .dashboard-screen--light .segmented-control-button.active,
@@ -497,11 +521,6 @@ a {
 .dashboard-screen--light .dialog-card {
   background: #ffffff;
   border-color: rgba(15, 23, 42, 0.08);
-}
-
-.dashboard-screen--light .detail-table-status {
-  background: rgba(15, 118, 110, 0.12);
-  color: #0f766e;
 }
 
 .dashboard-screen--light .company-metric-label,
@@ -1567,6 +1586,75 @@ a {
   border-radius: 999px;
   background: rgba(125, 253, 212, 0.12);
   color: #7dfdd4;
+}
+
+.detail-table-status[data-status="ativo"],
+.detail-table-status[data-status="ATIVO"] {
+  background: rgba(34, 197, 94, 0.12);
+  color: #22c55e;
+}
+
+.detail-table-status[data-status="em analise"],
+.detail-table-status[data-status="ELABORACAO"],
+.detail-table-status[data-status="ENVIADA"] {
+  background: rgba(251, 191, 36, 0.12);
+  color: #fbbf24;
+}
+
+.detail-table-status[data-status="recusado"],
+.detail-table-status[data-status="RECUSADA"] {
+  background: rgba(248, 113, 113, 0.12);
+  color: #f87171;
+}
+
+.detail-table-status[data-status="aceito"],
+.detail-table-status[data-status="ACEITA"] {
+  background: rgba(34, 197, 94, 0.12);
+  color: #22c55e;
+}
+
+.dashboard-screen--light .detail-table-status {
+  background: rgba(15, 118, 110, 0.12);
+  color: #0f766e;
+}
+
+.dashboard-screen--light .detail-table-status[data-status="ativo"],
+.dashboard-screen--light .detail-table-status[data-status="ATIVO"] {
+  background: rgba(21, 128, 61, 0.12);
+  color: #15803d;
+}
+
+.dashboard-screen--light .detail-table-status[data-status="em analise"],
+.dashboard-screen--light .detail-table-status[data-status="ELABORACAO"],
+.dashboard-screen--light .detail-table-status[data-status="ENVIADA"] {
+  background: rgba(180, 120, 0, 0.1);
+  color: #b45309;
+}
+
+.dashboard-screen--light .detail-table-status[data-status="recusado"],
+.dashboard-screen--light .detail-table-status[data-status="RECUSADA"] {
+  background: rgba(220, 38, 38, 0.1);
+  color: #dc2626;
+}
+
+.detail-table-status[data-status="Disponível"] {
+  background: rgba(34, 197, 94, 0.12);
+  color: #22c55e;
+}
+
+.detail-table-status[data-status="Em preparação"] {
+  background: rgba(251, 191, 36, 0.12);
+  color: #fbbf24;
+}
+
+.dashboard-screen--light .detail-table-status[data-status="Disponível"] {
+  background: rgba(21, 128, 61, 0.12);
+  color: #15803d;
+}
+
+.dashboard-screen--light .detail-table-status[data-status="Em preparação"] {
+  background: rgba(180, 120, 0, 0.1);
+  color: #b45309;
 }
 
 .team-highlights-grid {
@@ -2861,3 +2949,20 @@ a {
 .dashboard-screen--light .notification-menu-pulse {
   background: #79C6C0 !important;
 }
+
+.dashboard-screen--light aside img {
+  filter: brightness(0);
+}
+
+.dashboard-screen--light .proposal-rejection-option {
+  border-color: rgba(15, 23, 42, 0.15) !important;
+  background: #f8fafc !important;
+  color: #0f172a !important;
+}
+
+.dashboard-screen--light .proposal-rejection-option--selected {
+  border-color: #79C6C0 !important;
+  background: rgba(121, 198, 192, 0.12) !important;
+  color: #4a9e98 !important;
+}
+

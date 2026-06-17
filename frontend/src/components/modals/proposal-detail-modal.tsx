@@ -131,21 +131,20 @@ export default function ProposalDetailModal({ detail, onClose, onApprove, onReje
             <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginTop: 8 }}>
               {MOTIVOS_RECUSA.map((motivo) => (
                 <button
-                  key={motivo}
-                  type="button"
-                  onClick={() => setSelectedMotivo(motivo)}
-                  style={{
-                    textAlign: 'left',
-                    padding: '10px 14px',
-                    borderRadius: 8,
-                    border: `1px solid ${selectedMotivo === motivo ? '#79C6C0' : 'rgba(255,255,255,0.08)'}`,
-                    background: selectedMotivo === motivo ? 'rgba(121,198,192,0.12)' : 'rgba(255,255,255,0.03)',
-                    color: selectedMotivo === motivo ? '#79C6C0' : '#edf2f7',
-                    fontSize: 13,
-                    cursor: 'pointer',
-                    transition: 'all 0.15s ease',
-                  }}
-                >
+  key={motivo}
+  type="button"
+  className={selectedMotivo === motivo ? 'proposal-rejection-option proposal-rejection-option--selected' : 'proposal-rejection-option'}
+  onClick={() => setSelectedMotivo(motivo)}
+  style={{
+    textAlign: 'left',
+    padding: '10px 14px',
+    borderRadius: 8,
+    fontSize: 13,
+    cursor: 'pointer',
+    transition: 'all 0.15s ease',
+    width: '100%',
+  }}
+>
                   {motivo}
                 </button>
               ))}
