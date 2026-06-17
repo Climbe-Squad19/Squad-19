@@ -13,12 +13,6 @@ const documentTypes = [
   'PLANILHA_GERENCIAL',
 ] as const;
 
-const statusClasses: Record<string, string> = {
-  APROVADO: 'text-emerald-200 bg-emerald-950',
-  RECUSADO: 'text-rose-200 bg-rose-950',
-  PENDENTE: 'text-zinc-200 bg-zinc-800',
-};
-
 export default function PortalDocumentosPage() {
   const [documentos, setDocumentos] = useState<DocumentoApiResponse[]>([]);
   const [loading, setLoading] = useState(true);
@@ -87,30 +81,30 @@ export default function PortalDocumentosPage() {
       </div>
 
       <div className="grid gap-6">
-        <form onSubmit={handleSubmit} className="grid gap-4 rounded-2xl border border-zinc-800/80 bg-zinc-950 p-6">
+        <form onSubmit={handleSubmit} className="portal-upload-form grid gap-4 p-6">
           <div className="grid gap-4 sm:grid-cols-2">
-            <label className="flex flex-col gap-2 text-sm font-semibold text-zinc-200">
+            <label className="portal-field flex flex-col gap-2 text-sm font-semibold">
               Tipo de documento
               <select
                 value={selectedType}
                 onChange={(event) => setSelectedType(event.target.value as typeof documentTypes[number])}
-                className="rounded-md border border-zinc-700 bg-transparent px-3 py-2 text-sm text-zinc-100 outline-none"
+                className="portal-control rounded-md px-3 py-2 text-sm outline-none"
               >
                 {documentTypes.map((type) => (
-                  <option key={type} value={type} className="bg-zinc-950">
+                  <option key={type} value={type}>
                     {type}
                   </option>
                 ))}
               </select>
             </label>
 
-            <label className="flex flex-col gap-2 text-sm font-semibold text-zinc-200">
+            <label className="portal-field flex flex-col gap-2 text-sm font-semibold">
               Arquivo
               <input
                 type="file"
                 accept="*/*"
                 onChange={(event) => setFile(event.target.files?.[0] ?? null)}
-                className="rounded-md border border-zinc-700 bg-transparent px-3 py-2 text-sm text-zinc-100 outline-none file:text-sm file:font-semibold file:bg-zinc-900 file:border-none file:rounded-md file:px-3 file:py-2"
+                className="portal-control portal-file-input rounded-md px-3 py-2 text-sm outline-none"
               />
             </label>
           </div>
@@ -137,7 +131,7 @@ export default function PortalDocumentosPage() {
                   <small className="text-zinc-400">Tipo</small>
                 </div>
                 <div>
-                  <span className={`detail-table-status ${statusClasses[documento.status] ?? ''}`}>
+                  <span className="detail-table-status" data-status={documento.status}>
                     {documento.status}
                   </span>
                 </div>

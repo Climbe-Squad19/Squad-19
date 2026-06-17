@@ -56,13 +56,13 @@ export default function PortalReunioesPage() {
                 : 'Online';
 
               return (
-                <article key={reuniao.id} className="rounded-2xl border border-zinc-800/80 bg-zinc-950 p-6">
+                <article key={reuniao.id} className="portal-meeting-card p-6">
                   <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                     <div>
-                      <h4 className="text-base font-semibold text-zinc-100">{reuniao.pauta || 'Sem pauta'}</h4>
-                      <p className="text-sm text-zinc-400 mt-2">{formatDateTime(reuniao.dataHora)}</p>
+                      <h4 className="portal-meeting-title text-base font-semibold">{reuniao.pauta || 'Sem pauta'}</h4>
+                      <p className="portal-meeting-date text-sm mt-2">{formatDateTime(reuniao.dataHora)}</p>
                     </div>
-                    <div className="rounded-full bg-zinc-900 px-3 py-1 text-xs font-semibold uppercase tracking-wide text-zinc-200">
+                    <div className="portal-meeting-badge rounded-full px-3 py-1 text-xs font-semibold uppercase tracking-wide">
                       {tipo}
                     </div>
                   </div>
