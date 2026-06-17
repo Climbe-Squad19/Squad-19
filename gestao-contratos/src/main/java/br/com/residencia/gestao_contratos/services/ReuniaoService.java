@@ -122,6 +122,12 @@ public class ReuniaoService {
                 .collect(Collectors.toList());
     }
 
+    public List<ReuniaoResponse> listarPorEmpresa(Long empresaId) {
+        return reuniaoRepository.findByEmpresaId(empresaId).stream()
+                .map(this::converterParaResponse)
+                .collect(Collectors.toList());
+    }
+
     public ReuniaoResponse buscarPorId(Long id) {
         return converterParaResponse(buscarEntidadePorId(id));
     }

@@ -11,6 +11,7 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import br.com.residencia.gestao_contratos.dtos.request.ReuniaoAtualizacaoRequest;
@@ -29,7 +30,11 @@ public class ReuniaoController {
     }
 
     @GetMapping
-    public ResponseEntity<List<ReuniaoResponse>> getAll() {
+    public ResponseEntity<List<ReuniaoResponse>> getAll(
+            @RequestParam(required = false) Long empresaId) {
+        if (empresaId != null) {
+            return ResponseEntity.ok(reuniaoService.listarPorEmpresa(empresaId));
+        }
         return ResponseEntity.ok(reuniaoService.listarTodos());
     }
 

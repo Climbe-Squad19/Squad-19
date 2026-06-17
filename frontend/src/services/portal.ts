@@ -1,5 +1,5 @@
 import { API_BASE_URL, parseApiErrorMessage } from './api';
-import type { PropostaApiResponse, ReuniaoApiResponse, DocumentoApiResponse } from './business';
+import type { PropostaApiResponse, ReuniaoApiResponse, DocumentoApiResponse, PropostaCriacaoPayload } from './business';
 
 export const PORTAL_TOKEN_KEY = 'climbe_portal_token';
 export const PORTAL_EMPRESA_KEY = 'climbe_portal_empresa';
@@ -116,12 +116,30 @@ export function fetchPortalPropostas(empresaId: number): Promise<PropostaApiResp
   return getPortalApiJson(`${API_BASE_URL}/propostas?empresaId=${encodeURIComponent(String(empresaId))}`);
 }
 
+export function criarPortalProposta(empresaId: number, payload: Omit<PropostaCriacaoPayload, 'empresaId'>): Promise<PropostaApiResponse> {
+  return fetch(`${API_BASE_URL}/propostas/portal?empresaId=${encodeURIComponent(String(empresaId))}`, {
+    method: 'POST',
+    headers: buildPortalAuthHeaders(),
+    body: JSON.stringify({ ...payload, empresaId }),
+  }).then(async (response) => {
+    if (!response.ok) {
+      const text = await response.text();
+      throw new Error(text || 'Erro ao enviar proposta');
+    }
+    return response.json() as Promise<PropostaApiResponse>;
+  });
+}
+
 export function updatePortalPropostaStatus(
   propostaId: number,
-  status: 'ACEITA' | 'RECUSADA'
+  status: 'ACEITA' | 'RECUSADA',
+  motivoRecusa?: string
 ): Promise<PropostaApiResponse> {
-  const motivoParam = status === 'RECUSADA' ? '&motivoRecusa=Recusado pelo contratante' : '';
-  return fetch(`${API_BASE_URL}/propostas/${propostaId}/status?status=${encodeURIComponent(status)}${motivoParam}`, {
+  const params = new URLSearchParams({ status });
+  if (status === 'RECUSADA') {
+    params.append('motivoRecusa', motivoRecusa || 'Recusado pelo contratante');
+  }
+  return fetch(`${API_BASE_URL}/propostas/${propostaId}/status?${params.toString()}`, {
     method: 'PUT',
     headers: buildPortalAuthHeaders(false),
   }).then(async (response) => {
@@ -139,6 +157,18 @@ export function fetchPortalReunioes(empresaId: number): Promise<ReuniaoApiRespon
 
 export function fetchPortalDocumentos(empresaId: number): Promise<DocumentoApiResponse[]> {
   return getPortalApiJson(`${API_BASE_URL}/documentos/empresa/${encodeURIComponent(String(empresaId))}`);
+}
+
+export function downloadPortalDocumento(documentoId: number): Promise<Blob> {
+  return fetch(`${API_BASE_URL}/documentos/${encodeURIComponent(String(documentoId))}/download`, {
+    headers: buildPortalAuthHeaders(false),
+  }).then(async (response) => {
+    if (!response.ok) {
+      const text = await response.text();
+      throw new Error(text || 'Erro ao abrir documento');
+    }
+    return response.blob();
+  });
 }
 
 export function uploadPortalDocumento(

@@ -9,5 +9,7 @@ import br.com.residencia.gestao_contratos.classes.Proposta;
 
 @Repository
 public interface PropostaRepository extends JpaRepository<Proposta, Long> {
+    List<Proposta> findByEmpresaId(Long empresaId);
+
     long countByStatusIn(List<Proposta.StatusProposta> status);
 }
