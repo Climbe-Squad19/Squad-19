@@ -404,6 +404,37 @@ a {
   border: 1px solid rgba(15, 23, 42, 0.08);
 }
 
+.dashboard-screen--light .portal-upload-form,
+.dashboard-screen--light .portal-meeting-card {
+  background: #ffffff;
+  border-color: rgba(15, 23, 42, 0.1);
+}
+
+.dashboard-screen--light .portal-field,
+.dashboard-screen--light .portal-meeting-title {
+  color: #0f172a;
+}
+
+.dashboard-screen--light .portal-meeting-date {
+  color: #475569;
+}
+
+.dashboard-screen--light .portal-control {
+  background: #f8fafc;
+  border-color: rgba(15, 23, 42, 0.14);
+  color: #0f172a;
+}
+
+.dashboard-screen--light .portal-file-input::file-selector-button {
+  background: #e2e8f0;
+  color: #0f172a;
+}
+
+.dashboard-screen--light .portal-meeting-badge {
+  background: #e2e8f0;
+  color: #0f172a;
+}
+
 .dashboard-screen--light .calendar-day {
   background: #ffffff;
   border: 1px solid rgba(15, 23, 42, 0.08);
@@ -1588,6 +1619,49 @@ a {
   color: #7dfdd4;
 }
 
+.portal-upload-form,
+.portal-meeting-card {
+  border-radius: 12px;
+  background: #1c1c1f;
+  border: 1px solid rgba(255, 255, 255, 0.07);
+}
+
+.portal-field,
+.portal-meeting-title {
+  color: #f4f4f5;
+}
+
+.portal-meeting-date {
+  color: #8fa7d6;
+}
+
+.portal-control {
+  width: 100%;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: #202024;
+  color: #f8fafc;
+}
+
+.portal-control:focus {
+  border-color: rgba(125, 253, 212, 0.3);
+  box-shadow: 0 0 0 3px rgba(125, 253, 212, 0.08);
+}
+
+.portal-file-input::file-selector-button {
+  margin-right: 12px;
+  border: none;
+  border-radius: 8px;
+  padding: 8px 12px;
+  background: #101114;
+  color: #f8fafc;
+  font-weight: 600;
+}
+
+.portal-meeting-badge {
+  background: #101114;
+  color: #f8fafc;
+}
+
 .portal-proposal-card--accepted {
   border-color: rgba(34, 197, 94, 0.55);
   background: linear-gradient(180deg, rgba(34, 197, 94, 0.14), rgba(28, 28, 31, 0.96));
@@ -1599,20 +1673,23 @@ a {
 }
 
 .detail-table-status[data-status="ativo"],
-.detail-table-status[data-status="ATIVO"] {
+.detail-table-status[data-status="ATIVO"],
+.detail-table-status[data-status="APROVADO"] {
   background: rgba(34, 197, 94, 0.12);
   color: #22c55e;
 }
 
 .detail-table-status[data-status="em analise"],
 .detail-table-status[data-status="ELABORACAO"],
-.detail-table-status[data-status="ENVIADA"] {
+.detail-table-status[data-status="ENVIADA"],
+.detail-table-status[data-status="PENDENTE"] {
   background: rgba(251, 191, 36, 0.12);
   color: #fbbf24;
 }
 
 .detail-table-status[data-status="recusado"],
-.detail-table-status[data-status="RECUSADA"] {
+.detail-table-status[data-status="RECUSADA"],
+.detail-table-status[data-status="RECUSADO"] {
   background: rgba(248, 113, 113, 0.12);
   color: #f87171;
 }
@@ -1629,20 +1706,23 @@ a {
 }
 
 .dashboard-screen--light .detail-table-status[data-status="ativo"],
-.dashboard-screen--light .detail-table-status[data-status="ATIVO"] {
+.dashboard-screen--light .detail-table-status[data-status="ATIVO"],
+.dashboard-screen--light .detail-table-status[data-status="APROVADO"] {
   background: rgba(21, 128, 61, 0.12);
   color: #15803d;
 }
 
 .dashboard-screen--light .detail-table-status[data-status="em analise"],
 .dashboard-screen--light .detail-table-status[data-status="ELABORACAO"],
-.dashboard-screen--light .detail-table-status[data-status="ENVIADA"] {
+.dashboard-screen--light .detail-table-status[data-status="ENVIADA"],
+.dashboard-screen--light .detail-table-status[data-status="PENDENTE"] {
   background: rgba(180, 120, 0, 0.1);
   color: #b45309;
 }
 
 .dashboard-screen--light .detail-table-status[data-status="recusado"],
-.dashboard-screen--light .detail-table-status[data-status="RECUSADA"] {
+.dashboard-screen--light .detail-table-status[data-status="RECUSADA"],
+.dashboard-screen--light .detail-table-status[data-status="RECUSADO"] {
   background: rgba(220, 38, 38, 0.1);
   color: #dc2626;
 }
@@ -2294,6 +2374,23 @@ a {
   width: 100%;
   min-height: 120px;
   resize: vertical;
+}
+
+.proposal-rejection-option {
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: rgba(255, 255, 255, 0.03);
+  color: #f4f4f5;
+}
+
+.proposal-rejection-option:hover {
+  border-color: rgba(121, 198, 192, 0.6);
+  background: rgba(121, 198, 192, 0.08);
+}
+
+.proposal-rejection-option--selected {
+  border-color: #79C6C0;
+  background: rgba(121, 198, 192, 0.14);
+  color: #b8fff0;
 }
 
 .team-create-form,
