@@ -41,6 +41,15 @@ export type ReuniaoApiResponse = {
   linkOnline: string;
 };
 
+export type PropostaCriacaoPayload = {
+  empresaId: number;
+  servicoContratado: string;
+  valorMensal: number;
+  valorSetup?: number;
+  dataEmissao?: string;
+  linkGoogleDrive?: string;
+};
+
 async function fetchJson<T>(url: string): Promise<T> {
   const response = await fetch(url, { headers: buildAuthHeaders() });
   if (!response.ok) {
@@ -65,9 +74,22 @@ export function fetchDocumentosByEmpresa(empresaId: number): Promise<DocumentoAp
   return fetchJson(`${API_BASE_URL}/documentos/empresa/${empresaId}`);
 }
 
+export async function criarProposta(payload: PropostaCriacaoPayload): Promise<PropostaApiResponse> {
+  const response = await fetch(`${API_BASE_URL}/propostas`, {
+    method: 'POST',
+    headers: buildAuthHeaders(),
+    body: JSON.stringify(payload),
+  });
+  if (!response.ok) {
+    const text = await response.text();
+    throw new Error(text || 'Erro ao criar proposta');
+  }
+  return response.json();
+}
+
 export async function atualizarStatusProposta(
   propostaId: number,
-  status: 'ACEITA' | 'RECUSADA',
+  status: 'ACEITA' | 'RECUSADA'| 'ENVIADA',
   motivoRecusa?: string
 ): Promise<PropostaApiResponse> {
   const params = new URLSearchParams({ status });

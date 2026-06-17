@@ -43,6 +43,7 @@ type DashboardOverviewApiResponse = {
   documentosPendentes: number;
   reunioesSemana: number;
   ultimosContratos: Array<{
+    id: number;
     empresa: string;
     servico: string;
     dataCriacao: string;

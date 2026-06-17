@@ -100,6 +100,7 @@ type CompanyProposal = {
 };
 
 type CompanyContract = {
+  id?: number;
   code: string;
   service: string;
   startDate: string;
@@ -3530,6 +3531,7 @@ async function handleRejectProposal() {
         <button
           key={motivo}
           type="button"
+          className="proposal-rejection-option"
           onClick={() => setProposalRejectionReasonInput(motivo)}
           style={{
             textAlign: 'left',
@@ -3537,7 +3539,7 @@ async function handleRejectProposal() {
             borderRadius: 8,
             border: `1px solid ${proposalRejectionReasonInput === motivo ? '#79C6C0' : 'rgba(255,255,255,0.08)'}`,
             background: proposalRejectionReasonInput === motivo ? 'rgba(121,198,192,0.12)' : 'rgba(255,255,255,0.03)',
-            color: proposalRejectionReasonInput === motivo ? '#79C6C0' : '#edf2f7',
+            color: proposalRejectionReasonInput === motivo ? '#79C6C0' : '#0f172a',
             fontSize: 13,
             cursor: 'pointer',
             transition: 'all 0.15s ease',

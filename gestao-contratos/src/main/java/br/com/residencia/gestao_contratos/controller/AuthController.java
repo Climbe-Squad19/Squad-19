@@ -19,19 +19,21 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
-import jakarta.servlet.http.HttpServletResponse;
-
 import br.com.residencia.gestao_contratos.Security.JwtService;
+import br.com.residencia.gestao_contratos.classes.Empresa;
 import br.com.residencia.gestao_contratos.classes.Usuario;
 import br.com.residencia.gestao_contratos.dtos.request.AutenticacaoRequest;
 import br.com.residencia.gestao_contratos.dtos.request.ForgotPasswordRequest;
+import br.com.residencia.gestao_contratos.dtos.request.PortalAutenticacaoRequest;
 import br.com.residencia.gestao_contratos.dtos.request.ResetPasswordRequest;
-import br.com.residencia.gestao_contratos.dtos.response.TokenResponse;
-import br.com.residencia.gestao_contratos.repository.UsuarioRepository;
 import br.com.residencia.gestao_contratos.dtos.response.AuthMeResponse;
+import br.com.residencia.gestao_contratos.dtos.response.TokenResponse;
+import br.com.residencia.gestao_contratos.repository.EmpresaRepository;
+import br.com.residencia.gestao_contratos.repository.UsuarioRepository;
 import br.com.residencia.gestao_contratos.services.GoogleOAuthLoginService;
 import br.com.residencia.gestao_contratos.services.PasswordResetService;
 import br.com.residencia.gestao_contratos.services.UsuarioService;
+import jakarta.servlet.http.HttpServletResponse;
 import jakarta.validation.Valid;
 
 @RestController
@@ -46,6 +48,9 @@ public class AuthController {
 
     @Autowired
     private UsuarioRepository usuarioRepository;
+
+    @Autowired
+    private EmpresaRepository empresaRepository;
 
     @Autowired
     private PasswordResetService passwordResetService;
@@ -103,6 +108,57 @@ public class AuthController {
         response.setAccessToken(token);
         response.setTokenType("Bearer");
         response.setExpiresIn(86400000L); 
+
+        return ResponseEntity.ok(response);
+    }
+
+    @PostMapping("/portal-login")
+    public ResponseEntity<?> portalLogin(@RequestBody PortalAutenticacaoRequest request) {
+        // Validar entrada
+        if (request.getEmail() == null || request.getEmail().isBlank()
+                || request.getCnpj() == null || request.getCnpj().isBlank()) {
+            return ResponseEntity
+                    .status(HttpStatus.BAD_REQUEST)
+                    .body("Email e CNPJ são obrigatórios");
+        }
+
+        // Buscar empresa pelo CNPJ (já armazenado sem formatação no banco)
+        Empresa empresa = empresaRepository.findByCnpj(request.getCnpj())
+                .orElse(null);
+
+        if (empresa == null) {
+            return ResponseEntity
+                    .status(HttpStatus.UNAUTHORIZED)
+                    .body("Empresa não encontrada");
+        }
+
+        // Validar se empresa está ativa
+        if (!empresa.isAtiva()) {
+            return ResponseEntity
+                    .status(HttpStatus.UNAUTHORIZED)
+                    .body("Empresa inativa");
+        }
+
+        // Validar se email fornecido corresponde ao email de contato da empresa
+        if (empresa.getEmailContato() == null 
+                || !empresa.getEmailContato().equalsIgnoreCase(request.getEmail())) {
+            return ResponseEntity
+                    .status(HttpStatus.UNAUTHORIZED)
+                    .body("Email não corresponde ao cadastro da empresa");
+        }
+
+        // Gerar token JWT baseado na empresa
+        // Usar CNPJ como "email" para identificar a empresa no token
+        String token = jwtService.gerarToken(
+                empresa.getCnpj(),  // Identificador único da empresa
+                empresa.getId(),
+                "EMPRESA"  // Cargo/tipo de acesso: EMPRESA
+        );
+
+        TokenResponse response = new TokenResponse();
+        response.setAccessToken(token);
+        response.setTokenType("Bearer");
+        response.setExpiresIn(86400000L);
 
         return ResponseEntity.ok(response);
     }

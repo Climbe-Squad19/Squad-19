@@ -8,13 +8,13 @@ export const defaultSummaryCards: SummaryCard[] = [
 ];
 
 export const defaultRecentContracts: ContractItem[] = [
-  { company: 'Universidade Tiradentes', service: 'BPO Financeiro', start: '08/03/2026 - 08:32h' },
-  { company: 'JotaNunes Construtora', service: 'Análise Valuation', start: '05/03/2026 - 14:59h' },
-  { company: 'Porto Digital', service: 'M&A', start: '23/02/2026 - 17:00h' },
+  { contractId: 1, company: 'Universidade Tiradentes', service: 'BPO Financeiro', start: '08/03/2026 - 08:32h' },
+  { contractId: 2, company: 'JotaNunes Construtora', service: 'Análise Valuation', start: '05/03/2026 - 14:59h' },
+  { contractId: 3, company: 'Porto Digital', service: 'M&A', start: '23/02/2026 - 17:00h' },
 ];
 
 export const defaultUpcomingItems: UpcomingItem[] = [
-  { client: 'Empresa X', reference: 'Entrega de balanço', due: 'em 3 dias', priority: 'Média' },
-  { client: 'Unit', reference: 'Renovação de contrato', due: 'em 2 semanas', priority: 'Alta' },
-  { client: 'Empresa Y', reference: 'Relatório', due: 'em 3 dias', priority: 'Baixa' },
+  { contractId: 1, client: 'Empresa X', reference: 'Entrega de balanço', due: 'em 3 dias', priority: 'Média' },
+  { contractId: 2, client: 'Unit', reference: 'Renovação de contrato', due: 'em 2 semanas', priority: 'Alta' },
+  { contractId: 3, client: 'Empresa Y', reference: 'Relatório', due: 'em 3 dias', priority: 'Baixa' },
 ];

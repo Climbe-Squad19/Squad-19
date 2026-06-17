@@ -147,7 +147,7 @@ public class UsuarioService {
         Usuario u = usuarioRepository.findByEmailIgnoreCase(email)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND));
         boolean pode = administrativoAuthorizationService.podeGerenciarUsuarios(u);
-        return new AuthMeResponse(converterParaResponse(u), pode);
+        return new AuthMeResponse(converterParaResponse(u), pode, u.getEmpresaId());
     }
 
     public UsuarioResponse buscarPorId(Long id) {
@@ -172,8 +172,8 @@ public class UsuarioService {
         response.setCargo(usuario.getCargo());
         response.setPermissoes(usuario.getPermissoes());
         response.setEmail(usuario.getEmail());
+        response.setEmpresaId(usuario.getEmpresaId());
         response.setTelefone(usuario.getTelefone());
-        response.setAtivo(usuario.isAtivo());
         response.setSituacao(usuario.getSituacao());
         response.setFotoPerfilUrl(usuario.getFotoPerfilUrl());
         response.setDataCriacao(usuario.getDataCriacao());
