@@ -30,10 +30,12 @@ export type CompanyContract = {
 };
 
 export type CompanyDocument = {
+  id?: number;
   name: string;
   category: string;
   status: string;
   downloadUrl?: string;
+  fileUrl?: string;
 };
 
 export type CompanyMeeting = {

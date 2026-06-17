@@ -113,9 +113,11 @@ export function useCompanies() {
         const docs = await fetchDocumentosByEmpresa(selectedCompany.id);
         setCompanyDocumentsData(
           docs.map((doc) => ({
+            id: doc.id,
             name: doc.nomeArquivo || `Documento ${doc.id}`,
             category: doc.tipo || 'Documento',
             status: doc.status || 'PENDENTE',
+            fileUrl: doc.googleDriveWebViewLink || doc.s3Url || undefined,
             downloadUrl: doc.id ? `${import.meta.env.VITE_API_BASE_URL ?? 'http://localhost:8081'}/documentos/${doc.id}/download` : undefined,
           }))
         );

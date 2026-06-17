@@ -76,6 +76,17 @@ export function fetchDocumentosByEmpresa(empresaId: number): Promise<DocumentoAp
   return fetchJson(`${API_BASE_URL}/documentos/empresa/${empresaId}`);
 }
 
+export async function downloadDocumentoEmpresa(documentoId: number): Promise<Blob> {
+  const response = await fetch(`${API_BASE_URL}/documentos/${encodeURIComponent(String(documentoId))}/download`, {
+    headers: buildAuthHeaders(false),
+  });
+  if (!response.ok) {
+    const text = await response.text();
+    throw new Error(text || 'Erro ao abrir documento');
+  }
+  return response.blob();
+}
+
 export async function criarProposta(payload: PropostaCriacaoPayload): Promise<PropostaApiResponse> {
   const response = await fetch(`${API_BASE_URL}/propostas`, {
     method: 'POST',
