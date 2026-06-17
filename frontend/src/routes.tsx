@@ -1,4 +1,4 @@
-import { createBrowserRouter, Navigate, useNavigate } from "react-router-dom"
+import { createBrowserRouter, Navigate } from "react-router-dom"
 
 import { AuthLayout } from "./pages/_layout/auth"
 import AgendaPage from "./pages/app/agenda"
@@ -21,6 +21,10 @@ export const router = createBrowserRouter([
     path: '/',
     element: <AppLayout />,
     children: [
+      {
+        index: true,
+        element: <Navigate to="/dashboard" replace />
+      },
       {
         path: '/dashboard',
         element: <DashboardPage />
@@ -59,6 +63,10 @@ export const router = createBrowserRouter([
         path: '/forgot-password',
         element: <ForgotPassword />
       },
+      {
+        path: '/portal/login',
+        element: <PortalLogin />
+      },
     ]
   },
   {
@@ -78,9 +86,5 @@ export const router = createBrowserRouter([
         element: <PortalDocumentosPage />
       },
     ]
-  },
-  {
-    path: '/portal/login',
-    element: <PortalLogin />
   },
 ])
