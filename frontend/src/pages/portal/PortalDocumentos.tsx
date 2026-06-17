@@ -4,7 +4,7 @@ import { fetchPortalDocumentos, uploadPortalDocumento, getPortalEmpresaId } from
 import type { DocumentoApiResponse } from '../../services/business';
 
 const documentTypes = [
-  'BALANCO',
+  'BALANCO_EMPRESA',
   'DRE',
   'CNPJ',
   'CONTRATO_SOCIAL',
@@ -20,7 +20,7 @@ const statusClasses: Record<string, string> = {
 export default function PortalDocumentosPage() {
   const [documentos, setDocumentos] = useState<DocumentoApiResponse[]>([]);
   const [loading, setLoading] = useState(true);
-  const [selectedType, setSelectedType] = useState<typeof documentTypes[number]>('BALANCO');
+  const [selectedType, setSelectedType] = useState<typeof documentTypes[number]>('BALANCO_EMPRESA');
   const [file, setFile] = useState<File | null>(null);
   const [uploading, setUploading] = useState(false);
   const empresaId = getPortalEmpresaId();

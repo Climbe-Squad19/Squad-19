@@ -1,4 +1,4 @@
-import { API_BASE_URL } from './api';
+import { API_BASE_URL, parseApiErrorMessage } from './api';
 import type { PropostaApiResponse, ReuniaoApiResponse, DocumentoApiResponse } from './business';
 
 export const PORTAL_TOKEN_KEY = 'climbe_portal_token';
@@ -149,9 +149,9 @@ export function uploadPortalDocumento(
   const formData = new FormData();
   formData.append('arquivo', arquivo);
   formData.append('empresaId', String(empresaId));
-  formData.append('tipoDocumento', tipoDocumento);
+  formData.append('tipo', tipoDocumento);
 
-  return fetch(`${API_BASE_URL}/documentos/empresa/upload`, {
+  return fetch(`${API_BASE_URL}/documentos/upload`, {
     method: 'POST',
     headers: {
       Authorization: `Bearer ${getPortalToken() ?? ''}`,
@@ -160,7 +160,7 @@ export function uploadPortalDocumento(
   }).then(async (response) => {
     if (!response.ok) {
       const text = await response.text();
-      throw new Error(text || 'Erro ao enviar o documento');
+      throw new Error(parseApiErrorMessage(text, response.status) || 'Erro ao enviar o documento');
     }
     return response.json() as Promise<DocumentoApiResponse>;
   });
