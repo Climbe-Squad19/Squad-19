@@ -151,7 +151,7 @@ export function uploadPortalDocumento(
   formData.append('empresaId', String(empresaId));
   formData.append('tipoDocumento', tipoDocumento);
 
-  return fetch(`${API_BASE_URL}/documentos/empresa`, {
+  return fetch(`${API_BASE_URL}/documentos/empresa/upload`, {
     method: 'POST',
     headers: {
       Authorization: `Bearer ${getPortalToken() ?? ''}`,
