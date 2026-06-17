@@ -1,4 +1,5 @@
 import { Tooltip } from '@mui/material';
+import { Search } from 'lucide-react';
 import { useMemo, useState, type FormEvent } from 'react';
 import { useOutletContext } from 'react-router-dom';
 import { companyReports } from '../../mocks/business.mock';
@@ -8,6 +9,7 @@ import EntityActionModalData from '../../components/modals/entity-action-modal';
 import { useAppSelector } from '../../store/hooks';
 import { uploadDocumentoContrato } from '../../services/contratos-documentos';
 import { listarDocumentosContrato, downloadDocumentoContrato } from '../../services/contratos-documentos';
+import { downloadDocumentoEmpresa } from '../../services/business';
 
 export default function CompaniesPage() {
   const { search } = useOutletContext<{ search: string }>();
@@ -99,6 +101,34 @@ export default function CompaniesPage() {
       URL.revokeObjectURL(downloadUrl);
     }
     setEntityActionModal(null);
+  }
+
+  async function handleOpenCompanyDocument(item: (typeof companyDocumentsData)[number]) {
+    if (item.fileUrl) {
+      window.open(item.fileUrl, '_blank', 'noopener,noreferrer');
+      return;
+    }
+
+    if (!item.id) {
+      alert('Documento indisponível para visualização.');
+      return;
+    }
+
+    const tab = window.open('', '_blank', 'noopener,noreferrer');
+    try {
+      const blob = await downloadDocumentoEmpresa(item.id);
+      const url = URL.createObjectURL(blob);
+      if (tab) {
+        tab.location.href = url;
+      } else {
+        window.open(url, '_blank', 'noopener,noreferrer');
+      }
+      setTimeout(() => URL.revokeObjectURL(url), 30000);
+    } catch (error) {
+      tab?.close();
+      console.error('Erro ao abrir documento da empresa', error);
+      alert('Não foi possível abrir o documento anexado.');
+    }
   }
 
   async function handleCreateCompany(event: FormEvent<HTMLFormElement>) {
@@ -302,6 +332,16 @@ export default function CompaniesPage() {
                   <span className="detail-table-status" data-status={item.status}>
   {item.status}
 </span>
+                  <Tooltip title="Ver documento" arrow>
+                    <button
+                      type="button"
+                      className="icon-button detail-icon-button"
+                      aria-label="Ver documento"
+                      onClick={() => void handleOpenCompanyDocument(item)}
+                    >
+                      <Search className="size-4" />
+                    </button>
+                  </Tooltip>
                 </article>
               ))}
             </div>
