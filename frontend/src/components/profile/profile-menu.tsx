@@ -9,6 +9,7 @@ type ProfileMenuProps = {
   onOpenProfile?: () => void;
   onSettings?: () => void;
   onLogout?: () => void;
+  isLightMode?: boolean;
 };
 
 export default function ProfileMenu({
@@ -20,6 +21,7 @@ export default function ProfileMenu({
   onOpenProfile,
   onSettings,
   onLogout,
+  isLightMode,
 }: ProfileMenuProps) {
   return (
     <Menu
@@ -31,9 +33,9 @@ export default function ProfileMenu({
           sx: {
             mt: 1,
             minWidth: 240,
-            background: '#1c1c1f',
-            color: '#edf2f7',
-            border: '1px solid rgba(255,255,255,0.08)',
+            background: isLightMode ? '#ffffff' : '#1c1c1f',
+            color: isLightMode ? '#0f172a' : '#edf2f7',
+            border: isLightMode ? '1px solid rgba(15,23,42,0.1)' : '1px solid rgba(255,255,255,0.08)',
             borderRadius: 1,
           },
         },
@@ -41,14 +43,14 @@ export default function ProfileMenu({
     >
       <MuiMenuItem disabled>
         <div className="profile-menu-header">
-          <strong>{fullName}</strong>
-          <small>{email}</small>
+          <strong style={{ color: isLightMode ? '#0f172a' : '#edf2f7' }}>{fullName}</strong>
+          <small style={{ color: isLightMode ? '#64748b' : '#9ab0d6' }}>{email}</small>
         </div>
       </MuiMenuItem>
-      
-      <Divider sx={{ borderColor: 'rgba(255,255,255,0.08)' }} />
-      
-      <MuiMenuItem onClick={onOpenProfile}>
+
+      <Divider sx={{ borderColor: isLightMode ? 'rgba(15,23,42,0.08)' : 'rgba(255,255,255,0.08)' }} />
+
+      <MuiMenuItem onClick={onOpenProfile} sx={{ color: isLightMode ? '#0f172a' : '#edf2f7', '&:hover': { background: isLightMode ? 'rgba(121,198,192,0.1)' : 'rgba(255,255,255,0.05)' } }}>
         <ListItemIcon>
           <Avatar sx={{ width: 24, height: 24, bgcolor: '#79C6C0', color: '#04121f', fontSize: 12 }}>
             {userInitials}
@@ -56,8 +58,8 @@ export default function ProfileMenu({
         </ListItemIcon>
         Perfil
       </MuiMenuItem>
-      
-      <MuiMenuItem onClick={onSettings}>
+
+      <MuiMenuItem onClick={onSettings} sx={{ color: isLightMode ? '#0f172a' : '#edf2f7', '&:hover': { background: isLightMode ? 'rgba(121,198,192,0.1)' : 'rgba(255,255,255,0.05)' } }}>
         <ListItemIcon>
           <span className="profile-menu-icon">⚙️</span>
         </ListItemIcon>

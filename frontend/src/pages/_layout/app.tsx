@@ -11,6 +11,14 @@ export function AppLayout() {
   // 1. Busca e URL
   const [searchParams, setSearchParams] = useSearchParams();
   const search = searchParams.get('q') ?? '';
+  const climbeToken = searchParams.get('climbe_token');
+  const oauthError = searchParams.get('oauth_error');
+  const oauthPending = searchParams.get('oauth_pending');
+
+  // Salva o token do callback Google OAuth antes de qualquer verificação de auth
+  if (climbeToken) {
+    localStorage.setItem(ACCESS_TOKEN_KEY, climbeToken);
+  }
 
   const dispatch = useAppDispatch();
   const navigate = useNavigate();
@@ -71,7 +79,18 @@ export function AppLayout() {
     ?.join('') || 'U';
 
   if (!token) {
-    return <Navigate to="/login" replace />
+    if (oauthError) {
+      return <Navigate to={`/login?oauth_error=${encodeURIComponent(oauthError)}`} replace />;
+    }
+    if (oauthPending) {
+      return <Navigate to="/login?oauth_pending=1" replace />;
+    }
+    return <Navigate to="/login" replace />;
+  }
+
+  // Após salvar o token do OAuth, limpa a URL redirecionando para o dashboard
+  if (climbeToken) {
+    return <Navigate to="/dashboard" replace />;
   }
 
   if (!isAuthChecked) {

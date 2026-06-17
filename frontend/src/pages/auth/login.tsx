@@ -1,18 +1,20 @@
 import { useEffect, useState } from 'react';
 import '../../index.css'
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { toast } from 'sonner';
 import { ACCESS_TOKEN_KEY, API_BASE_URL } from '../../services/api';
 import { fetchGoogleOAuthDisponivel, login } from '../../services/auth';
+import googleLogo from '../../assets/google.svg';
 
 export function Login() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [feedback, setFeedback] = useState('');
-  const [feedbackError, setFeedbackError] = useState(false);
   const [googleOAuthDisponivel, setGoogleOAuthDisponivel] = useState<boolean | null>(null);
 
-  const navigate = useNavigate()
+  const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const oauthError = searchParams.get('oauth_error');
+  const oauthPending = searchParams.get('oauth_pending');
 
   useEffect(() => {
     let cancelled = false;
@@ -26,14 +28,11 @@ export function Login() {
 
   const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
-    setFeedback('');
 
     try {
-      const response = await login({ email: email.trim(), senha: password })
-      .then(response => {
-        localStorage.setItem(ACCESS_TOKEN_KEY, response.accessToken);
-        navigate('/dashboard')
-      });
+      const response = await login({ email: email.trim(), senha: password });
+      localStorage.setItem(ACCESS_TOKEN_KEY, response.accessToken);
+      navigate('/dashboard');
     } catch (error) {
       toast.error('Erro ao fazer login. Verifique suas credenciais e tente novamente.');
     }
@@ -80,21 +79,40 @@ export function Login() {
           </div>
         </form>
 
+        {oauthError && (
+          <p className="text-red-400 text-sm text-center w-full max-w-79">
+            Erro ao entrar com Google: {decodeURIComponent(oauthError).replace(/_/g, ' ')}
+          </p>
+        )}
+        {oauthPending && (
+          <p className="text-yellow-400 text-sm text-center w-full max-w-79">
+            Sua conta aguarda aprovação do administrador.
+          </p>
+        )}
+
         <div className="max-w-79 w-full flex items-center gap-2">
           <div className="w-full border-t border-zinc-700" />
           <p className="text-sm font-semibold">ou</p>
           <div className="w-full border-t border-zinc-700" />
         </div>
 
+        {googleOAuthDisponivel === false && (
+          <p className="text-zinc-500 text-xs text-center w-full max-w-79">
+            Login com Google indisponível: configure <code>GOOGLE_CLIENT_ID</code> e{' '}
+            <code>GOOGLE_CLIENT_SECRET</code> no back-end.
+          </p>
+        )}
+
         <button
           type="button"
-          className="w-full bg-transparent border border-zinc-600 flex items-center justify-center py-2 gap-4 rounded-lg cursor-pointer text-sm font-semibold"
-          // disabled={googleOAuthDisponivel !== true}
+          className="w-full bg-transparent border border-zinc-600 flex items-center justify-center py-2 gap-4 rounded-lg text-sm font-semibold disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer"
+          disabled={googleOAuthDisponivel !== true}
+          title={googleOAuthDisponivel === false ? 'Credenciais Google OAuth não configuradas na API' : undefined}
           onClick={() => {
             window.location.href = `${API_BASE_URL}/auth/google`;
           }}
         >
-          <img src="https://raw.githubusercontent.com/Climbe-Squad19/climbe-frontend/9eb6d581f368cf55af43231555515173be8bf912/src/assets/google.svg" alt="" />
+          <img src={googleLogo} alt="" />
           Continuar com Google
         </button>
       </div>
