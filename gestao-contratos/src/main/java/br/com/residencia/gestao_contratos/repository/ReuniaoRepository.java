@@ -10,6 +10,8 @@ import br.com.residencia.gestao_contratos.classes.Reuniao;
 
 @Repository
 public interface ReuniaoRepository extends JpaRepository<Reuniao, Long> {
+    List<Reuniao> findByEmpresaId(Long empresaId);
+
     List<Reuniao> findByDataHoraBetween(LocalDateTime start, LocalDateTime end);
 
     long countByDataHoraBetweenAndStatusNot(

@@ -6,6 +6,7 @@ export type ProposalCardItem = {
   createdLabel: string;
   rejectionReason?: string;
   linkGoogleDrive?: string;
+  status?: string;
 };
 
 export type ProposalColumn = {

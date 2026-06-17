@@ -101,6 +101,29 @@ public class PropostaService {
     }
 
     @Transactional
+    public PropostaResponse criarPeloPortal(Long empresaId, PropostaCriacaoRequest request) {
+        if (empresaId == null) {
+            throw new RuntimeException("Empresa ID não pode ser nulo");
+        }
+
+        Empresa empresa = empresaRepository.findById(empresaId)
+                .orElseThrow(() -> new RuntimeException("Empresa não encontrada"));
+
+        Proposta proposta = new Proposta();
+        proposta.setEmpresa(empresa);
+        proposta.setServicoContratado(request.getServicoContratado());
+        proposta.setValorMensal(request.getValorMensal());
+        proposta.setValorSetup(request.getValorSetup());
+        proposta.setDataEmissao(request.getDataEmissao());
+        proposta.setLinkGoogleDrive(request.getLinkGoogleDrive());
+        proposta.setStatus(Proposta.StatusProposta.ENVIADA);
+        proposta.setDataCriacao(LocalDateTime.now());
+
+        Proposta salva = propostaRepository.save(proposta);
+        return converterParaResponse(salva);
+    }
+
+    @Transactional
     public PropostaResponse atualizar(Long id, PropostaAtualizacaoRequest request) {
         Proposta proposta = buscarEntidadePorId(id);
 
@@ -137,6 +160,12 @@ public class PropostaService {
 
     public List<PropostaResponse> listarTodos() {
         return propostaRepository.findAll().stream()
+                .map(this::converterParaResponse)
+                .collect(Collectors.toList());
+    }
+
+    public List<PropostaResponse> listarPorEmpresa(Long empresaId) {
+        return propostaRepository.findByEmpresaId(empresaId).stream()
                 .map(this::converterParaResponse)
                 .collect(Collectors.toList());
     }

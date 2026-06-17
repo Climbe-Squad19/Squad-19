@@ -1,6 +1,8 @@
 import { useEffect, useState } from 'react';
 import { toast } from 'sonner';
-import { fetchPortalDocumentos, uploadPortalDocumento, getPortalEmpresaId } from '../../services/portal';
+import { Eye } from 'lucide-react';
+import { Tooltip } from '@mui/material';
+import { downloadPortalDocumento, fetchPortalDocumentos, uploadPortalDocumento, getPortalEmpresaId } from '../../services/portal';
 import type { DocumentoApiResponse } from '../../services/business';
 
 const documentTypes = [
@@ -55,6 +57,23 @@ export default function PortalDocumentosPage() {
       toast.error(error instanceof Error ? error.message : 'Erro ao enviar documento');
     } finally {
       setUploading(false);
+    }
+  }
+
+  async function handleOpenDocumento(documento: DocumentoApiResponse) {
+    const directUrl = documento.googleDriveWebViewLink || documento.s3Url;
+    if (directUrl) {
+      window.open(directUrl, '_blank', 'noopener,noreferrer');
+      return;
+    }
+
+    try {
+      const blob = await downloadPortalDocumento(documento.id);
+      const url = URL.createObjectURL(blob);
+      window.open(url, '_blank', 'noopener,noreferrer');
+      setTimeout(() => URL.revokeObjectURL(url), 30000);
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : 'Erro ao abrir documento');
     }
   }
 
@@ -122,6 +141,15 @@ export default function PortalDocumentosPage() {
                     {documento.status}
                   </span>
                 </div>
+                <Tooltip title="Ver documento anexado" arrow>
+                  <button
+                    type="button"
+                    className="icon-button detail-icon-button"
+                    onClick={() => void handleOpenDocumento(documento)}
+                  >
+                    <Eye className="size-4" />
+                  </button>
+                </Tooltip>
               </article>
             ))}
           </div>

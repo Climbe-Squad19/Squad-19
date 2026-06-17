@@ -35,7 +35,11 @@ public class PropostaController {
     }
 
     @GetMapping
-    public ResponseEntity<List<PropostaResponse>> getAll() {
+    public ResponseEntity<List<PropostaResponse>> getAll(
+            @RequestParam(required = false) Long empresaId) {
+        if (empresaId != null) {
+            return ResponseEntity.ok(propostaService.listarPorEmpresa(empresaId));
+        }
         return ResponseEntity.ok(propostaService.listarTodos());
     }
 
@@ -48,6 +52,15 @@ public class PropostaController {
     public ResponseEntity<PropostaResponse> create(
             @RequestBody PropostaCriacaoRequest request) {
         return new ResponseEntity<>(propostaService.criar(request), HttpStatus.CREATED);
+    }
+
+    @PostMapping("/portal")
+    public ResponseEntity<PropostaResponse> createFromPortal(
+            @RequestParam Long empresaId,
+            @RequestBody PropostaCriacaoRequest request) {
+        return new ResponseEntity<>(
+                propostaService.criarPeloPortal(empresaId, request),
+                HttpStatus.CREATED);
     }
 
     @PutMapping("/{id}")
