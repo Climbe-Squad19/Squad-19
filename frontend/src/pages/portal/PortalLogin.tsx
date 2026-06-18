@@ -12,6 +12,35 @@ import {
 
 export { PORTAL_TOKEN_KEY, PORTAL_EMPRESA_KEY };
 
+function maskCnpj(value: string): string {
+  const digits = value.replace(/\D/g, '').slice(0, 14);
+  return digits
+    .replace(/^(\d{2})(\d)/, '$1.$2')
+    .replace(/^(\d{2})\.(\d{3})(\d)/, '$1.$2.$3')
+    .replace(/\.(\d{3})(\d)/, '.$1/$2')
+    .replace(/(\d{4})(\d)/, '$1-$2');
+}
+
+function maskCpf(value: string): string {
+  const digits = value.replace(/\D/g, '').slice(0, 11);
+  return digits
+    .replace(/^(\d{3})(\d)/, '$1.$2')
+    .replace(/^(\d{3})\.(\d{3})(\d)/, '$1.$2.$3')
+    .replace(/\.(\d{3})(\d)/, '.$1-$2');
+}
+
+function maskTelefone(value: string): string {
+  const digits = value.replace(/\D/g, '').slice(0, 11);
+  if (digits.length <= 10) {
+    return digits
+      .replace(/^(\d{2})(\d)/, '($1) $2')
+      .replace(/(\d{4})(\d)/, '$1-$2');
+  }
+  return digits
+    .replace(/^(\d{2})(\d)/, '($1) $2')
+    .replace(/(\d{5})(\d)/, '$1-$2');
+}
+
 const inputClass =
   'flex flex-1 w-full rounded-md bg-transparent border border-zinc-700 px-3 py-2 text-sm text-zinc-100 outline-none disabled:cursor-not-allowed focus-within:ring-2 focus-within:ring-zinc-800 focus-within:ring-offset-2 focus-within:ring-offset-zinc-950';
 
@@ -147,8 +176,9 @@ export function PortalLogin() {
                   type="text"
                   placeholder="00.000.000/0000-00"
                   value={loginCnpj}
-                  onChange={(e) => setLoginCnpj(e.target.value)}
+                  onChange={(e) => setLoginCnpj(maskCnpj(e.target.value))}
                   className={inputClass}
+                  maxLength={18}
                   required
                 />
               </label>
@@ -198,8 +228,9 @@ export function PortalLogin() {
                   type="text"
                   placeholder="00.000.000/0000-00"
                   value={cnpj}
-                  onChange={(e) => setCnpj(e.target.value)}
+                  onChange={(e) => setCnpj(maskCnpj(e.target.value))}
                   className={inputClass}
+                  maxLength={18}
                   required
                 />
               </label>
@@ -222,8 +253,9 @@ export function PortalLogin() {
                   type="text"
                   placeholder="(00) 00000-0000"
                   value={telefone}
-                  onChange={(e) => setTelefone(e.target.value)}
+                  onChange={(e) => setTelefone(maskTelefone(e.target.value))}
                   className={inputClass}
+                  maxLength={15}
                 />
               </label>
 
@@ -244,8 +276,9 @@ export function PortalLogin() {
                   type="text"
                   placeholder="000.000.000-00"
                   value={cpfRepresentante}
-                  onChange={(e) => setCpfRepresentante(e.target.value)}
+                  onChange={(e) => setCpfRepresentante(maskCpf(e.target.value))}
                   className={inputClass}
+                  maxLength={14}
                 />
               </label>
 
