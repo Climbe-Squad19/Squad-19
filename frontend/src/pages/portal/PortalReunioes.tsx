@@ -29,7 +29,7 @@ export default function PortalReunioesPage() {
     }
 
     fetchPortalReunioes(empresaId)
-      .then(setReunioes)
+      .then((data) => setReunioes(data.filter((r) => r.empresaId === empresaId)))
       .catch((error) => toast.error(error instanceof Error ? error.message : 'Erro ao carregar reuniões'))
       .finally(() => setLoading(false));
   }, [empresaId]);
