@@ -29,6 +29,8 @@ export type DocumentoApiResponse = {
   nomeArquivo: string;
   tipo: string;
   status: string;
+  googleDriveWebViewLink?: string | null;
+  s3Url?: string | null;
 };
 
 export type ReuniaoApiResponse = {

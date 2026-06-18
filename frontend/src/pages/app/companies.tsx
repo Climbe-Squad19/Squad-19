@@ -296,12 +296,33 @@ export default function CompaniesPage() {
               {companyDocumentsData.map((item) => (
                 <article key={item.name} className="detail-table-row">
                   <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
-                      <strong>{item.name}</strong>
-                      <small style={{ color: '#9ab0d6' }}>{item.category}</small>
-                    </div>
-                  <span className="detail-table-status" data-status={item.status}>
-  {item.status}
-</span>
+                    <strong>{item.name}</strong>
+                    <small style={{ color: '#9ab0d6' }}>{item.category}</small>
+                  </div>
+                  <span className="detail-table-status" data-status={item.status}>{item.status}</span>
+                  <Tooltip title="Visualizar documento" arrow>
+                    <button
+                      type="button"
+                      className="icon-button detail-icon-button"
+                      disabled={!item.downloadUrl}
+                      onClick={async () => {
+                        if (!item.downloadUrl) return;
+                        if (item.downloadUrl.startsWith('http') && !item.downloadUrl.includes('localhost')) {
+                          window.open(item.downloadUrl, '_blank');
+                          return;
+                        }
+                        const token = localStorage.getItem('climbe_access_token');
+                        const res = await fetch(item.downloadUrl, { headers: { Authorization: `Bearer ${token ?? ''}` } });
+                        if (!res.ok) { alert('Documento não encontrado.'); return; }
+                        const blob = await res.blob();
+                        const url = URL.createObjectURL(blob);
+                        window.open(url, '_blank');
+                        setTimeout(() => URL.revokeObjectURL(url), 15000);
+                      }}
+                    >
+                      ⌕
+                    </button>
+                  </Tooltip>
                 </article>
               ))}
             </div>
