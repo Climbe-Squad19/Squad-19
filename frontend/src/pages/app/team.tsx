@@ -3,12 +3,14 @@ import { useOutletContext } from 'react-router-dom';
 import TeamCreateModal from '../../components/modals/team-create-modal';
 import TeamMemberModal from '../../components/modals/team-member-modal';
 import { fetchUsuarios } from '../../services/usuarios';
-import { useAppSelector } from '../../store/hooks';
+import { useAppDispatch, useAppSelector } from '../../store/hooks';
+import { openNotifications } from '../../store/uiSlice';
 import { TeamMember } from '../../types';
 import { useTeam } from '../../hooks/use-team';
 
 export default function TeamPage() {
   const { search } = useOutletContext<{ search: string }>();
+  const dispatch = useAppDispatch();
   const profile = useAppSelector((state) => state.profile);
   const {
     members,
@@ -36,8 +38,13 @@ export default function TeamPage() {
   );
 
   async function handleCreated() {
-    const usuarios = await fetchUsuarios();
-    setMembers(usuarios.map(mapUsuarioToTeamMember));
+    try {
+      const usuarios = await fetchUsuarios();
+      setMembers(usuarios.map(mapUsuarioToTeamMember));
+    } catch (error) {
+      console.error('Colaborador criado, mas a lista da equipe nao atualizou', error);
+    }
+    dispatch(openNotifications('Usuário criado com sucesso.'));
   }
 
   const onlineCount = filteredTeamMembers.filter((member) => member.status === 'Online').length;
