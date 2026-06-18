@@ -107,23 +107,35 @@ export default function PortalDocumentosPage() {
           <div className="p-6 text-zinc-400 text-center">Nenhum documento encontrado.</div>
         ) : (
           <div className="detail-table-list">
-            {documentos.map((documento) => (
-              <article key={documento.id} className="detail-table-row">
-                <div>
-                  <strong>{documento.nomeArquivo || 'Sem nome'}</strong>
-                  <small className="text-zinc-400">Arquivo</small>
-                </div>
-                <div>
-                  <strong>{documento.tipo}</strong>
-                  <small className="text-zinc-400">Tipo</small>
-                </div>
-                <div>
-                  <span className={`detail-table-status ${statusClasses[documento.status] ?? ''}`}>
-                    {documento.status}
-                  </span>
-                </div>
-              </article>
-            ))}
+            {documentos.map((documento) => {
+              const viewUrl = documento.googleDriveWebViewLink ?? documento.s3Url ?? null;
+              return (
+                <article key={documento.id} className="detail-table-row">
+                  <div>
+                    <strong>{documento.nomeArquivo || 'Sem nome'}</strong>
+                    <small className="text-zinc-400">Arquivo</small>
+                  </div>
+                  <div>
+                    <strong>{documento.tipo}</strong>
+                    <small className="text-zinc-400">Tipo</small>
+                  </div>
+                  <div>
+                    <span className={`detail-table-status ${statusClasses[String(documento.status)] ?? ''}`}>
+                      {String(documento.status)}
+                    </span>
+                  </div>
+                  <button
+                    type="button"
+                    className="icon-button detail-icon-button"
+                    disabled={!viewUrl}
+                    title={viewUrl ? 'Visualizar documento' : 'Documento sem link disponível'}
+                    onClick={() => { if (viewUrl) window.open(viewUrl, '_blank'); }}
+                  >
+                    ⌕
+                  </button>
+                </article>
+              );
+            })}
           </div>
         )}
       </div>

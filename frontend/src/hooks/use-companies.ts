@@ -116,7 +116,7 @@ export function useCompanies() {
             name: doc.nomeArquivo || `Documento ${doc.id}`,
             category: doc.tipo || 'Documento',
             status: doc.status || 'PENDENTE',
-            downloadUrl: doc.id ? `${import.meta.env.VITE_API_BASE_URL ?? 'http://localhost:8081'}/documentos/${doc.id}/download` : undefined,
+            downloadUrl: doc.googleDriveWebViewLink ?? doc.s3Url ?? (doc.id ? `${import.meta.env.VITE_API_BASE_URL ?? 'http://localhost:8081'}/documentos/${doc.id}/download` : undefined),
           }))
         );
       } catch (error) {
