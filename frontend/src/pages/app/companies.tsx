@@ -114,7 +114,11 @@ export default function CompaniesPage() {
       return;
     }
 
-    const tab = window.open('', '_blank', 'noopener,noreferrer');
+    const tab = window.open('about:blank', '_blank');
+    if (tab) {
+      tab.opener = null;
+    }
+
     try {
       const blob = await downloadDocumentoEmpresa(item.id);
       const url = URL.createObjectURL(blob);
@@ -507,10 +511,30 @@ export default function CompaniesPage() {
         {docsModal.docs.map((doc) => (
           <article key={doc.id} className="detail-table-row" style={{ cursor: 'pointer', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}
             onClick={async () => {
-              const dlRes = await downloadDocumentoContrato(docsModal.contratoId, doc.id);
-              const blob = await dlRes.blob();
-              const url = URL.createObjectURL(blob);
-              window.open(url, '_blank');
+              const tab = window.open('about:blank', '_blank');
+              if (tab) {
+                tab.opener = null;
+              }
+
+              try {
+                const dlRes = await downloadDocumentoContrato(docsModal.contratoId, doc.id);
+                if (!dlRes.ok) {
+                  throw new Error('Erro ao baixar documento do contrato.');
+                }
+
+                const blob = await dlRes.blob();
+                const url = URL.createObjectURL(blob);
+                if (tab) {
+                  tab.location.href = url;
+                } else {
+                  window.open(url, '_blank', 'noopener,noreferrer');
+                }
+                setTimeout(() => URL.revokeObjectURL(url), 30000);
+              } catch (error) {
+                tab?.close();
+                console.error('Erro ao abrir documento do contrato', error);
+                alert('NÃ£o foi possÃ­vel abrir o documento deste contrato.');
+              }
             }}
           >
             <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
