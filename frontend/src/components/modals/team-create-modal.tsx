@@ -90,7 +90,11 @@ export default function TeamCreateModal({ open, onClose, onCreated }: TeamCreate
         telefone: teamFormPhone.trim(),
         senha: teamFormPassword,
       });
-      await onCreated();
+      try {
+        await onCreated();
+      } catch (refreshError) {
+        console.error('Colaborador criado, mas a lista da equipe nao atualizou', refreshError);
+      }
       resetForm();
       onClose();
     } catch (error) {

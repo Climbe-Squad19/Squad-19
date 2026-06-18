@@ -38,13 +38,28 @@ public class ContratoService {
     // chamado pelo PropostaService quando proposta é aceita
     @Transactional
     public Contrato gerarContratoAPartirDeProposta(Proposta proposta) {
-        if (proposta.getCriadoPor() == null) {
-            throw new RuntimeException("Usuário responsável não informado na proposta");
+        Usuario responsavel = proposta.getCriadoPor();
+        if (responsavel == null) {
+            responsavel = usuarioRepository.findByAtivoTrueAndSituacaoAndCargoIn(
+                    Usuario.SituacaoUsuario.ATIVO,
+                    List.of(
+                            br.com.residencia.gestao_contratos.classes.Cargo.CEO,
+                            br.com.residencia.gestao_contratos.classes.Cargo.CFO,
+                            br.com.residencia.gestao_contratos.classes.Cargo.CMO,
+                            br.com.residencia.gestao_contratos.classes.Cargo.CSO,
+                            br.com.residencia.gestao_contratos.classes.Cargo.ANALISTA_SENIOR,
+                            br.com.residencia.gestao_contratos.classes.Cargo.ANALISTA_PLENO,
+                            br.com.residencia.gestao_contratos.classes.Cargo.ANALISTA_BPO,
+                            br.com.residencia.gestao_contratos.classes.Cargo.ANALISTA_JUNIOR,
+                            br.com.residencia.gestao_contratos.classes.Cargo.ANALISTA_TRAINEE))
+                    .stream()
+                    .findFirst()
+                    .orElseThrow(() -> new RuntimeException("Nenhum responsavel interno ativo encontrado para gerar o contrato"));
         }
         Contrato contrato = new Contrato();
         contrato.setPropostaOrigem(proposta);
         contrato.setEmpresa(proposta.getEmpresa());
-        contrato.setUsuarioResponsavel(proposta.getCriadoPor());
+        contrato.setUsuarioResponsavel(responsavel);
         contrato.setTipoServico(proposta.getServicoContratado());
         contrato.setStatus(Contrato.StatusContrato.ATIVO);
         contrato.setDataCriacao(LocalDateTime.now());
