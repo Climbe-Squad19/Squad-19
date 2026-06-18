@@ -55,18 +55,28 @@ export default function PortalDocumentosPage() {
   }
 
   async function handleOpenDocumento(documento: DocumentoApiResponse) {
-    const directUrl = documento.googleDriveWebViewLink || documento.s3Url;
+    const directUrl = documento.googleDriveWebViewLink?.trim() || documento.s3Url?.trim();
     if (directUrl) {
       window.open(directUrl, '_blank', 'noopener,noreferrer');
       return;
     }
 
+    const tab = window.open('about:blank', '_blank');
+    if (tab) {
+      tab.opener = null;
+    }
+
     try {
       const blob = await downloadPortalDocumento(documento.id);
       const url = URL.createObjectURL(blob);
-      window.open(url, '_blank', 'noopener,noreferrer');
+      if (tab) {
+        tab.location.href = url;
+      } else {
+        window.open(url, '_blank', 'noopener,noreferrer');
+      }
       setTimeout(() => URL.revokeObjectURL(url), 30000);
     } catch (error) {
+      tab?.close();
       toast.error(error instanceof Error ? error.message : 'Erro ao abrir documento');
     }
   }

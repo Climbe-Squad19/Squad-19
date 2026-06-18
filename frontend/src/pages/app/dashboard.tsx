@@ -48,6 +48,11 @@ export default function DashboardPage() {
       return;
     }
 
+    const tab = window.open('about:blank', '_blank');
+    if (tab) {
+      tab.opener = null;
+    }
+
     try {
       const documentsResponse = await listarDocumentosContrato(contractId);
       if (!documentsResponse.ok) {
@@ -56,6 +61,7 @@ export default function DashboardPage() {
 
       const documents: Array<{ id: number }> = await documentsResponse.json();
       if (documents.length === 0) {
+        tab?.close();
         alert('Nenhum documento encontrado para este contrato.');
         return;
       }
@@ -68,9 +74,14 @@ export default function DashboardPage() {
 
       const blob = await downloadResponse.blob();
       const url = URL.createObjectURL(blob);
-      window.open(url, '_blank', 'noopener,noreferrer');
+      if (tab) {
+        tab.location.href = url;
+      } else {
+        window.open(url, '_blank', 'noopener,noreferrer');
+      }
       setTimeout(() => URL.revokeObjectURL(url), 60_000);
     } catch (error) {
+      tab?.close();
       console.error('Erro ao abrir documento do contrato', error);
       alert('Não foi possível abrir o documento deste contrato.');
     }
