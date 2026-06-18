@@ -190,6 +190,7 @@ public class IntegracaoUsuarioService {
                     novo.setUsuario(usuario);
                     novo.setGoogleDrive(false);
                     novo.setGoogleCalendar(false);
+                    novo.setGoogleMeet(false);
                     novo.setGoogleSheets(false);
                     novo.setGmail(false);
                     return integracaoUsuarioRepository.save(novo);
@@ -203,6 +204,8 @@ public class IntegracaoUsuarioService {
                 return IntegracaoOAuthToken.ProvedorIntegracao.GOOGLEDRIVE;
             case "googlecalendar":
                 return IntegracaoOAuthToken.ProvedorIntegracao.GOOGLECALENDAR;
+            case "googlemeet":
+                return IntegracaoOAuthToken.ProvedorIntegracao.GOOGLEMEET;
             case "googlesheets":
                 return IntegracaoOAuthToken.ProvedorIntegracao.GOOGLESHEETS;
             case "gmail":
@@ -223,6 +226,9 @@ public class IntegracaoUsuarioService {
             case GOOGLECALENDAR:
                 item.setGoogleCalendar(conectado);
                 break;
+            case GOOGLEMEET:
+                item.setGoogleMeet(conectado);
+                break;
             case GOOGLESHEETS:
                 item.setGoogleSheets(conectado);
                 break;
@@ -240,6 +246,9 @@ public class IntegracaoUsuarioService {
                 return "https://www.googleapis.com/auth/drive.file https://www.googleapis.com/auth/drive.metadata.readonly";
             case GOOGLECALENDAR:
                 return "https://www.googleapis.com/auth/calendar";
+            case GOOGLEMEET:
+                return "https://www.googleapis.com/auth/meetings.space.readonly "
+                        + "https://www.googleapis.com/auth/drive.readonly";
             case GOOGLESHEETS:
                 return "https://www.googleapis.com/auth/spreadsheets";
             case GMAIL:
@@ -270,6 +279,7 @@ public class IntegracaoUsuarioService {
         return new IntegracoesUsuarioResponse(
                 item.isGoogleDrive(),
                 item.isGoogleCalendar(),
+                item.isGoogleMeet(),
                 item.isGoogleSheets(),
                 item.isGmail());
     }

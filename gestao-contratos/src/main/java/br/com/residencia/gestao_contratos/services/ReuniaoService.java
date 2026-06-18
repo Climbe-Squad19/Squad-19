@@ -14,12 +14,17 @@ import org.springframework.transaction.annotation.Transactional;
 import br.com.residencia.gestao_contratos.classes.Contrato;
 import br.com.residencia.gestao_contratos.classes.Empresa;
 import br.com.residencia.gestao_contratos.classes.Reuniao;
+import br.com.residencia.gestao_contratos.classes.ReuniaoGravacao;
 import br.com.residencia.gestao_contratos.classes.Usuario;
 import br.com.residencia.gestao_contratos.dtos.request.ReuniaoAtualizacaoRequest;
 import br.com.residencia.gestao_contratos.dtos.request.ReuniaoCriacaoRequest;
+import br.com.residencia.gestao_contratos.dtos.response.MeetInsightsResponse;
+import br.com.residencia.gestao_contratos.dtos.response.MeetRecordingItemResponse;
+import br.com.residencia.gestao_contratos.dtos.response.ReuniaoGravacaoResponse;
 import br.com.residencia.gestao_contratos.dtos.response.ReuniaoResponse;
 import br.com.residencia.gestao_contratos.repository.ContratoRepository;
 import br.com.residencia.gestao_contratos.repository.EmpresaRepository;
+import br.com.residencia.gestao_contratos.repository.ReuniaoGravacaoRepository;
 import br.com.residencia.gestao_contratos.repository.ReuniaoRepository;
 import br.com.residencia.gestao_contratos.repository.UsuarioRepository;
 
@@ -28,6 +33,9 @@ public class ReuniaoService {
 
     @Autowired
     private ReuniaoRepository reuniaoRepository;
+
+    @Autowired
+    private ReuniaoGravacaoRepository reuniaoGravacaoRepository;
 
     @Autowired
     private EmpresaRepository empresaRepository;
@@ -43,6 +51,9 @@ public class ReuniaoService {
 
     @Autowired
     private GoogleCalendarService googleCalendarService;
+
+    @Autowired
+    private GoogleMeetInsightsService googleMeetInsightsService;
 
     @Transactional
     public ReuniaoResponse agendar(ReuniaoCriacaoRequest request) {
@@ -132,6 +143,73 @@ public class ReuniaoService {
         return converterParaResponse(buscarEntidadePorId(id));
     }
 
+    public MeetInsightsResponse obterInsightsMeet(Long id) {
+        Reuniao reuniao = buscarEntidadePorId(id);
+        validarReuniaoGoogleMeet(reuniao);
+        return googleMeetInsightsService.obterInsightsDoMeet(reuniao.getLinkOnline());
+    }
+
+    @Transactional
+    public List<ReuniaoGravacaoResponse> sincronizarGravacoesMeet(Long id) {
+        Reuniao reuniao = buscarEntidadePorId(id);
+        validarReuniaoGoogleMeet(reuniao);
+
+        MeetInsightsResponse insights = googleMeetInsightsService.obterInsightsDoMeet(reuniao.getLinkOnline());
+        LocalDateTime agora = LocalDateTime.now();
+
+        for (MeetRecordingItemResponse item : insights.getGravacoes()) {
+            if (item.getNome() == null || item.getNome().isBlank()) {
+                continue;
+            }
+
+            ReuniaoGravacao gravacao = reuniaoGravacaoRepository.findByRecordingName(item.getNome())
+                    .orElseGet(ReuniaoGravacao::new);
+            gravacao.setReuniao(reuniao);
+            gravacao.setMeetingCode(insights.getMeetingCode());
+            gravacao.setRecordingName(item.getNome());
+            gravacao.setEstado(item.getEstado());
+            gravacao.setDriveFile(item.getArquivoDrive());
+            gravacao.setUrl(item.getUrl());
+            gravacao.setUltimaSincronizacao(agora);
+
+            reuniaoGravacaoRepository.save(gravacao);
+        }
+
+        return listarGravacoesMeet(id);
+    }
+
+    @Transactional
+    public int sincronizarGravacoesMeetEmLote(int diasRetroativos) {
+        LocalDateTime limite = LocalDateTime.now().minusDays(Math.max(diasRetroativos, 1));
+        int reunioesAtualizadas = 0;
+
+        List<Reuniao> candidatas = reuniaoRepository.findAll().stream()
+                .filter(reuniao -> !reuniao.isPresencial())
+                .filter(reuniao -> reuniao.getLinkOnline() != null && reuniao.getLinkOnline().contains("meet.google.com"))
+                .filter(reuniao -> reuniao.getDataHora() != null && reuniao.getDataHora().isAfter(limite))
+                .toList();
+
+        for (Reuniao reuniao : candidatas) {
+            try {
+                List<ReuniaoGravacaoResponse> gravacoes = sincronizarGravacoesMeet(reuniao.getId());
+                if (!gravacoes.isEmpty()) {
+                    reunioesAtualizadas++;
+                }
+            } catch (RuntimeException ex) {
+                // Falha em uma reunião não deve interromper o lote completo.
+            }
+        }
+
+        return reunioesAtualizadas;
+    }
+
+    public List<ReuniaoGravacaoResponse> listarGravacoesMeet(Long id) {
+        buscarEntidadePorId(id);
+        return reuniaoGravacaoRepository.findByReuniaoIdOrderByUltimaSincronizacaoDesc(id).stream()
+                .map(this::converterGravacaoParaResponse)
+                .collect(Collectors.toList());
+    }
+
     @Transactional
     public void cancelar(Long id) {
         Reuniao reuniao = buscarEntidadePorId(id);
@@ -142,6 +220,32 @@ public class ReuniaoService {
     private Reuniao buscarEntidadePorId(Long id) {
         return reuniaoRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Reunião não encontrada"));
+    }
+
+    private void validarReuniaoGoogleMeet(Reuniao reuniao) {
+        if (reuniao.isPresencial()) {
+            throw new IllegalArgumentException("A reunião informada é presencial e não possui dados de Meet");
+        }
+
+        if (reuniao.getLinkOnline() == null || reuniao.getLinkOnline().isBlank()) {
+            throw new IllegalArgumentException("A reunião não possui link online");
+        }
+
+        if (!reuniao.getLinkOnline().contains("meet.google.com")) {
+            throw new IllegalArgumentException("A reunião não está vinculada a um Google Meet");
+        }
+    }
+
+    private ReuniaoGravacaoResponse converterGravacaoParaResponse(ReuniaoGravacao gravacao) {
+        return new ReuniaoGravacaoResponse(
+                gravacao.getId(),
+                gravacao.getReuniao().getId(),
+                gravacao.getMeetingCode(),
+                gravacao.getRecordingName(),
+                gravacao.getEstado(),
+                gravacao.getDriveFile(),
+                gravacao.getUrl(),
+                gravacao.getUltimaSincronizacao());
     }
 
     private ReuniaoResponse converterParaResponse(Reuniao reuniao) {
