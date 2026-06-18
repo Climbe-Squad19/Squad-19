@@ -44,6 +44,13 @@ public class EmpresaController {
         return new ResponseEntity<>(empresaService.criar(request), HttpStatus.CREATED);
     }
 
+    /** Endpoint público para auto-cadastro da empresa pelo portal (sem autenticação). */
+    @PostMapping("/registro")
+    public ResponseEntity<EmpresaResponse> registro(
+            @RequestBody EmpresaCriacaoRequest request) {
+        return new ResponseEntity<>(empresaService.criar(request), HttpStatus.CREATED);
+    }
+
     @PutMapping("/{id}")
     public ResponseEntity<EmpresaResponse> update(
             @PathVariable Long id,
