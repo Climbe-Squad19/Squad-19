@@ -79,6 +79,16 @@ public class PropostaController {
                 propostaService.atualizarStatus(id, status, motivoRecusa));
     }
 
+    @PutMapping("/portal/{id}/status")
+    public ResponseEntity<PropostaResponse> responderPeloPortal(
+            @PathVariable Long id,
+            @RequestParam Long empresaId,
+            @RequestParam Proposta.StatusProposta status,
+            @RequestParam(required = false) String motivoRecusa) {
+        return ResponseEntity.ok(
+                propostaService.responderPeloPortal(empresaId, id, status, motivoRecusa));
+    }
+
     @GetMapping("/{id}/external")
     public ResponseEntity<String> getPropostaExterna(@PathVariable Long id) {
         return ResponseEntity.ok(apiIntegrationService.buscarPropostaExterna(id));

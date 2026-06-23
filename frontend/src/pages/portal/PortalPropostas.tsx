@@ -4,15 +4,15 @@ import { useEffect, useMemo, useState } from 'react';
 import { toast } from 'sonner';
 import ProposalDetailModal from '../../components/modals/proposal-detail-modal';
 import { buildProposalColumns } from '../../hooks/use-proposals';
-import { criarPortalProposta, fetchPortalPropostas, updatePortalPropostaStatus, getPortalEmpresaId } from '../../services/portal';
-import type { ProposalCardItem } from '../../types';
+import { criarPortalProposta, fetchPortalPropostas, getPortalEmpresaId, updatePortalPropostaStatus } from '../../services/portal';
 import type { PropostaApiResponse } from '../../services/business';
+import type { ProposalCardItem } from '../../types';
 
 const SERVICOS = [
   'Valuation',
   'BPO Financeiro',
   'CFO Sob Demanda',
-  'Fusões & Aquisições (M&A)',
+  'Fusoes & Aquisicoes (M&A)',
   'Contabilidade',
 ];
 
@@ -30,6 +30,7 @@ export default function PortalPropostasPage() {
 
   const empresaId = getPortalEmpresaId();
   const proposalBoard = useMemo(() => buildProposalColumns(propostas), [propostas]);
+  const empresaPodeResponder = selectedProposalDetail?.createdByClimbe === true;
 
   const reloadPropostas = async () => {
     if (!empresaId) return;
@@ -49,8 +50,10 @@ export default function PortalPropostasPage() {
   }, [empresaId]);
 
   async function handleUpdateStatus(propostaId: number, status: 'ACEITA' | 'RECUSADA', motivo?: string) {
+    if (!empresaId) return;
+
     try {
-      await updatePortalPropostaStatus(propostaId, status, motivo);
+      await updatePortalPropostaStatus(empresaId, propostaId, status, motivo);
       await reloadPropostas();
       toast.success(`Proposta ${status === 'ACEITA' ? 'aceita' : 'recusada'} com sucesso.`);
     } catch (error) {
@@ -96,14 +99,14 @@ export default function PortalPropostasPage() {
             <div className="panel-header">
               <div>
                 <h3>Nova proposta</h3>
-                <span>Envie uma solicitação para a Climbe avaliar</span>
+                <span>Envie uma solicitacao para a Climbe avaliar</span>
               </div>
-              <button type="button" className="icon-button" onClick={() => setShowForm(false)}>×</button>
+              <button type="button" className="icon-button" onClick={() => setShowForm(false)}>x</button>
             </div>
 
             <div className="agenda-form">
               <label>
-                Serviço
+                Servico
                 <select
                   value={formServico}
                   onChange={(event) => {
@@ -119,10 +122,10 @@ export default function PortalPropostasPage() {
                 </select>
               </label>
               {!isValuationService ? (
-              <label>
-                Valor mensal (R$)
-                <input type="number" min="0" value={formValorMensal} onChange={(event) => setFormValorMensal(event.target.value)} />
-              </label>
+                <label>
+                  Valor mensal (R$)
+                  <input type="number" min="0" value={formValorMensal} onChange={(event) => setFormValorMensal(event.target.value)} />
+                </label>
               ) : null}
               <label>
                 Valor setup (R$)
@@ -148,7 +151,7 @@ export default function PortalPropostasPage() {
         <div className="section-topbar">
           <div>
             <h3>Propostas</h3>
-            <span>Envie propostas e responda as propostas recebidas</span>
+            <span>Envie propostas e responda as propostas recebidas da Climbe</span>
           </div>
           <div className="section-actions">
             <button type="button" className="button button--primary section-create-button" onClick={() => setShowForm(true)}>
@@ -210,10 +213,9 @@ export default function PortalPropostasPage() {
       <ProposalDetailModal
         detail={selectedProposalDetail}
         onClose={() => setSelectedProposalDetail(null)}
-        onApprove={(id) => handleUpdateStatus(id, 'ACEITA')}
-        onReject={(id, motivo) => handleUpdateStatus(id, 'RECUSADA', motivo)}
+        onApprove={empresaPodeResponder ? (id) => handleUpdateStatus(id, 'ACEITA') : undefined}
+        onReject={empresaPodeResponder ? (id, motivo) => handleUpdateStatus(id, 'RECUSADA', motivo) : undefined}
       />
     </>
   );
 }
-

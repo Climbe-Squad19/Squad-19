@@ -19,6 +19,8 @@ export default function ProposalsPage() {
   const { search } = useOutletContext<{ search: string }>();
   const { proposalBoard, aprovarProposta, recusarProposta, reloadProposals, enviarParaAprovacao } = useProposals();
   const [selectedProposalDetail, setSelectedProposalDetail] = useState<(ProposalCardItem & { stage: string }) | null>(null);
+  const funcionarioPodeResponder = selectedProposalDetail?.createdByClimbe === false;
+  const funcionarioPodeEnviar = selectedProposalDetail?.createdByClimbe === true;
 
   // Nova proposta
   const [showForm, setShowForm] = useState(false);
@@ -234,9 +236,9 @@ export default function ProposalsPage() {
       <ProposalDetailModal
         detail={selectedProposalDetail}
         onClose={() => setSelectedProposalDetail(null)}
-        onApprove={aprovarProposta}
-        onReject={recusarProposta}
-        onEnviar={enviarParaAprovacao}
+        onApprove={funcionarioPodeResponder ? aprovarProposta : undefined}
+        onReject={funcionarioPodeResponder ? recusarProposta : undefined}
+        onEnviar={funcionarioPodeEnviar ? enviarParaAprovacao : undefined}
       />
     </>
   );

@@ -131,6 +131,7 @@ export function criarPortalProposta(empresaId: number, payload: Omit<PropostaCri
 }
 
 export function updatePortalPropostaStatus(
+  empresaId: number,
   propostaId: number,
   status: 'ACEITA' | 'RECUSADA',
   motivoRecusa?: string
@@ -139,7 +140,7 @@ export function updatePortalPropostaStatus(
   if (status === 'RECUSADA') {
     params.append('motivoRecusa', motivoRecusa || 'Recusado pelo contratante');
   }
-  return fetch(`${API_BASE_URL}/propostas/${propostaId}/status?${params.toString()}`, {
+  return fetch(`${API_BASE_URL}/propostas/portal/${propostaId}/status?empresaId=${encodeURIComponent(String(empresaId))}&${params.toString()}`, {
     method: 'PUT',
     headers: buildPortalAuthHeaders(false),
   }).then(async (response) => {

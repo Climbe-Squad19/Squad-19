@@ -44,6 +44,7 @@ export const buildProposalColumns = (propostas: PropostaApiResponse[]): Proposal
           rejectionReason: proposta.motivoRecusa ?? proposta.motivoDaRecusa ?? proposta.justificativaRecusa ?? undefined,
           linkGoogleDrive: proposta.linkGoogleDrive ?? undefined,
           status: proposta.status,
+          createdByClimbe: Boolean(proposta.criadoPorId),
         };
       }),
   }));

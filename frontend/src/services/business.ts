@@ -4,6 +4,8 @@ export type PropostaApiResponse = {
   id: number;
   empresaId: number;
   nomeEmpresa: string;
+  criadoPorId?: number | null;
+  nomeCriadoPor?: string | null;
   servicoContratado: string;
   valorMensal?: number | null;
   status: string;
