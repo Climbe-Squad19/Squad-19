@@ -35,6 +35,9 @@ public class ContratoService {
     @Autowired
     private UsuarioRepository usuarioRepository;
 
+    @Autowired
+    private NotificacaoInternaService notificacaoInternaService;
+
     // chamado pelo PropostaService quando proposta é aceita
     @Transactional
     public Contrato gerarContratoAPartirDeProposta(Proposta proposta) {
@@ -63,7 +66,9 @@ public class ContratoService {
         contrato.setTipoServico(proposta.getServicoContratado());
         contrato.setStatus(Contrato.StatusContrato.ATIVO);
         contrato.setDataCriacao(LocalDateTime.now());
-        return contratoRepository.save(contrato);
+        Contrato salvo = contratoRepository.save(contrato);
+        notificarContratoGerado(salvo);
+        return salvo;
     }
 
     // criação manual de contrato
@@ -102,6 +107,7 @@ public class ContratoService {
         contrato.setDataCriacao(LocalDateTime.now());
 
         Contrato salvo = contratoRepository.save(contrato);
+        notificarContratoGerado(salvo);
         return converterParaResponse(salvo);
     }
 
@@ -179,6 +185,14 @@ public class ContratoService {
     private Contrato buscarEntidadePorId(Long id) {
         return contratoRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Contrato não encontrado"));
+    }
+
+    private void notificarContratoGerado(Contrato contrato) {
+        notificacaoInternaService.notificarOperacaoEUsuario(
+                contrato.getUsuarioResponsavel(),
+                String.format(
+                        "Contrato gerado para %s: anexe os documentos necessarios.",
+                        contrato.getEmpresa().getRazaoSocial()));
     }
 
     private ContratoResponse converterParaResponse(Contrato contrato) {

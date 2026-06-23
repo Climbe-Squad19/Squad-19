@@ -38,6 +38,9 @@ public class PropostaService {
     @Autowired
     private EmailService emailService;
 
+    @Autowired
+    private NotificacaoInternaService notificacaoInternaService;
+
     private static final List<Cargo> CARGOS_AUTORIZADOS = List.of(
         Cargo.CMO,
         Cargo.CSO,
@@ -84,6 +87,12 @@ public class PropostaService {
         proposta.setDataCriacao(LocalDateTime.now());
 
         Proposta salva = propostaRepository.save(proposta);
+        notificacaoInternaService.notificarOperacaoEUsuario(
+                usuarioLogado,
+                String.format(
+                        "Proposta enviada para %s: %s.",
+                        salva.getEmpresa().getRazaoSocial(),
+                        salva.getServicoContratado()));
 
         try {
             List<Cargo> cargosLideranca = List.of(Cargo.CEO, Cargo.CFO, Cargo.CMO, Cargo.CSO);
@@ -120,6 +129,11 @@ public class PropostaService {
         proposta.setDataCriacao(LocalDateTime.now());
 
         Proposta salva = propostaRepository.save(proposta);
+        notificacaoInternaService.notificarOperacao(
+                String.format(
+                        "Proposta recebida de %s: %s.",
+                        salva.getEmpresa().getRazaoSocial(),
+                        salva.getServicoContratado()));
         return converterParaResponse(salva);
     }
 
@@ -150,6 +164,7 @@ public class PropostaService {
         }
 
         Proposta atualizada = propostaRepository.save(proposta);
+        notificarMudancaStatus(atualizada, novoStatus);
 
         if (novoStatus == Proposta.StatusProposta.ACEITA) {
             contratoService.gerarContratoAPartirDeProposta(atualizada);
@@ -177,12 +192,28 @@ public class PropostaService {
     public void inativar(Long id) {
         Proposta proposta = buscarEntidadePorId(id);
         proposta.setStatus(Proposta.StatusProposta.RECUSADA);
-        propostaRepository.save(proposta);
+        Proposta recusada = propostaRepository.save(proposta);
+        notificarMudancaStatus(recusada, Proposta.StatusProposta.RECUSADA);
     }
 
     private Proposta buscarEntidadePorId(Long id) {
         return propostaRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Proposta não encontrada"));
+    }
+
+    private void notificarMudancaStatus(Proposta proposta, Proposta.StatusProposta status) {
+        String nomeEmpresa = proposta.getEmpresa().getRazaoSocial();
+        String servico = proposta.getServicoContratado();
+        String mensagem = switch (status) {
+            case ENVIADA -> String.format("Proposta enviada para %s: %s.", nomeEmpresa, servico);
+            case ACEITA -> String.format("Proposta aceita por %s: %s.", nomeEmpresa, servico);
+            case RECUSADA -> String.format("Proposta recusada por %s: %s.", nomeEmpresa, servico);
+            default -> null;
+        };
+
+        if (mensagem != null) {
+            notificacaoInternaService.notificarOperacaoEUsuario(proposta.getCriadoPor(), mensagem);
+        }
     }
 
     private PropostaResponse converterParaResponse(Proposta proposta) {

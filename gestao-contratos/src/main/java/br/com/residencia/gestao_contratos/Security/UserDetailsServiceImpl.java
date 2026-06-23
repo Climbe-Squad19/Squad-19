@@ -11,6 +11,7 @@ import org.springframework.stereotype.Service;
 import br.com.residencia.gestao_contratos.classes.Usuario;
 import br.com.residencia.gestao_contratos.repository.UsuarioRepository;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -35,11 +36,17 @@ public class UserDetailsServiceImpl implements UserDetailsService {
                 && sit != Usuario.SituacaoUsuario.PENDENTE
                 && sit != Usuario.SituacaoUsuario.INATIVO;
 
-        List<SimpleGrantedAuthority> authorities = usuario.getPermissoes() == null ? List.of()
+        List<SimpleGrantedAuthority> authorities = usuario.getPermissoes() == null ? new ArrayList<>()
                 : usuario.getPermissoes()
                 .stream()
                 .map(cargo -> new SimpleGrantedAuthority("ROLE_" + cargo.name()))
-                .collect(Collectors.toList());
+                .collect(Collectors.toCollection(ArrayList::new));
+        if (usuario.getCargo() != null) {
+            SimpleGrantedAuthority cargoPrincipal = new SimpleGrantedAuthority("ROLE_" + usuario.getCargo().name());
+            if (!authorities.contains(cargoPrincipal)) {
+                authorities.add(cargoPrincipal);
+            }
+        }
 
         return User.builder()
                 .username(usuario.getEmail())

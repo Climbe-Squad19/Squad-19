@@ -1,7 +1,10 @@
 package br.com.residencia.gestao_contratos.services;
 
 import java.time.LocalDateTime;
+import java.util.Collection;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -18,6 +21,18 @@ public class NotificacaoInternaService {
 
     private static final List<Cargo> CARGOS_NOTIFICAR = List.of(
             Cargo.CEO, Cargo.COMPLIANCE, Cargo.MEMBRO_CONSELHO);
+    private static final List<Cargo> CARGOS_OPERACIONAIS = List.of(
+            Cargo.COMPLIANCE,
+            Cargo.CEO,
+            Cargo.MEMBRO_CONSELHO,
+            Cargo.CSO,
+            Cargo.CMO,
+            Cargo.CFO,
+            Cargo.ANALISTA_TRAINEE,
+            Cargo.ANALISTA_JUNIOR,
+            Cargo.ANALISTA_PLENO,
+            Cargo.ANALISTA_SENIOR,
+            Cargo.ANALISTA_BPO);
 
     private final NotificacaoInternaRepository notificacaoInternaRepository;
     private final UsuarioRepository usuarioRepository;
@@ -34,8 +49,36 @@ public class NotificacaoInternaService {
         List<Usuario> destinatarios = usuarioRepository.findByAtivoTrueAndSituacaoAndCargoIn(
                 Usuario.SituacaoUsuario.ATIVO,
                 CARGOS_NOTIFICAR);
+        criarNotificacoes(destinatarios, mensagem);
+    }
+
+    @Transactional
+    public void notificarOperacao(String mensagem) {
+        List<Usuario> destinatarios = usuarioRepository.findByAtivoTrueAndSituacaoAndCargoIn(
+                Usuario.SituacaoUsuario.ATIVO,
+                CARGOS_OPERACIONAIS);
+        criarNotificacoes(destinatarios, mensagem);
+    }
+
+    @Transactional
+    public void notificarOperacaoEUsuario(Usuario usuario, String mensagem) {
+        List<Usuario> destinatarios = usuarioRepository.findByAtivoTrueAndSituacaoAndCargoIn(
+                Usuario.SituacaoUsuario.ATIVO,
+                CARGOS_OPERACIONAIS);
+        if (usuario != null) {
+            destinatarios = new java.util.ArrayList<>(destinatarios);
+            destinatarios.add(usuario);
+        }
+        criarNotificacoes(destinatarios, mensagem);
+    }
+
+    private void criarNotificacoes(Collection<Usuario> destinatarios, String mensagem) {
         LocalDateTime agora = LocalDateTime.now();
+        Set<Long> usuariosNotificados = new HashSet<>();
         for (Usuario u : destinatarios) {
+            if (u == null || u.getId() == null || !usuariosNotificados.add(u.getId())) {
+                continue;
+            }
             NotificacaoInterna n = new NotificacaoInterna();
             n.setUsuario(u);
             n.setMensagem(mensagem);
