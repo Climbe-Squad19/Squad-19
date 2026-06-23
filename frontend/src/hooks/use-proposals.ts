@@ -31,19 +31,21 @@ export const buildProposalColumns = (propostas: PropostaApiResponse[]): Proposal
     title: stage,
     items: propostas
       .filter((proposta) => statusToProposalStage(proposta.status) === stage)
-      .map((proposta) => ({
-        id: proposta.id,
-        company: proposta.nomeEmpresa,
-        tag: serviceTagFromText(proposta.servicoContratado || ''),
-        amount: `R$ ${Number(proposta.valorMensal || 0).toLocaleString('pt-BR')}`,
-        createdLabel: proposta.dataCriacao
-          ? `criada em ${new Date(proposta.dataCriacao).toLocaleDateString('pt-BR')}`
-          : 'criada recentemente',
-        rejectionReason: proposta.motivoRecusa ?? proposta.motivoDaRecusa ?? proposta.justificativaRecusa ?? undefined,
-        linkGoogleDrive: proposta.linkGoogleDrive ?? undefined,
-        status: proposta.status,
-        criadoPorId: proposta.criadoPorId ?? null,
-      })),
+      .map((proposta) => {
+        const tag = serviceTagFromText(proposta.servicoContratado || '');
+        return {
+          id: proposta.id,
+          company: proposta.nomeEmpresa,
+          tag,
+          amount: tag === 'Valuation' ? '' : `R$ ${Number(proposta.valorMensal || 0).toLocaleString('pt-BR')}`,
+          createdLabel: proposta.dataCriacao
+            ? `criada em ${new Date(proposta.dataCriacao).toLocaleDateString('pt-BR')}`
+            : 'criada recentemente',
+          rejectionReason: proposta.motivoRecusa ?? proposta.motivoDaRecusa ?? proposta.justificativaRecusa ?? undefined,
+          linkGoogleDrive: proposta.linkGoogleDrive ?? undefined,
+          status: proposta.status,
+        };
+      }),
   }));
 
 export function useProposals() {

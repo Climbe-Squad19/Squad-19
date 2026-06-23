@@ -105,10 +105,12 @@ export default function ProposalDetailModal({ detail, onClose, onApprove, onReje
             <span>Serviço</span>
             <strong>{detail.tag}</strong>
           </article>
-          <article className="team-member-meta-item">
-            <span>Valor</span>
-            <strong>{detail.amount}</strong>
-          </article>
+          {detail.amount ? (
+            <article className="team-member-meta-item">
+              <span>Valor</span>
+              <strong>{detail.amount}</strong>
+            </article>
+          ) : null}
           <article className="team-member-meta-item team-member-meta-item--full">
             <span>Histórico</span>
             <strong>{detail.createdLabel}</strong>

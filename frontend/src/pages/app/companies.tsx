@@ -10,6 +10,7 @@ import { useAppSelector } from '../../store/hooks';
 import { uploadDocumentoContrato } from '../../services/contratos-documentos';
 import { listarDocumentosContrato, downloadDocumentoContrato } from '../../services/contratos-documentos';
 import { downloadDocumentoEmpresa } from '../../services/business';
+import { createEmpresa } from '../../services/empresas';
 
 export default function CompaniesPage() {
   const { search } = useOutletContext<{ search: string }>();
@@ -40,6 +41,7 @@ export default function CompaniesPage() {
   const [docsModal, setDocsModal] = useState<{ contratoId: number; docs: { id: number; nomeArquivo: string }[] } | null>(null);
 
   const searchTerm = search.trim().toLowerCase();
+  const canCreateCompany = profile.role === 'CEO';
   const filteredCompanies = useMemo(
     () =>
       companies.filter((company) =>
@@ -137,16 +139,30 @@ export default function CompaniesPage() {
 
   async function handleCreateCompany(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
+    if (!canCreateCompany) {
+      setCompanyFormError('Apenas usuarios com cargo CEO podem cadastrar novas empresas parceiras.');
+      return;
+    }
     setCompanyFormSubmitting(true);
     setCompanyFormError('');
     try {
-      const fakeEmpresa = mapEmpresaToCard({
-        id: Date.now(),
+      const empresaCriada = await createEmpresa({
         razaoSocial: companyFormName,
+        nomeFantasia: companyFormName,
         cnpj: companyFormDocument,
-        ativa: companyFormStatus === 'Ativa',
-        dataCadastro: new Date().toISOString(),
+        logradouro: '',
+        numero: '',
+        bairro: '',
+        cidade: '',
+        uf: '',
+        cep: '',
+        telefone: '',
+        emailContato: '',
+        nomeRepresentante: '',
+        cpfRepresentante: '',
+        contatoRepresentante: '',
       });
+      const fakeEmpresa = mapEmpresaToCard(empresaCriada);
       fakeEmpresa.tags = companyFormTags.split(',').map((tag) => tag.trim()).filter(Boolean);
       setCompanies((current) => [fakeEmpresa, ...current]);
       resetForm();
@@ -406,7 +422,17 @@ export default function CompaniesPage() {
               <h3>Empresas</h3>
               <span>{filteredCompanies.length} empresa(s) listada(s)</span>
             </div>
-            <div className="section-actions"></div>
+            <div className="section-actions">
+              {canCreateCompany ? (
+                <button
+                  type="button"
+                  className="button button--primary section-create-button"
+                  onClick={() => setShowCompanyCreatePanel(true)}
+                >
+                  + Nova empresa
+                </button>
+              ) : null}
+            </div>
           </div>
 
           {showCompanyCreatePanel ? (

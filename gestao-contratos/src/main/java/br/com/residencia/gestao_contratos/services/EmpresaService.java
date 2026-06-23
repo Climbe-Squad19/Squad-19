@@ -5,14 +5,20 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.server.ResponseStatusException;
 
+import br.com.residencia.gestao_contratos.classes.Cargo;
 import br.com.residencia.gestao_contratos.classes.Empresa;
+import br.com.residencia.gestao_contratos.classes.Usuario;
 import br.com.residencia.gestao_contratos.dtos.request.EmpresaAtualizacaoRequest;
 import br.com.residencia.gestao_contratos.dtos.request.EmpresaCriacaoRequest;
 import br.com.residencia.gestao_contratos.dtos.response.EmpresaResponse;
 import br.com.residencia.gestao_contratos.repository.EmpresaRepository;
+import br.com.residencia.gestao_contratos.repository.UsuarioRepository;
 
 @Service
 public class EmpresaService {
@@ -20,8 +26,12 @@ public class EmpresaService {
     @Autowired
     private EmpresaRepository empresaRepository;
 
+    @Autowired
+    private UsuarioRepository usuarioRepository;
+
     @Transactional
     public EmpresaResponse criar(EmpresaCriacaoRequest request) {
+        exigirCeoParaCriarEmpresa();
 
         // req 9b — unicidade do CNPJ
         if (empresaRepository.existsByCnpj(request.getCnpj()))
@@ -91,6 +101,17 @@ public class EmpresaService {
     private Empresa buscarEntidadePorId(Long id) {
         return empresaRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Empresa não encontrada"));
+    }
+
+    private void exigirCeoParaCriarEmpresa() {
+        String email = SecurityContextHolder.getContext().getAuthentication().getName();
+        Usuario usuario = usuarioRepository.findByEmailIgnoreCase(email)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Sessao invalida"));
+
+        if (usuario.getCargo() != Cargo.CEO) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN,
+                    "Apenas usuarios com cargo CEO podem cadastrar novas empresas parceiras.");
+        }
     }
 
     private EmpresaResponse converterParaResponse(Empresa empresa) {

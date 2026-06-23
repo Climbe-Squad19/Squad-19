@@ -26,6 +26,7 @@ export default function PortalPropostasPage() {
   const [formValorSetup, setFormValorSetup] = useState('');
   const [formLink, setFormLink] = useState('');
   const [formSubmitting, setFormSubmitting] = useState(false);
+  const isValuationService = formServico === 'Valuation';
 
   const empresaId = getPortalEmpresaId();
   const proposalBoard = useMemo(() => buildProposalColumns(propostas), [propostas]);
@@ -60,8 +61,8 @@ export default function PortalPropostasPage() {
 
   async function handleCriarProposta() {
     if (!empresaId) return;
-    if (!formValorMensal || Number.isNaN(Number(formValorMensal))) {
-      toast.error('Informe um valor mensal válido.');
+    if (!isValuationService && (!formValorMensal || Number.isNaN(Number(formValorMensal)))) {
+      toast.error('Informe um valor mensal valido.');
       return;
     }
 
@@ -69,7 +70,7 @@ export default function PortalPropostasPage() {
     try {
       await criarPortalProposta(empresaId, {
         servicoContratado: formServico,
-        valorMensal: Number(formValorMensal),
+        valorMensal: isValuationService ? undefined : Number(formValorMensal),
         valorSetup: formValorSetup ? Number(formValorSetup) : undefined,
         linkGoogleDrive: formLink || undefined,
       });
@@ -103,16 +104,26 @@ export default function PortalPropostasPage() {
             <div className="agenda-form">
               <label>
                 Serviço
-                <select value={formServico} onChange={(event) => setFormServico(event.target.value)}>
+                <select
+                  value={formServico}
+                  onChange={(event) => {
+                    setFormServico(event.target.value);
+                    if (event.target.value === 'Valuation') {
+                      setFormValorMensal('');
+                    }
+                  }}
+                >
                   {SERVICOS.map((servico) => (
                     <option key={servico} value={servico}>{servico}</option>
                   ))}
                 </select>
               </label>
+              {!isValuationService ? (
               <label>
                 Valor mensal (R$)
                 <input type="number" min="0" value={formValorMensal} onChange={(event) => setFormValorMensal(event.target.value)} />
               </label>
+              ) : null}
               <label>
                 Valor setup (R$)
                 <input type="number" min="0" value={formValorSetup} onChange={(event) => setFormValorSetup(event.target.value)} />
@@ -124,7 +135,7 @@ export default function PortalPropostasPage() {
             </div>
 
             <div className="dialog-actions">
-              <button type="button" className="button button--outline" onClick={() => setShowForm(false)}>Cancelar</button>
+              <button type="button" className="button button--outline" onClick={() => setShowForm(false)}>Fechar</button>
               <button type="button" className="button button--primary" disabled={formSubmitting} onClick={() => void handleCriarProposta()}>
                 {formSubmitting ? 'Enviando...' : 'Enviar proposta'}
               </button>
@@ -168,7 +179,7 @@ export default function PortalPropostasPage() {
                       <article key={`${column.title}-${item.id}`} className={`proposal-card portal-proposal-card ${statusClass}`}>
                         <div className="proposal-card-top">
                           <strong>{item.company}</strong>
-                          <small>{item.amount}</small>
+                          {item.amount ? <small>{item.amount}</small> : null}
                         </div>
                         <div className="proposal-card-middle">
                           <span className={`proposal-chip proposal-chip--${item.tag.toLowerCase()}`}>{item.tag}</span>
@@ -206,3 +217,4 @@ export default function PortalPropostasPage() {
     </>
   );
 }
+
