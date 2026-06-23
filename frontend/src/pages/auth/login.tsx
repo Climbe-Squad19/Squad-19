@@ -78,6 +78,13 @@ export function Login() {
           </div>
         </form>
 
+        <Link
+          to="/portal/login"
+          className="w-full max-w-79 border border-zinc-700 flex py-2 items-center justify-center gap-3 rounded-md text-sm font-bold text-zinc-100 hover:bg-zinc-900 transition-all"
+        >
+          Entrar como empresa
+        </Link>
+
         {oauthError && (
           <p className="text-red-400 text-sm text-center w-full max-w-79">
             Erro ao entrar com Google: {decodeURIComponent(oauthError).replace(/_/g, ' ')}

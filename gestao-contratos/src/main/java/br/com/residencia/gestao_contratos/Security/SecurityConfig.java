@@ -65,7 +65,6 @@ public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
         .csrf(csrf -> csrf.disable())
         .authorizeHttpRequests(auth -> auth
             .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
-            .requestMatchers("/documentos/**").permitAll()
             .requestMatchers("/auth/**").permitAll()
             .requestMatchers(HttpMethod.POST, "/empresas/registro").permitAll()
             .requestMatchers("/integracoes/google/callback").permitAll()
