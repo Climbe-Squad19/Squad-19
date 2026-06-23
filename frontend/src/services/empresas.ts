@@ -1,4 +1,4 @@
-import { API_BASE_URL, buildAuthHeaders } from './api';
+import { API_BASE_URL, buildAuthHeaders, parseApiErrorMessage } from './api';
 
 export type EmpresaApiResponse = {
   id: number;
@@ -45,8 +45,8 @@ export async function createEmpresa(payload: EmpresaCreatePayload): Promise<Empr
   });
 
   if (!response.ok) {
-    const message = await response.text();
-    throw new Error(message || 'Erro ao criar empresa');
+    const text = await response.text();
+    throw new Error(parseApiErrorMessage(text, response.status) || 'Erro ao criar empresa');
   }
 
   return response.json();

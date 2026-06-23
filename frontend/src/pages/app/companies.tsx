@@ -12,6 +12,43 @@ import { listarDocumentosContrato, downloadDocumentoContrato } from '../../servi
 import { downloadDocumentoEmpresa } from '../../services/business';
 import { createEmpresa } from '../../services/empresas';
 
+function onlyDigits(value: string) {
+  return value.replace(/\D/g, '');
+}
+
+function maskCnpj(value: string): string {
+  const digits = onlyDigits(value).slice(0, 14);
+  return digits
+    .replace(/^(\d{2})(\d)/, '$1.$2')
+    .replace(/^(\d{2})\.(\d{3})(\d)/, '$1.$2.$3')
+    .replace(/\.(\d{3})(\d)/, '.$1/$2')
+    .replace(/(\d{4})(\d)/, '$1-$2');
+}
+
+function maskCpf(value: string): string {
+  const digits = onlyDigits(value).slice(0, 11);
+  return digits
+    .replace(/^(\d{3})(\d)/, '$1.$2')
+    .replace(/^(\d{3})\.(\d{3})(\d)/, '$1.$2.$3')
+    .replace(/\.(\d{3})(\d)/, '.$1-$2');
+}
+
+function maskTelefone(value: string): string {
+  const digits = onlyDigits(value).slice(0, 11);
+  if (digits.length <= 10) {
+    return digits
+      .replace(/^(\d{2})(\d)/, '($1) $2')
+      .replace(/(\d{4})(\d)/, '$1-$2');
+  }
+  return digits
+    .replace(/^(\d{2})(\d)/, '($1) $2')
+    .replace(/(\d{5})(\d)/, '$1-$2');
+}
+
+function maskCep(value: string): string {
+  return onlyDigits(value).slice(0, 8).replace(/^(\d{5})(\d)/, '$1-$2');
+}
+
 export default function CompaniesPage() {
   const { search } = useOutletContext<{ search: string }>();
   const profile = useAppSelector((state) => state.profile);
@@ -30,9 +67,20 @@ export default function CompaniesPage() {
   } = useCompanies();
   const [showCompanyCreatePanel, setShowCompanyCreatePanel] = useState(false);
   const [companyFormName, setCompanyFormName] = useState('');
+  const [companyFormFantasyName, setCompanyFormFantasyName] = useState('');
   const [companyFormDocument, setCompanyFormDocument] = useState('');
+  const [companyFormEmail, setCompanyFormEmail] = useState('');
+  const [companyFormPhone, setCompanyFormPhone] = useState('');
+  const [companyFormRepresentative, setCompanyFormRepresentative] = useState('');
+  const [companyFormRepresentativeCpf, setCompanyFormRepresentativeCpf] = useState('');
+  const [companyFormRepresentativeContact, setCompanyFormRepresentativeContact] = useState('');
+  const [companyFormStreet, setCompanyFormStreet] = useState('');
+  const [companyFormNumber, setCompanyFormNumber] = useState('');
+  const [companyFormDistrict, setCompanyFormDistrict] = useState('');
+  const [companyFormCity, setCompanyFormCity] = useState('');
+  const [companyFormUf, setCompanyFormUf] = useState('');
+  const [companyFormCep, setCompanyFormCep] = useState('');
   const [companyFormTags, setCompanyFormTags] = useState('BPO');
-  const [companyFormStatus, setCompanyFormStatus] = useState<'Ativa' | 'Inativa'>('Ativa');
   const [companyFormSubmitting, setCompanyFormSubmitting] = useState(false);
   const [companyFormError, setCompanyFormError] = useState('');
   const [entityActionModal, setEntityActionModal] = useState<EntityActionModal | null>(null);
@@ -74,9 +122,20 @@ export default function CompaniesPage() {
 
   function resetForm() {
     setCompanyFormName('');
+    setCompanyFormFantasyName('');
     setCompanyFormDocument('');
+    setCompanyFormEmail('');
+    setCompanyFormPhone('');
+    setCompanyFormRepresentative('');
+    setCompanyFormRepresentativeCpf('');
+    setCompanyFormRepresentativeContact('');
+    setCompanyFormStreet('');
+    setCompanyFormNumber('');
+    setCompanyFormDistrict('');
+    setCompanyFormCity('');
+    setCompanyFormUf('');
+    setCompanyFormCep('');
     setCompanyFormTags('BPO');
-    setCompanyFormStatus('Ativa');
     setCompanyFormError('');
   }
 
@@ -147,20 +206,20 @@ export default function CompaniesPage() {
     setCompanyFormError('');
     try {
       const empresaCriada = await createEmpresa({
-        razaoSocial: companyFormName,
-        nomeFantasia: companyFormName,
-        cnpj: companyFormDocument,
-        logradouro: '',
-        numero: '',
-        bairro: '',
-        cidade: '',
-        uf: '',
-        cep: '',
-        telefone: '',
-        emailContato: '',
-        nomeRepresentante: '',
-        cpfRepresentante: '',
-        contatoRepresentante: '',
+        razaoSocial: companyFormName.trim(),
+        nomeFantasia: companyFormFantasyName.trim() || companyFormName.trim(),
+        cnpj: onlyDigits(companyFormDocument),
+        logradouro: companyFormStreet.trim(),
+        numero: companyFormNumber.trim(),
+        bairro: companyFormDistrict.trim(),
+        cidade: companyFormCity.trim(),
+        uf: companyFormUf.trim().toUpperCase(),
+        cep: onlyDigits(companyFormCep),
+        telefone: onlyDigits(companyFormPhone),
+        emailContato: companyFormEmail.trim(),
+        nomeRepresentante: companyFormRepresentative.trim(),
+        cpfRepresentante: onlyDigits(companyFormRepresentativeCpf),
+        contatoRepresentante: onlyDigits(companyFormRepresentativeContact),
       });
       const fakeEmpresa = mapEmpresaToCard(empresaCriada);
       fakeEmpresa.tags = companyFormTags.split(',').map((tag) => tag.trim()).filter(Boolean);
@@ -472,20 +531,95 @@ export default function CompaniesPage() {
                 </div>
                 <form className="agenda-form" onSubmit={handleCreateCompany}>
                   <label>
-                    Nome da empresa
+                    Razao social
                     <input type="text" value={companyFormName} onChange={(event) => setCompanyFormName(event.target.value)} required />
                   </label>
                   <label>
-                    Documento
-                    <input type="text" value={companyFormDocument} onChange={(event) => setCompanyFormDocument(event.target.value)} required />
+                    Nome fantasia
+                    <input type="text" value={companyFormFantasyName} onChange={(event) => setCompanyFormFantasyName(event.target.value)} />
+                  </label>
+                  <label>
+                    CNPJ
+                    <input
+                      type="text"
+                      value={companyFormDocument}
+                      onChange={(event) => setCompanyFormDocument(maskCnpj(event.target.value))}
+                      maxLength={18}
+                      required
+                    />
+                  </label>
+                  <label>
+                    Email de contato
+                    <input type="email" value={companyFormEmail} onChange={(event) => setCompanyFormEmail(event.target.value)} required />
+                  </label>
+                  <label>
+                    Telefone
+                    <input
+                      type="text"
+                      value={companyFormPhone}
+                      onChange={(event) => setCompanyFormPhone(maskTelefone(event.target.value))}
+                      maxLength={15}
+                    />
+                  </label>
+                  <label>
+                    Nome do responsavel
+                    <input type="text" value={companyFormRepresentative} onChange={(event) => setCompanyFormRepresentative(event.target.value)} />
+                  </label>
+                  <label>
+                    CPF do responsavel
+                    <input
+                      type="text"
+                      value={companyFormRepresentativeCpf}
+                      onChange={(event) => setCompanyFormRepresentativeCpf(maskCpf(event.target.value))}
+                      maxLength={14}
+                    />
+                  </label>
+                  <label>
+                    Contato do responsavel
+                    <input
+                      type="text"
+                      value={companyFormRepresentativeContact}
+                      onChange={(event) => setCompanyFormRepresentativeContact(maskTelefone(event.target.value))}
+                      maxLength={15}
+                    />
+                  </label>
+                  <label>
+                    Logradouro
+                    <input type="text" value={companyFormStreet} onChange={(event) => setCompanyFormStreet(event.target.value)} />
+                  </label>
+                  <label>
+                    Numero
+                    <input type="text" value={companyFormNumber} onChange={(event) => setCompanyFormNumber(event.target.value)} />
+                  </label>
+                  <label>
+                    Bairro
+                    <input type="text" value={companyFormDistrict} onChange={(event) => setCompanyFormDistrict(event.target.value)} />
+                  </label>
+                  <label>
+                    Cidade
+                    <input type="text" value={companyFormCity} onChange={(event) => setCompanyFormCity(event.target.value)} />
+                  </label>
+                  <label>
+                    UF
+                    <input
+                      type="text"
+                      value={companyFormUf}
+                      onChange={(event) => setCompanyFormUf(event.target.value.replace(/[^a-zA-Z]/g, '').slice(0, 2).toUpperCase())}
+                      maxLength={2}
+                    />
+                  </label>
+                  <label>
+                    CEP
+                    <input
+                      type="text"
+                      value={companyFormCep}
+                      onChange={(event) => setCompanyFormCep(maskCep(event.target.value))}
+                      maxLength={9}
+                    />
                   </label>
                   <label>
                     Categoria
                     <input type="text" value={companyFormTags} onChange={(event) => setCompanyFormTags(event.target.value)} required />
-                  </label>
-                  <label>
-                    Status
-                    <input type="text" value={companyFormStatus} onChange={(event) => setCompanyFormStatus(event.target.value === 'Inativa' ? 'Inativa' : 'Ativa')} />
                   </label>
                   {companyFormError ? <p className="form-error">{companyFormError}</p> : null}
                   <button type="submit" className="button button--primary" disabled={companyFormSubmitting}>
