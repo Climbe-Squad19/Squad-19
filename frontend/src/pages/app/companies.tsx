@@ -1,16 +1,17 @@
 import { Tooltip } from '@mui/material';
-import { Search } from 'lucide-react';
+import { CheckCircle, MoreVertical, Search, XCircle } from 'lucide-react';
 import { useMemo, useState, type FormEvent } from 'react';
 import { useOutletContext } from 'react-router-dom';
 import { companyReports } from '../../mocks/business.mock';
 import { useCompanies } from '../../hooks/use-companies';
 import { EntityActionModal } from '../../types';
 import EntityActionModalData from '../../components/modals/entity-action-modal';
-import { useAppSelector } from '../../store/hooks';
+import { useAppDispatch, useAppSelector } from '../../store/hooks';
 import { uploadDocumentoContrato } from '../../services/contratos-documentos';
 import { listarDocumentosContrato, downloadDocumentoContrato } from '../../services/contratos-documentos';
-import { downloadDocumentoEmpresa } from '../../services/business';
+import { downloadDocumentoEmpresa, validarDocumentoEmpresa } from '../../services/business';
 import { createEmpresa } from '../../services/empresas';
+import { openNotifications } from '../../store/uiSlice';
 
 function onlyDigits(value: string) {
   return value.replace(/\D/g, '');
@@ -49,8 +50,15 @@ function maskCep(value: string): string {
   return onlyDigits(value).slice(0, 8).replace(/^(\d{5})(\d)/, '$1-$2');
 }
 
+const DOCUMENT_REJECTION_REASONS = [
+  'Documento errado foi anexado',
+  'Documento ilegível',
+  'Documento desnecessário',
+];
+
 export default function CompaniesPage() {
   const { search } = useOutletContext<{ search: string }>();
+  const dispatch = useAppDispatch();
   const profile = useAppSelector((state) => state.profile);
   const {
     companies,
@@ -62,6 +70,7 @@ export default function CompaniesPage() {
     companyProposalsData,
     companyContractsData,
     companyDocumentsData,
+    setCompanyDocumentsData,
     companyMeetingsData,
     mapEmpresaToCard,
   } = useCompanies();
@@ -84,6 +93,9 @@ export default function CompaniesPage() {
   const [companyFormSubmitting, setCompanyFormSubmitting] = useState(false);
   const [companyFormError, setCompanyFormError] = useState('');
   const [entityActionModal, setEntityActionModal] = useState<EntityActionModal | null>(null);
+  const [documentActionId, setDocumentActionId] = useState<number | null>(null);
+  const [rejectingDocument, setRejectingDocument] = useState<(typeof companyDocumentsData)[number] | null>(null);
+  const [validatingDocumentId, setValidatingDocumentId] = useState<number | null>(null);
   const [uploadingContratoId, setUploadingContratoId] = useState<number | null>(null);
   const [uploadFeedback, setUploadFeedback] = useState<{ contratoId: number; message: string; ok: boolean } | null>(null);
   const [docsModal, setDocsModal] = useState<{ contratoId: number; docs: { id: number; nomeArquivo: string }[] } | null>(null);
@@ -193,6 +205,55 @@ export default function CompaniesPage() {
       tab?.close();
       console.error('Erro ao abrir documento da empresa', error);
       alert('Não foi possível abrir o documento anexado.');
+    }
+  }
+
+  async function handleValidateCompanyDocument(item: (typeof companyDocumentsData)[number]) {
+    if (!item.id || !profile.id) {
+      dispatch(openNotifications('Não foi possível validar o documento.'));
+      return;
+    }
+
+    setValidatingDocumentId(item.id);
+    setDocumentActionId(null);
+    try {
+      const updated = await validarDocumentoEmpresa(item.id, profile.id, true);
+      setCompanyDocumentsData((current) =>
+        current.map((doc) =>
+          doc.id === item.id
+            ? {
+                ...doc,
+                status: updated.status || 'APROVADO',
+                rejectionReason: undefined,
+              }
+            : doc
+        )
+      );
+      dispatch(openNotifications('Documento aceito com sucesso.'));
+    } catch (error) {
+      dispatch(openNotifications(error instanceof Error ? error.message : 'Erro ao aceitar documento.'));
+    } finally {
+      setValidatingDocumentId(null);
+    }
+  }
+
+  async function handleRejectCompanyDocument(reason: string) {
+    if (!rejectingDocument?.id || !profile.id) {
+      dispatch(openNotifications('Não foi possível recusar o documento.'));
+      return;
+    }
+
+    setValidatingDocumentId(rejectingDocument.id);
+    try {
+      await validarDocumentoEmpresa(rejectingDocument.id, profile.id, false, reason);
+      setCompanyDocumentsData((current) => current.filter((doc) => doc.id !== rejectingDocument.id));
+      setRejectingDocument(null);
+      setDocumentActionId(null);
+      dispatch(openNotifications('Documento recusado com sucesso.'));
+    } catch (error) {
+      dispatch(openNotifications(error instanceof Error ? error.message : 'Erro ao recusar documento.'));
+    } finally {
+      setValidatingDocumentId(null);
     }
   }
 
@@ -408,16 +469,56 @@ export default function CompaniesPage() {
                       <strong>{item.name}</strong>
                       <small style={{ color: '#9ab0d6' }}>{item.category}</small>
                     </div>
-                  <Tooltip title="Ver documento" arrow>
-                    <button
-                      type="button"
-                      className="icon-button detail-icon-button"
-                      aria-label="Ver documento"
-                      onClick={() => void handleOpenCompanyDocument(item)}
-                    >
-                      <Search className="size-4" />
-                    </button>
-                  </Tooltip>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 8, position: 'relative' }}>
+                    <Tooltip title="Ver documento" arrow>
+                      <button
+                        type="button"
+                        className="icon-button detail-icon-button"
+                        aria-label="Ver documento"
+                        onClick={() => void handleOpenCompanyDocument(item)}
+                      >
+                        <Search className="size-4" />
+                      </button>
+                    </Tooltip>
+                    {item.id && item.status !== 'APROVADO' ? (
+                      <>
+                        <Tooltip title="Ações do documento" arrow>
+                          <button
+                            type="button"
+                            className="icon-button detail-icon-button"
+                            aria-label="Ações do documento"
+                            disabled={validatingDocumentId === item.id}
+                            onClick={() => setDocumentActionId((current) => current === item.id ? null : item.id!)}
+                          >
+                            <MoreVertical className="size-4" />
+                          </button>
+                        </Tooltip>
+                        {documentActionId === item.id ? (
+                          <div className="document-action-menu">
+                            <button
+                              type="button"
+                              onClick={() => void handleValidateCompanyDocument(item)}
+                              disabled={validatingDocumentId === item.id}
+                            >
+                              <CheckCircle className="size-4" />
+                              Validar Documento
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setRejectingDocument(item);
+                                setDocumentActionId(null);
+                              }}
+                              disabled={validatingDocumentId === item.id}
+                            >
+                              <XCircle className="size-4" />
+                              Recusar documento
+                            </button>
+                          </div>
+                        ) : null}
+                      </>
+                    ) : null}
+                  </div>
                 </article>
               ))}
             </div>
@@ -654,6 +755,40 @@ export default function CompaniesPage() {
           )}
         </section>
       )}
+{rejectingDocument && (
+  <div className="dialog-backdrop" onClick={() => setRejectingDocument(null)}>
+    <section className="dialog-card dialog-card--compact" onClick={(e) => e.stopPropagation()}>
+      <div className="panel-header">
+        <div>
+          <h3>Recusar documento</h3>
+          <span>{rejectingDocument.name}</span>
+        </div>
+        <button type="button" className="icon-button" onClick={() => setRejectingDocument(null)}>×</button>
+      </div>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginTop: 12 }}>
+        {DOCUMENT_REJECTION_REASONS.map((reason) => (
+          <button
+            key={reason}
+            type="button"
+            className="proposal-rejection-option"
+            disabled={validatingDocumentId === rejectingDocument.id}
+            onClick={() => void handleRejectCompanyDocument(reason)}
+            style={{
+              textAlign: 'left',
+              padding: '10px 14px',
+              borderRadius: 8,
+              fontSize: 13,
+              cursor: validatingDocumentId === rejectingDocument.id ? 'not-allowed' : 'pointer',
+              width: '100%',
+            }}
+          >
+            {reason}
+          </button>
+        ))}
+      </div>
+    </section>
+  </div>
+)}
 {docsModal && (
   <div className="dialog-backdrop" onClick={() => setDocsModal(null)}>
     <section className="dialog-card" onClick={(e) => e.stopPropagation()}>

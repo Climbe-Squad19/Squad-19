@@ -1,4 +1,4 @@
-import { API_BASE_URL, buildAuthHeaders } from './api';
+import { API_BASE_URL, buildAuthHeaders, parseApiErrorMessage } from './api';
 
 export type PropostaApiResponse = {
   id: number;
@@ -31,6 +31,7 @@ export type DocumentoApiResponse = {
   nomeArquivo: string;
   tipo: string;
   status: string;
+  motivoRejeicao?: string | null;
   s3Url?: string | null;
   googleDriveWebViewLink?: string | null;
 };
@@ -87,6 +88,31 @@ export async function downloadDocumentoEmpresa(documentoId: number): Promise<Blo
     throw new Error(text || 'Erro ao abrir documento');
   }
   return response.blob();
+}
+
+export async function validarDocumentoEmpresa(
+  documentoId: number,
+  analistaId: number,
+  aprovado: boolean,
+  motivoRejeicao?: string
+): Promise<DocumentoApiResponse> {
+  const params = new URLSearchParams({
+    analistaId: String(analistaId),
+    aprovado: String(aprovado),
+  });
+  if (!aprovado && motivoRejeicao) {
+    params.append('motivoRejeicao', motivoRejeicao);
+  }
+
+  const response = await fetch(`${API_BASE_URL}/documentos/${documentoId}/validar?${params.toString()}`, {
+    method: 'POST',
+    headers: buildAuthHeaders(false),
+  });
+  if (!response.ok) {
+    const text = await response.text();
+    throw new Error(parseApiErrorMessage(text, response.status) || 'Erro ao validar documento');
+  }
+  return response.json();
 }
 
 export async function criarProposta(payload: PropostaCriacaoPayload): Promise<PropostaApiResponse> {
