@@ -55,6 +55,37 @@ type DashboardOverviewApiResponse = {
   }>;
 };
 
+type MeetRecordingItemApi = {
+  nome: string | null;
+  estado: string | null;
+  arquivoDrive: string | null;
+  url: string | null;
+};
+
+type MeetInsightsApiResponse = {
+  meetingCode: string;
+  participantes: number;
+  duracaoMinutos: number | null;
+  possuiGravacao: boolean;
+  gravacoes: MeetRecordingItemApi[];
+};
+
+type PersistedMeetRecordingApi = {
+  id: number;
+  reuniaoId: number;
+  meetingCode: string | null;
+  recordingName: string;
+  estado: string | null;
+  driveFile: string | null;
+  url: string | null;
+  ultimaSincronizacao: string;
+};
+
+type SyncMeetRecordingsBulkApiResponse = {
+  reunioesAtualizadas: number;
+  diasRetroativos: number;
+};
+
 export async function fetchAgenda(date: string): Promise<AgendaApiItem[]> {
   const response = await fetch(`${API_BASE_URL}/dashboard/agenda?date=${encodeURIComponent(date)}`, {
     cache: 'no-store',
@@ -107,4 +138,64 @@ export async function fetchDashboardOverview(): Promise<DashboardOverviewApiResp
   return response.json();
 }
 
-export type { AgendaApiItem, CalendarApiDay, CalendarEventSnippet, CreateMeetingPayload, DashboardOverviewApiResponse };
+export async function fetchMeetingMeetInsights(reuniaoId: number): Promise<MeetInsightsApiResponse> {
+  const response = await fetch(`${API_BASE_URL}/reunioes/${encodeURIComponent(String(reuniaoId))}/meet/insights`, {
+    headers: buildAuthHeaders(),
+  });
+
+  if (!response.ok) {
+    throw new Error('Erro ao carregar dados do Google Meet');
+  }
+
+  return response.json();
+}
+
+export async function syncMeetingRecordings(reuniaoId: number): Promise<PersistedMeetRecordingApi[]> {
+  const response = await fetch(`${API_BASE_URL}/reunioes/${encodeURIComponent(String(reuniaoId))}/meet/sync-gravacoes`, {
+    method: 'POST',
+    headers: buildAuthHeaders(),
+  });
+
+  if (!response.ok) {
+    throw new Error('Erro ao sincronizar gravações da reunião');
+  }
+
+  return response.json();
+}
+
+export async function fetchPersistedMeetingRecordings(reuniaoId: number): Promise<PersistedMeetRecordingApi[]> {
+  const response = await fetch(`${API_BASE_URL}/reunioes/${encodeURIComponent(String(reuniaoId))}/meet/gravacoes`, {
+    headers: buildAuthHeaders(),
+  });
+
+  if (!response.ok) {
+    throw new Error('Erro ao carregar gravações sincronizadas');
+  }
+
+  return response.json();
+}
+
+export async function syncMeetingRecordingsBulk(diasRetroativos = 14): Promise<SyncMeetRecordingsBulkApiResponse> {
+  const response = await fetch(`${API_BASE_URL}/reunioes/meet/sync-gravacoes?diasRetroativos=${encodeURIComponent(String(diasRetroativos))}`, {
+    method: 'POST',
+    headers: buildAuthHeaders(),
+  });
+
+  if (!response.ok) {
+    throw new Error('Erro ao sincronizar gravações em lote');
+  }
+
+  return response.json();
+}
+
+export type {
+  AgendaApiItem,
+  CalendarApiDay,
+  CalendarEventSnippet,
+  CreateMeetingPayload,
+  DashboardOverviewApiResponse,
+  MeetRecordingItemApi,
+  MeetInsightsApiResponse,
+  PersistedMeetRecordingApi,
+  SyncMeetRecordingsBulkApiResponse,
+};

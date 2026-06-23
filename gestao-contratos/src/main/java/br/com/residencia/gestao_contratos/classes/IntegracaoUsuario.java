@@ -24,6 +24,7 @@ public class IntegracaoUsuario {
 
     private boolean googleDrive;
     private boolean googleCalendar;
+    private boolean googleMeet;
     private boolean googleSheets;
     private boolean gmail;
 }

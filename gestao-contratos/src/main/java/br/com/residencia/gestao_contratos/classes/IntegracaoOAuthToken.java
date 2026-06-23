@@ -22,6 +22,7 @@ public class IntegracaoOAuthToken {
     public enum ProvedorIntegracao {
         GOOGLEDRIVE,
         GOOGLECALENDAR,
+        GOOGLEMEET,
         GOOGLESHEETS,
         GMAIL
     }

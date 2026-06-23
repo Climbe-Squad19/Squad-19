@@ -212,6 +212,7 @@ export default function PortalPropostasPage() {
         onClose={() => setSelectedProposalDetail(null)}
         onApprove={(id) => handleUpdateStatus(id, 'ACEITA')}
         onReject={(id, motivo) => handleUpdateStatus(id, 'RECUSADA', motivo)}
+        respondente="EMPRESA"
       />
     </>
   );
