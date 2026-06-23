@@ -86,7 +86,7 @@ export default function PortalDocumentosPage() {
       <div className="section-topbar">
         <div>
           <h3>Documentos</h3>
-          <span>Envie arquivos e acompanhe o status</span>
+          <span>Envie arquivos da empresa</span>
         </div>
       </div>
 
@@ -139,11 +139,6 @@ export default function PortalDocumentosPage() {
                 <div>
                   <strong>{documento.tipo}</strong>
                   <small className="text-zinc-400">Tipo</small>
-                </div>
-                <div>
-                  <span className="detail-table-status" data-status={documento.status}>
-                    {documento.status}
-                  </span>
                 </div>
                 <Tooltip title="Ver documento anexado" arrow>
                   <button

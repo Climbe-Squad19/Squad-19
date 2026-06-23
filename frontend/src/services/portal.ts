@@ -112,36 +112,6 @@ export function getPortalEmpresaId(): number | undefined {
   return undefined;
 }
 
-export type EmpresaRegistroPayload = {
-  razaoSocial: string;
-  nomeFantasia?: string;
-  cnpj: string;
-  emailContato: string;
-  telefone?: string;
-  nomeRepresentante?: string;
-  cpfRepresentante?: string;
-  contatoRepresentante?: string;
-  logradouro?: string;
-  numero?: string;
-  bairro?: string;
-  cidade?: string;
-  uf?: string;
-  cep?: string;
-};
-
-export async function cadastrarEmpresaPortal(payload: EmpresaRegistroPayload): Promise<{ id: number }> {
-  const response = await fetch(`${API_BASE_URL}/empresas/registro`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(payload),
-  });
-  if (!response.ok) {
-    const text = await response.text();
-    throw new Error(text || 'Erro ao cadastrar empresa');
-  }
-  return response.json() as Promise<{ id: number }>;
-}
-
 export function fetchPortalPropostas(empresaId: number): Promise<PropostaApiResponse[]> {
   return getPortalApiJson(`${API_BASE_URL}/propostas?empresaId=${encodeURIComponent(String(empresaId))}`);
 }
