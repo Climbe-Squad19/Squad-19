@@ -155,6 +155,37 @@ public class PropostaService {
             String motivoRecusa) {
         Proposta proposta = buscarEntidadePorId(id);
 
+        if ((novoStatus == Proposta.StatusProposta.ACEITA || novoStatus == Proposta.StatusProposta.RECUSADA)
+                && proposta.getCriadoPor() != null) {
+            throw new RuntimeException("Propostas criadas por funcionario Climbe devem ser respondidas pela empresa");
+        }
+
+        return aplicarStatus(proposta, novoStatus, motivoRecusa);
+    }
+
+    @Transactional
+    public PropostaResponse responderPeloPortal(Long empresaId, Long id, Proposta.StatusProposta novoStatus,
+            String motivoRecusa) {
+        if (empresaId == null) {
+            throw new RuntimeException("Empresa ID nÃ£o pode ser nulo");
+        }
+        if (novoStatus != Proposta.StatusProposta.ACEITA && novoStatus != Proposta.StatusProposta.RECUSADA) {
+            throw new RuntimeException("Portal da empresa sÃ³ pode aceitar ou recusar propostas");
+        }
+
+        Proposta proposta = buscarEntidadePorId(id);
+        if (proposta.getEmpresa() == null || !empresaId.equals(proposta.getEmpresa().getId())) {
+            throw new RuntimeException("Proposta nÃ£o pertence Ã  empresa autenticada");
+        }
+        if (proposta.getCriadoPor() == null) {
+            throw new RuntimeException("Propostas criadas pela empresa devem ser respondidas pela Climbe");
+        }
+
+        return aplicarStatus(proposta, novoStatus, motivoRecusa);
+    }
+
+    private PropostaResponse aplicarStatus(Proposta proposta, Proposta.StatusProposta novoStatus,
+            String motivoRecusa) {
         proposta.setStatus(novoStatus);
 
         if (novoStatus == Proposta.StatusProposta.RECUSADA) {

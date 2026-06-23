@@ -4,6 +4,8 @@ export type PropostaApiResponse = {
   id: number;
   empresaId: number;
   nomeEmpresa: string;
+  criadoPorId?: number | null;
+  nomeCriadoPor?: string | null;
   servicoContratado: string;
   valorMensal?: number | null;
   status: string;
@@ -12,8 +14,6 @@ export type PropostaApiResponse = {
   motivoDaRecusa?: string | null;
   justificativaRecusa?: string | null;
   linkGoogleDrive?: string | null;
-  criadoPorId?: number | null;
-  nomeCriadoPor?: string | null;
 };
 
 export type ContratoApiResponse = {

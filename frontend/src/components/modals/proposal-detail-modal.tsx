@@ -43,6 +43,9 @@ export default function ProposalDetailModal({ detail, onClose, onApprove, onReje
     respondente === 'CLIMBE' ? !detail.criadoPorId : !!detail.criadoPorId
   );
 
+  const canEnviar = isRascunho && Boolean(onEnviar);
+  const canResponder = isAguardando && Boolean(onApprove && onReject);
+
   const handleApprove = async () => {
     if (!detail.id || !onApprove) return;
     setLoading(true);
@@ -134,7 +137,7 @@ export default function ProposalDetailModal({ detail, onClose, onApprove, onReje
           </button>
         )}
 
-        {isAguardando && (
+        {canResponder && (
           <div style={{ marginTop: 16 }}>
             <span style={{ fontSize: 13, opacity: 0.7 }}>Motivo da recusa (obrigatório para recusar)</span>
             <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginTop: 8 }}>
@@ -174,12 +177,12 @@ export default function ProposalDetailModal({ detail, onClose, onApprove, onReje
         )}
 
         <div className="dialog-actions" style={{ marginTop: 16 }}>
-          {isRascunho && (
+          {canEnviar && (
             <button type="button" className="button button--outline" onClick={handleEnviar} disabled={loading}>
               Enviar para empresa
             </button>
           )}
-          {isAguardando && (
+          {canResponder && (
             <>
               <button type="button" className="button button--outline" onClick={handleReject} disabled={loading}>
                 Recusar

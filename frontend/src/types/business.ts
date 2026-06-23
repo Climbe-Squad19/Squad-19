@@ -7,7 +7,9 @@ export type ProposalCardItem = {
   rejectionReason?: string;
   linkGoogleDrive?: string;
   status?: string;
+  createdByClimbe?: boolean;
   criadoPorId?: number | null;
+  nomeCriadoPor?: string | null;
 };
 
 export type ProposalColumn = {
