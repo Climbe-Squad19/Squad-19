@@ -34,6 +34,7 @@ export type CompanyDocument = {
   name: string;
   category: string;
   status: string;
+  rejectionReason?: string;
   downloadUrl?: string;
   fileUrl?: string;
 };

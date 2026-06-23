@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { toast } from 'sonner';
-import { Eye } from 'lucide-react';
+import { Search } from 'lucide-react';
 import { Tooltip } from '@mui/material';
 import { downloadPortalDocumento, fetchPortalDocumentos, uploadPortalDocumento, getPortalEmpresaId } from '../../services/portal';
 import type { DocumentoApiResponse } from '../../services/business';
@@ -16,6 +16,7 @@ const documentTypes = [
 export default function PortalDocumentosPage() {
   const [documentos, setDocumentos] = useState<DocumentoApiResponse[]>([]);
   const [loading, setLoading] = useState(true);
+  const [rejectionReason, setRejectionReason] = useState<{ title: string; reason: string } | null>(null);
   const [selectedType, setSelectedType] = useState<typeof documentTypes[number]>('BALANCO_EMPRESA');
   const [file, setFile] = useState<File | null>(null);
   const [uploading, setUploading] = useState(false);
@@ -55,6 +56,14 @@ export default function PortalDocumentosPage() {
   }
 
   async function handleOpenDocumento(documento: DocumentoApiResponse) {
+    if (documento.status === 'REJEITADO') {
+      setRejectionReason({
+        title: documento.nomeArquivo || 'Documento recusado',
+        reason: documento.motivoRejeicao || 'Documento recusado sem motivo informado.',
+      });
+      return;
+    }
+
     const directUrl = documento.googleDriveWebViewLink?.trim() || documento.s3Url?.trim();
     if (directUrl) {
       window.open(directUrl, '_blank', 'noopener,noreferrer');
@@ -81,8 +90,37 @@ export default function PortalDocumentosPage() {
     }
   }
 
+  const getStatusLabel = (status: string) => {
+    if (status === 'APROVADO') return 'APROVADO';
+    if (status === 'REJEITADO') return 'REJEITADO';
+    return '';
+  };
+
   return (
     <div className="panel stacked-panel">
+      {rejectionReason ? (
+        <div className="dialog-backdrop" onClick={() => setRejectionReason(null)}>
+          <section className="dialog-card dialog-card--compact" onClick={(event) => event.stopPropagation()}>
+            <div className="panel-header">
+              <div>
+                <h3>Motivo da recusa</h3>
+                <span>{rejectionReason.title}</span>
+              </div>
+              <button type="button" className="icon-button" onClick={() => setRejectionReason(null)}>×</button>
+            </div>
+            <article className="team-member-meta-item team-member-meta-item--full" style={{ marginTop: 12 }}>
+              <span>Motivo</span>
+              <strong>{rejectionReason.reason}</strong>
+            </article>
+            <div className="dialog-actions" style={{ marginTop: 16 }}>
+              <button type="button" className="button button--primary" onClick={() => setRejectionReason(null)}>
+                Fechar
+              </button>
+            </div>
+          </section>
+        </div>
+      ) : null}
+
       <div className="section-topbar">
         <div>
           <h3>Documentos</h3>
@@ -140,13 +178,18 @@ export default function PortalDocumentosPage() {
                   <strong>{documento.tipo}</strong>
                   <small className="text-zinc-400">Tipo</small>
                 </div>
-                <Tooltip title="Ver documento anexado" arrow>
+                {getStatusLabel(documento.status) ? (
+                  <span className="detail-table-status" data-status={documento.status}>
+                    {getStatusLabel(documento.status)}
+                  </span>
+                ) : null}
+                <Tooltip title={documento.status === 'REJEITADO' ? 'Ver motivo da recusa' : 'Ver documento anexado'} arrow>
                   <button
                     type="button"
                     className="icon-button detail-icon-button"
                     onClick={() => void handleOpenDocumento(documento)}
                   >
-                    <Eye className="size-4" />
+                    <Search className="size-4" />
                   </button>
                 </Tooltip>
               </article>
