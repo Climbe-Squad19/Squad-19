@@ -163,13 +163,6 @@ public class GoogleOAuthLoginService {
         String nome = profile.get("name") != null ? String.valueOf(profile.get("name")) : email;
         String picture = profile.get("picture") != null ? String.valueOf(profile.get("picture")) : "";
 
-        boolean emailVerified = Boolean.TRUE.equals(profile.get("email_verified"))
-                || "true".equalsIgnoreCase(String.valueOf(profile.get("email_verified")));
-
-        if (!emailVerified) {
-            return frontendUrl + "/?oauth_error=" + enc("email_not_verified");
-        }
-
         return usuarioRepository.findByEmailIgnoreCase(email)
                 .map(u -> tratarUsuarioExistente(u, nome, picture, sub))
                 .orElseGet(() -> criarNovoPendente(email, nome, picture, sub));

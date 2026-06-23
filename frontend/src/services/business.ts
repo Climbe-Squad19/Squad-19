@@ -5,7 +5,7 @@ export type PropostaApiResponse = {
   empresaId: number;
   nomeEmpresa: string;
   servicoContratado: string;
-  valorMensal: number;
+  valorMensal?: number | null;
   status: string;
   dataCriacao: string;
   motivoRecusa?: string | null;
@@ -46,7 +46,7 @@ export type ReuniaoApiResponse = {
 export type PropostaCriacaoPayload = {
   empresaId: number;
   servicoContratado: string;
-  valorMensal: number;
+  valorMensal?: number | null;
   valorSetup?: number;
   dataEmissao?: string;
   linkGoogleDrive?: string;

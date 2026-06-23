@@ -67,8 +67,7 @@ export function Login() {
             />
           </label>
 
-          <div className="w-full flex items-center justify-between gap-4">
-            <Link to='/portal/login' className="underline text-xs font-medium">Entrar como empresa</Link>
+          <div className="w-full flex items-center justify-end gap-4">
             <Link to='/forgot-password' className="underline text-xs font-medium">Esqueceu a senha?</Link>
           </div>
 

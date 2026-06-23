@@ -30,6 +30,7 @@ export default function ProposalsPage() {
   const [formLink, setFormLink] = useState('');
   const [formSubmitting, setFormSubmitting] = useState(false);
   const [formError, setFormError] = useState('');
+  const isValuationService = formServico === 'Valuation';
 
   useEffect(() => {
     if (showForm && empresas.length === 0) {
@@ -41,14 +42,14 @@ export default function ProposalsPage() {
 
   async function handleCriarProposta() {
     if (!formEmpresaId) { setFormError('Selecione uma empresa.'); return; }
-    if (!formValorMensal || isNaN(Number(formValorMensal))) { setFormError('Informe um valor mensal válido.'); return; }
+    if (!isValuationService && (!formValorMensal || isNaN(Number(formValorMensal)))) { setFormError('Informe um valor mensal valido.'); return; }
     setFormSubmitting(true);
     setFormError('');
     try {
       await criarProposta({
         empresaId: Number(formEmpresaId),
         servicoContratado: formServico,
-        valorMensal: Number(formValorMensal),
+        valorMensal: isValuationService ? undefined : Number(formValorMensal),
         valorSetup: formValorSetup ? Number(formValorSetup) : undefined,
         linkGoogleDrive: formLink || undefined,
       });
@@ -114,13 +115,19 @@ export default function ProposalsPage() {
                 Serviço *
                 <select
                   value={formServico}
-                  onChange={(e) => setFormServico(e.target.value)}
+                  onChange={(e) => {
+                    setFormServico(e.target.value);
+                    if (e.target.value === 'Valuation') {
+                      setFormValorMensal('');
+                    }
+                  }}
                   style={{ padding: '8px', borderRadius: '6px', border: '1px solid var(--color-border, #334155)', background: '#0f172a', color: 'inherit', fontSize: '13px' }}
                 >
                   {SERVICOS.map((s) => <option key={s} value={s}>{s}</option>)}
                 </select>
               </label>
 
+              {!isValuationService ? (
               <label style={{ fontSize: '13px', display: 'flex', flexDirection: 'column', gap: '4px' }}>
                 Valor mensal (R$) *
                 <input
@@ -132,6 +139,7 @@ export default function ProposalsPage() {
                   style={{ padding: '8px', borderRadius: '6px', border: '1px solid var(--color-border, #334155)', background: '#0f172a', color: 'inherit', fontSize: '13px' }}
                 />
               </label>
+              ) : null}
 
               <label style={{ fontSize: '13px', display: 'flex', flexDirection: 'column', gap: '4px' }}>
                 Valor setup (R$)
@@ -197,7 +205,7 @@ export default function ProposalsPage() {
                   <article key={`${column.title}-${item.company}-${index}`} className="proposal-card">
                     <div className="proposal-card-top">
                       <strong>{item.company}</strong>
-                      <small>{item.amount}</small>
+                      {item.amount ? <small>{item.amount}</small> : null}
                     </div>
                     <div className="proposal-card-middle">
                       <span className={`proposal-chip proposal-chip--${item.tag.toLowerCase()}`}>{item.tag}</span>
@@ -233,3 +241,4 @@ export default function ProposalsPage() {
     </>
   );
 }
+
