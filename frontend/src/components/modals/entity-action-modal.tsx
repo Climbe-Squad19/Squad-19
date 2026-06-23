@@ -30,7 +30,6 @@ export default function EntityActionModal({ modal, onClose, onConfirm }: EntityA
           ))}
         </div>
         <div className="dialog-actions">
-          <button type="button" className="button button--outline" onClick={onClose}>Cancelar</button>
           <button type="button" className="button button--primary" onClick={onConfirm}>
             {modal.actionIcon} {modal.actionLabel}
           </button>

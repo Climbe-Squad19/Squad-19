@@ -408,9 +408,6 @@ export default function CompaniesPage() {
                       <strong>{item.name}</strong>
                       <small style={{ color: '#9ab0d6' }}>{item.category}</small>
                     </div>
-                  <span className="detail-table-status" data-status={item.status}>
-  {item.status}
-</span>
                   <Tooltip title="Ver documento" arrow>
                     <button
                       type="button"
