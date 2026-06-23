@@ -10,6 +10,7 @@ import lombok.NoArgsConstructor;
 public class IntegracoesUsuarioResponse {
     private boolean googleDrive;
     private boolean googleCalendar;
+    private boolean googleMeet;
     private boolean googleSheets;
     private boolean gmail;
 }

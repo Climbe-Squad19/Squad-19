@@ -1,6 +1,7 @@
 package br.com.residencia.gestao_contratos.controller;
 
 import java.util.List;
+import java.util.Map;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -16,6 +17,8 @@ import org.springframework.web.bind.annotation.RestController;
 
 import br.com.residencia.gestao_contratos.dtos.request.ReuniaoAtualizacaoRequest;
 import br.com.residencia.gestao_contratos.dtos.request.ReuniaoCriacaoRequest;
+import br.com.residencia.gestao_contratos.dtos.response.MeetInsightsResponse;
+import br.com.residencia.gestao_contratos.dtos.response.ReuniaoGravacaoResponse;
 import br.com.residencia.gestao_contratos.dtos.response.ReuniaoResponse;
 import br.com.residencia.gestao_contratos.services.ReuniaoService;
 
@@ -41,6 +44,51 @@ public class ReuniaoController {
     @GetMapping("/{id}")
     public ResponseEntity<ReuniaoResponse> getById(@PathVariable Long id) {
         return ResponseEntity.ok(reuniaoService.buscarPorId(id));
+    }
+
+    @GetMapping("/{id}/meet/insights")
+    public ResponseEntity<?> getMeetInsights(@PathVariable Long id) {
+        try {
+            MeetInsightsResponse response = reuniaoService.obterInsightsMeet(id);
+            return ResponseEntity.ok(response);
+        } catch (IllegalArgumentException ex) {
+            return ResponseEntity.badRequest().body(Map.of("message", ex.getMessage()));
+        } catch (RuntimeException ex) {
+            String message = ex.getMessage() != null ? ex.getMessage() : "Falha ao consultar dados do Google Meet";
+            return ResponseEntity.status(HttpStatus.SERVICE_UNAVAILABLE).body(Map.of("message", message));
+        }
+    }
+
+    @PostMapping("/{id}/meet/sync-gravacoes")
+    public ResponseEntity<?> syncMeetRecordings(@PathVariable Long id) {
+        try {
+            List<ReuniaoGravacaoResponse> response = reuniaoService.sincronizarGravacoesMeet(id);
+            return ResponseEntity.ok(response);
+        } catch (IllegalArgumentException ex) {
+            return ResponseEntity.badRequest().body(Map.of("message", ex.getMessage()));
+        } catch (RuntimeException ex) {
+            String message = ex.getMessage() != null ? ex.getMessage() : "Falha ao sincronizar gravações do Google Meet";
+            return ResponseEntity.status(HttpStatus.SERVICE_UNAVAILABLE).body(Map.of("message", message));
+        }
+    }
+
+    @PostMapping("/meet/sync-gravacoes")
+    public ResponseEntity<?> syncMeetRecordingsBulk(
+            @RequestParam(defaultValue = "14") int diasRetroativos) {
+        try {
+            int reunioesAtualizadas = reuniaoService.sincronizarGravacoesMeetEmLote(diasRetroativos);
+            return ResponseEntity.ok(Map.of(
+                    "reunioesAtualizadas", reunioesAtualizadas,
+                    "diasRetroativos", diasRetroativos));
+        } catch (RuntimeException ex) {
+            String message = ex.getMessage() != null ? ex.getMessage() : "Falha ao sincronizar gravações em lote";
+            return ResponseEntity.status(HttpStatus.SERVICE_UNAVAILABLE).body(Map.of("message", message));
+        }
+    }
+
+    @GetMapping("/{id}/meet/gravacoes")
+    public ResponseEntity<List<ReuniaoGravacaoResponse>> listMeetRecordings(@PathVariable Long id) {
+        return ResponseEntity.ok(reuniaoService.listarGravacoesMeet(id));
     }
 
     @PostMapping

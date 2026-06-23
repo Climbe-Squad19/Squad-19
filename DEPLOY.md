@@ -178,3 +178,35 @@ git add -A && git status
 git commit -m "chore: ajustes de deploy"
 git push
 ```
+
+---
+
+## 11. Automação de gravações do Meet (job)
+
+A API expõe sync em lote para persistir gravações já disponíveis:
+
+- `POST /reunioes/meet/sync-gravacoes?diasRetroativos=14`
+
+Script pronto no repositório:
+
+- `scripts/sync-meet-recordings.ps1`
+
+Exemplo local (PowerShell):
+
+```powershell
+powershell -ExecutionPolicy Bypass -File scripts/sync-meet-recordings.ps1 \
+   -ApiBaseUrl "http://localhost:8081" \
+   -JwtToken "SEU_JWT" \
+   -DiasRetroativos 14
+```
+
+Exemplo produção (Render API):
+
+```powershell
+powershell -ExecutionPolicy Bypass -File scripts/sync-meet-recordings.ps1 \
+   -ApiBaseUrl "https://SUA-API.onrender.com" \
+   -JwtToken "SEU_JWT" \
+   -DiasRetroativos 14
+```
+
+Sugestão operacional: agendar a cada 10-15 minutos no Task Scheduler/cron.

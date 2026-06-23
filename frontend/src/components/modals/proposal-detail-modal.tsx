@@ -15,9 +15,12 @@ type ProposalDetailModalProps = {
   onApprove?: (id: number) => Promise<void>;
   onReject?: (id: number, motivo: string) => Promise<void>;
   onEnviar?: (id: number) => Promise<void>;
+  /** 'CLIMBE' (padrão): funcionário responde propostas criadas pela empresa.
+   *  'EMPRESA': empresa responde propostas criadas pela Climbe. */
+  respondente?: 'CLIMBE' | 'EMPRESA';
 };
 
-export default function ProposalDetailModal({ detail, onClose, onApprove, onReject, onEnviar }: ProposalDetailModalProps) {
+export default function ProposalDetailModal({ detail, onClose, onApprove, onReject, onEnviar, respondente = 'CLIMBE' }: ProposalDetailModalProps) {
   const [selectedMotivo, setSelectedMotivo] = useState('');
   const [loading, setLoading] = useState(false);
 
@@ -33,8 +36,12 @@ export default function ProposalDetailModal({ detail, onClose, onApprove, onReje
 
   if (!detail) return null;
 
-  const isRascunho = detail.stage === 'Rascunhos';
-  const isAguardando = detail.stage === 'Aguardando Aprovação';
+  const isRascunho = detail.stage === 'Rascunhos' && respondente === 'CLIMBE';
+  // Climbe responde quando empresa criou (criadoPorId == null)
+  // Empresa responde quando Climbe criou (criadoPorId != null)
+  const isAguardando = detail.stage === 'Aguardando Aprovação' && (
+    respondente === 'CLIMBE' ? !detail.criadoPorId : !!detail.criadoPorId
+  );
 
   const canEnviar = isRascunho && Boolean(onEnviar);
   const canResponder = isAguardando && Boolean(onApprove && onReject);
@@ -161,10 +168,18 @@ export default function ProposalDetailModal({ detail, onClose, onApprove, onReje
           <p style={{ marginTop: 12, fontSize: 13, color: '#79C6C0' }}>{feedback}</p>
         )}
 
+        {detail.stage === 'Aguardando Aprovação' && !isAguardando && (
+          <p style={{ marginTop: 12, fontSize: 12, color: '#94a3b8', fontStyle: 'italic' }}>
+            {respondente === 'CLIMBE'
+              ? 'Aguardando resposta da empresa.'
+              : 'Aguardando resposta da Climbe.'}
+          </p>
+        )}
+
         <div className="dialog-actions" style={{ marginTop: 16 }}>
           {canEnviar && (
             <button type="button" className="button button--outline" onClick={handleEnviar} disabled={loading}>
-              Enviar para aprovação
+              Enviar para empresa
             </button>
           )}
           {canResponder && (

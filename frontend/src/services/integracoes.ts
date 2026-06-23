@@ -3,6 +3,7 @@ import { API_BASE_URL, buildAuthHeaders } from './api';
 export type IntegracoesResponse = {
   googleDrive: boolean;
   googleCalendar: boolean;
+  googleMeet: boolean;
   googleSheets: boolean;
   gmail: boolean;
 };

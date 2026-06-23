@@ -13,6 +13,7 @@ import { openNotifications } from '../store/uiSlice';
 const defaultIntegrations: IntegracoesResponse = {
   googleDrive: true,
   googleCalendar: true,
+  googleMeet: true,
   googleSheets: true,
   gmail: true,
 };

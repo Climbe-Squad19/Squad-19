@@ -147,9 +147,19 @@ export default function SettingsPage() {
               Integrações Google exigem <code>GOOGLE_CLIENT_ID</code> e <code>GOOGLE_CLIENT_SECRET</code> na API.
             </p>
           ) : null}
-          {(['googleDrive', 'googleCalendar', 'googleSheets', 'gmail'] as const).map((key) => (
+          {(['googleDrive', 'googleCalendar', 'googleMeet', 'googleSheets', 'gmail'] as const).map((key) => (
             <article key={key} className="settings-item">
-              <span>{key === 'gmail' ? 'Gmail' : key === 'googleSheets' ? 'Google Sheets' : key === 'googleCalendar' ? 'Google Calendar' : 'Google Drive'}</span>
+              <span>
+                {key === 'gmail'
+                  ? 'Gmail'
+                  : key === 'googleSheets'
+                    ? 'Google Sheets'
+                    : key === 'googleMeet'
+                      ? 'Google Meet'
+                      : key === 'googleCalendar'
+                        ? 'Google Calendar'
+                        : 'Google Drive'}
+              </span>
               <button
                 type="button"
                 className="button button--outline"
