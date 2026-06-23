@@ -1154,6 +1154,7 @@ a {
 }
 
 .agenda-form input[type='text'],
+.agenda-form input[type='email'],
 .agenda-form input[type='time'],
 .agenda-form input[type='url'] {
   width: 100%;
